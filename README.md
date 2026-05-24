@@ -1,8 +1,8 @@
-# TailorMyCV
+# ResMyCV
 
 **Your CV, tailored to any job — in 30 seconds.**
 
-TailorMyCV is a SaaS tool where job seekers upload their CV (DOCX/PDF), paste a job posting URL, get a gap analysis, answer targeted questions about missing skills, and receive an AI-tailored CV ready to download as PDF.
+ResMyCV is a SaaS tool where job seekers upload their CV (DOCX/PDF), paste a job posting URL, get a gap analysis, answer targeted questions about missing skills, and receive an AI-tailored CV ready to download as PDF.
 
 ## Features
 
@@ -27,7 +27,7 @@ TailorMyCV is a SaaS tool where job seekers upload their CV (DOCX/PDF), paste a 
 ## Project Structure
 
 ```
-tailormycv/
+resmycv/
 ├── app.py                  # Flask application
 ├── requirements.txt        # Python dependencies
 ├── .env.example             # Environment variables template
@@ -73,7 +73,7 @@ tailormycv/
 ### Step 1: Clone and Install Dependencies
 
 ```bash
-cd ~/tailormycv
+cd ~/resmycv
 pip install -r requirements.txt
 ```
 
@@ -111,7 +111,7 @@ FLASK_SECRET_KEY=your-random-secret-key
 ### Step 5: Run the App
 
 ```bash
-cd ~/tailormycv
+cd ~/resmycv
 python app.py
 ```
 
