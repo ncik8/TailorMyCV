@@ -16,7 +16,7 @@ from services.cover_letter import generate_cover_letter
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', root_path=os.path.dirname(os.path.abspath(__file__)))
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
 CORS(app)
 
