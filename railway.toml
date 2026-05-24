@@ -1,7 +1,6 @@
-[build]
-builder = "python"
-buildCommand = "pip install -r requirements.txt"
-
 [deploy]
 startCommand = "python app.py"
 healthCheckPath = "/"
+
+[build]
+builder = "nixpacks"
