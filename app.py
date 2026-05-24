@@ -1,6 +1,7 @@
 import os
 import json
 import tempfile
+import stripe as _stripe
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -13,7 +14,8 @@ from services.job_scraper import scrape_job_url, parse_job_text
 from services.gap_analyzer import extract_requirements, analyze_gaps, convert_answer_to_cv_language, generate_gap_questions
 from services.tailor import tailor_cv, generate_cv_pdf
 from services.cover_letter import generate_cover_letter
-from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count
+from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS
+from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count, get_client as get_supabase_client
 
 load_dotenv()
 
@@ -170,6 +172,88 @@ def upgrade_page():
     return render_template('upgrade.html', tier=user_tier)
 
 
+@app.route('/checkout/<tier>', methods=['POST'])
+def checkout_route(tier):
+    """Create Stripe Checkout session for the given tier."""
+    user_id = session.get('user_id')
+    email = session.get('user_email', '')
+
+    if not user_id:
+        return redirect(url_for('auth_login'))
+
+    valid_tiers = {'pro': 'Pro', 'pro_plus': 'Pro+'}
+    if tier not in valid_tiers:
+        return redirect(url_for('upgrade_page'))
+
+    try:
+        checkout_url = request.host_url.rstrip('/')
+        success_url = f"{checkout_url}/dashboard?upgrade=success"
+        cancel_url = f"{checkout_url}/upgrade"
+
+        sc = create_checkout_session(
+            user_id=user_id,
+            email=email,
+            tier=tier,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+        return redirect(sc.url, code=303)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/stripe/webhook', methods=['POST'])
+def stripe_webhook():
+    """Handle Stripe webhook events."""
+    payload = request.data
+    sig = request.headers.get('Stripe-Signature', '')
+
+    if not STRIPE_WEBHOOK_SECRET:
+        return jsonify({'error': 'Webhook secret not configured'}), 500
+
+    try:
+        event = construct_webhook_event(payload, sig)
+    except Exception as e:
+        return jsonify({'error': f'Webhook verification failed: {e}'}), 400
+
+    # Handle subscription events
+    if event['type'] in ('checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated'):
+        obj = event['data']['object']
+
+        if event['type'] == 'checkout.session.completed':
+            sub_id = obj.get('subscription')
+            user_id = obj.get('client_reference_id')
+        else:
+            sub_id = obj.get('id')
+            user_id = obj.get('metadata', {}).get('user_id')
+
+        if sub_id and user_id:
+            # Get the price ID from the subscription
+            sub = _stripe.Subscription.retrieve(sub_id)
+            price_id = sub['items']['data'][0]['price']['id']
+            tier = get_tier_from_price_id(price_id)
+
+            supabase = get_supabase_client()
+            supabase.table('profiles').update({
+                'tier': tier,
+                'stripe_subscription_id': sub_id,
+                'stripe_customer_id': sub.get('customer'),
+                'updated_at': 'now()',
+            }).eq('user_id', user_id).execute()
+
+    elif event['type'] == 'customer.subscription.deleted':
+        obj = event['data']['object']
+        user_id = obj.get('metadata', {}).get('user_id')
+        if user_id:
+            supabase = get_supabase_client()
+            supabase.table('profiles').update({
+                'tier': 'free',
+                'stripe_subscription_id': None,
+            }).eq('user_id', user_id).execute()
+
+    return jsonify({'ok': True})
+
+
 # ============ ROUTES ============
 
 @app.route('/')
@@ -182,7 +266,8 @@ def index():
 def dashboard():
     """User dashboard after login."""
     init_session()
-    return render_template('dashboard.html')
+    upgrade_success = request.args.get('upgrade') == 'success'
+    return render_template('dashboard.html', upgrade_success=upgrade_success)
 
 
 @app.route('/cv/upload')

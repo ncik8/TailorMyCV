@@ -5,6 +5,13 @@
 {% block content %}
 <div class="page">
     <div class="container">
+        {% if upgrade_success %}
+        <div class="card" style="margin-bottom: 24px; background: #f0fdf4; border-color: #bbf7d0;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #166534;">✓ Payment successful!</h3>
+            <p style="color: #166534;">Your subscription is now active. Enjoy unlimited CV generations.</p>
+        </div>
+        {% endif %}
+
         <div class="page-header">
             <h1>Welcome{% if session.get('user_email') %}, {{ session.user_email.split('@')[0] }}{% endif %}</h1>
             <p>Upload your CV and paste a job description to get started.</p>

@@ -187,7 +187,15 @@
                     <li>PDF download</li>
                     <li>Priority support</li>
                 </ul>
-                <div class="tier-btn tier-btn-primary">Coming Soon</div>
+                {% if session.get('tier') == 'pro' or session.get('tier') == 'pro_plus' %}
+                <div class="tier-btn tier-btn-secondary">Current Plan</div>
+                {% elif session.get('user_id') %}
+                <form action="/checkout/pro" method="POST">
+                    <button type="submit" class="tier-btn tier-btn-primary">Subscribe — $19/mo</button>
+                </form>
+                {% else %}
+                <a href="/auth/login" class="tier-btn tier-btn-primary">Login to Subscribe</a>
+                {% endif %}
             </div>
 
             <!-- Pro+ -->
@@ -203,7 +211,15 @@
                     <li>Cover letter generation</li>
                     <li>Priority support</li>
                 </ul>
-                <div class="tier-btn tier-btn-primary">Coming Soon</div>
+                {% if session.get('tier') == 'pro_plus' %}
+                <div class="tier-btn tier-btn-secondary">Current Plan</div>
+                {% elif session.get('user_id') %}
+                <form action="/checkout/pro_plus" method="POST">
+                    <button type="submit" class="tier-btn tier-btn-primary">Subscribe — $25/mo</button>
+                </form>
+                {% else %}
+                <a href="/auth/login" class="tier-btn tier-btn-primary">Login to Subscribe</a>
+                {% endif %}
             </div>
         </div>
 
