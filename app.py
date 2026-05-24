@@ -18,6 +18,7 @@ load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'))
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
 CORS(app)
 
