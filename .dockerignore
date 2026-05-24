@@ -1,0 +1,10 @@
+.env
+.env.local
+__pycache__/
+.git/
+static/js/app.js
+static/style.css
+templates/
+prompts/
+supabase/
+.flog
