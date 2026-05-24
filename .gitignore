@@ -24,8 +24,8 @@ build/
 .DS_Store
 Thumbs.db
 
-# Cloudflare tunnel logs
-/tmp/cloudflared.log
-
 # Session files
 *.session
+
+# OpenCode
+.opencode/

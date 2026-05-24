@@ -24,9 +24,8 @@ app.config['DEBUG'] = False
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
 CORS(app)
 
-# Session storage for multi-step flow
-# In production, use Supabase or Redis
-app.config['SESSION_TYPE'] = 'filesystem'
+# Session storage — cookie-based (no server-side storage needed for MVP)
+# For multi-instance prod, switch to Supabase session or Redis
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc'}
