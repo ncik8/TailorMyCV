@@ -358,15 +358,17 @@
         <div class="container">
             <a href="/" class="logo">Rezmycv</a>
             <div class="nav-links">
-                {% if session.get('user_id') %}
+{% if session.get('user_id') %}
                 <a href="/dashboard">Dashboard</a>
-                <a href="/upgrade">Upgrade</a>
-                <form action="/auth/logout" method="POST" style="display:inline">
+                <a href="/upgrade">Pricing</a>
+                <a href="/blog">Blog</a>
+                <form action="/auth/logout" method="POST" style="display:inline;">
                     <button type="submit" class="btn-logout">Logout</button>
                 </form>
                 {% else %}
-                <a href="/cv/upload">Upload CV</a>
                 <a href="/auth/login">Login</a>
+                <a href="/upgrade">Pricing</a>
+                <a href="/blog">Blog</a>
                 <a href="/auth/signup" class="btn-nav-signup">Sign Up</a>
                 {% endif %}
             </div>

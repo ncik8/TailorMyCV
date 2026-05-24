@@ -133,18 +133,19 @@ def auth_signup():
 @app.route('/auth/login', methods=['GET', 'POST'])
 def auth_login():
     """Login existing user."""
+    next_url = request.args.get('next', '')
     if request.method == 'GET':
-        return render_template('auth/login.html', error=None)
+        return render_template('auth/login.html', error=None, next=next_url)
     
     email = request.form.get('email', '').strip()
     password = request.form.get('password', '')
     
     if not email or not password:
-        return render_template('auth/login.html', error='Email and password are required.')
+        return render_template('auth/login.html', error='Email and password are required.', next=next_url)
     
     result = sign_in(email, password)
     if 'error' in result:
-        return render_template('auth/login.html', error=result['error'])
+        return render_template('auth/login.html', error=result['error'], next=next_url)
     
     user = result['user']
     session['user_id'] = user.id
@@ -153,7 +154,7 @@ def auth_login():
     session['tier'] = profile.get('tier', 'free')
     session['cv_count'] = profile.get('cv_count', 0)
     session.permanent = True
-    return redirect(url_for('dashboard'))
+    return redirect(next_url if next_url else url_for('dashboard'))
 
 
 @app.route('/auth/logout', methods=['POST'])
@@ -170,6 +171,38 @@ def upgrade_page():
     init_session()
     user_tier = session.get('tier', 'free')
     return render_template('upgrade.html', tier=user_tier)
+
+
+# ============ BLOG ROUTES ============
+
+@app.route('/blog')
+def blog_index():
+    """Blog listing page."""
+    init_session()
+    try:
+        supabase = get_supabase_client()
+        resp = supabase.table('blog_posts').select('id, title, slug, excerpt, author, cover_image, published_at').eq('published', True).order('published_at', desc=True).limit(20).execute()
+        posts = resp.data
+    except Exception:
+        posts = []
+    return render_template('blog/index.html', posts=posts)
+
+
+@app.route('/blog/<slug>')
+def blog_post(slug):
+    """Single blog post."""
+    init_session()
+    try:
+        supabase = get_supabase_client()
+        resp = supabase.table('blog_posts').select('*').eq('slug', slug).eq('published', True).single().execute()
+        post = resp.data
+    except Exception:
+        post = None
+
+    if not post:
+        return render_template('blog/404.html'), 404
+
+    return render_template('blog/post.html', post=post)
 
 
 @app.route('/checkout/<tier>', methods=['POST'])
@@ -274,6 +307,8 @@ def dashboard():
 def cv_upload_page():
     """CV upload page."""
     init_session()
+    if not session.get('user_id'):
+        return redirect(url_for('auth_login', next='/cv/upload'))
     return render_template('cv_upload.html')
 
 

@@ -72,6 +72,9 @@
         {% endif %}
 
         <form method="POST" action="/auth/login">
+            {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" placeholder="you@example.com" required autofocus>

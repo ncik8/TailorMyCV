@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} — Rezmycv Blog{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container" style="max-width: 720px;">
+        <div style="margin-bottom: 32px;">
+            <a href="/blog" style="color: rgba(10,10,10,.5); text-decoration: none; font-size: 14px;">← Back to Blog</a>
+        </div>
+
+        {% if post.cover_image %}
+        <img src="{{ post.cover_image }}" alt="{{ post.title }}"
+             style="width: 100%; height: 320px; object-fit: cover; border-radius: 6px; margin-bottom: 40px;">
+        {% endif %}
+
+        <div style="margin-bottom: 16px; font-size: 13px; color: rgba(10,10,10,.45); font-family: 'JetBrains Mono', monospace;">
+            {{ post.author }} · {{ post.published_at[:10] if post.published_at else '' }}
+        </div>
+
+        <h1 style="font-size: 42px; font-weight: 700; margin-bottom: 24px; line-height: 1.2;">{{ post.title }}</h1>
+
+        <div style="color: rgba(10,10,10,.8); font-size: 17px; line-height: 1.75;">
+            {{ post.content | safe }}
+        </div>
+
+        <div style="margin-top: 60px; padding-top: 32px; border-top: 1px solid rgba(10,10,10,.1);">
+            <a href="/upgrade" style="display: inline-block; background: #0a0a0a; color: #f8f8f5; padding: 14px 28px; border-radius: 4px; text-decoration: none; font-size: 15px; font-weight: 500;">
+                Try Rezmycv Free →
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
