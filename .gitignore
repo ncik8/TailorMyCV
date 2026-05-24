@@ -1,0 +1,31 @@
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cloudflare tunnel logs
+/tmp/cloudflared.log
+
+# Session files
+*.session

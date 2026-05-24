@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TailorMyCV{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container">
+        <div class="page-header">
+            <h1>Welcome to TailorMyCV</h1>
+            <p>Upload your CV and paste a job description to get started.</p>
+        </div>
+        
+        {% if session.get('cv_data') %}
+        <div class="card" style="margin-bottom: 24px;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">✓ CV Uploaded</h3>
+            <p style="color: #64748b; margin-bottom: 16px;">
+                {% if session.cv_data.name %}{{ session.cv_data.name }}{% endif %}
+                {% if session.cv_data.email %} · {{ session.cv_data.email }}{% endif %}
+            </p>
+            <div style="display: flex; gap: 12px;">
+                {% if not session.get('job_data') %}
+                <a href="/job/paste" class="btn btn-primary">Paste Job URL</a>
+                {% else %}
+                <a href="/gap/analysis" class="btn btn-primary">View Gap Analysis</a>
+                {% endif %}
+                <a href="/cv/preview" class="btn btn-secondary">Preview Current CV</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 60px 40px;">
+            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 16px;">Start by uploading your CV</h3>
+            <p style="color: #64748b; margin-bottom: 32px;">We support DOCX and PDF formats.</p>
+            <a href="/cv/upload" class="btn btn-primary" style="font-size: 18px; padding: 16px 40px;">Upload CV</a>
+        </div>
+        {% endif %}
+        
+        {% if session.get('job_data') %}
+        <div class="card" style="margin-bottom: 24px;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">✓ Job Description Loaded</h3>
+            <p style="color: #64748b; margin-bottom: 8px;">
+                <strong>{{ session.job_data.title or 'Unknown Title' }}</strong>
+                {% if session.job_data.company %}at {{ session.job_data.company }}{% endif %}
+            </p>
+            <div style="display: flex; gap: 12px;">
+                <a href="/gap/analysis" class="btn btn-primary">View Gap Analysis</a>
+                <a href="/job/paste" class="btn btn-secondary">Change Job</a>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if session.get('tailored_cv') %}
+        <div class="card" style="background: #f0fdf4; border-color: #bbf7d0;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #166534;">✓ Tailored CV Ready</h3>
+            <div style="display: flex; gap: 12px;">
+                <a href="/cv/preview" class="btn btn-success">View Tailored CV</a>
+                <a href="/cv/download" class="btn btn-secondary">Download PDF</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

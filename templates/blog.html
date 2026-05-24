@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Blog · TailorMyCV{% endblock %}
+
+{% block extra_css %}
+<style>
+.blog-header {
+    padding: 80px 0 60px;
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+}
+.blog-header h1 {
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+}
+.blog-header p {
+    font-size: 17px;
+    color: var(--text-2);
+}
+.blog-grid {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding-bottom: 80px;
+}
+.post {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 36px;
+    transition: border-color 0.2s;
+}
+.post:hover {
+    border-color: var(--text);
+}
+.post-meta {
+    font-size: 12px;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 14px;
+    letter-spacing: .04em;
+}
+.post h2 {
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin: 0 0 12px;
+}
+.post h2 a {
+    color: var(--text);
+    text-decoration: none;
+}
+.post h2 a:hover {
+    text-decoration: underline;
+}
+.post p {
+    font-size: 14px;
+    color: var(--text-2);
+    margin: 0 0 20px;
+    line-height: 1.7;
+}
+.post-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.post-tag {
+    padding: 4px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-2);
+}
+</style>
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar">
+    <div class="container">
+        <a href="/" class="logo">TailorMyCV</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/blog">Blog</a>
+            <a href="/cv/upload">Upload CV</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<header class="blog-header">
+    <div class="section-label" style="text-align: center;">Blog</div>
+    <h1>CV & Job Search Insights</h1>
+    <p>Practical guides on tailoring your CV, cracking applicant tracking systems, and standing out in competitive job markets.</p>
+</header>
+
+<main class="blog-grid" id="posts">
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const POSTS = [
+    {
+        date: '2026-05-24',
+        title: 'Why Most CVs Get Filtered Out Before a Human Reads Them',
+        excerpt: 'ATS systems reject up to 75% of CVs before they reach a recruiter. Here\'s exactly what those systems look for — and how to beat them.',
+        tags: ['ATS', 'Job Search'],
+        url: '/blog/ats-rejections'
+    },
+    {
+        date: '2026-05-17',
+        title: 'The 30-Second Test: Does Your CV Pass the Recruiter Scan?',
+        excerpt: 'Recruiters spend an average of 6 seconds on an initial CV screen. Here\'s how to make those seconds count — with a proven layout structure.',
+        tags: ['CV Tips', 'Recruiting'],
+        url: '/blog/30-second-cv-test'
+    },
+    {
+        date: '2026-05-10',
+        title: 'Tailoring vs. Spamming: Why One Version of Your CV Is Costing You Interviews',
+        excerpt: 'Sending the same CV to every job is like showing up to a technical interview in a suit — technically correct, strategically wrong.',
+        tags: ['Job Search', 'Strategy'],
+        url: '/blog/tailoring-vs-spamming'
+    },
+    {
+        date: '2026-05-03',
+        title: 'How to Read a Job Description Like a Recruiter',
+        excerpt: 'Most job seekers skim job descriptions. The ones who get interviews know how to decode what\'s really being asked — and what\'s just noise.',
+        tags: ['Job Search', 'Interview'],
+        url: '/blog/read-job-description'
+    },
+    {
+        date: '2026-04-26',
+        title: 'The Gap Questions Nobody Asks — But Should',
+        excerpt: 'Every CV has gaps. The difference between an interview and a rejection often comes down to how those gaps are framed — or ignored.',
+        tags: ['CV Tips', 'Interview'],
+        url: '/blog/gap-questions'
+    }
+];
+
+const postsEl = document.getElementById('posts');
+POSTS.forEach(post => {
+    const [year, month, day] = post.date.split('-');
+    const formatted = `${day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(month)-1]} ${year}`;
+    const tags = post.tags.map(t => `<span class="post-tag">${t}</span>`).join('');
+    const link = post.url ? `<h2><a href="${post.url}">${post.title}</a></h2>` : `<h2>${post.title}</h2>`;
+    postsEl.innerHTML += `
+        <article class="post">
+            <div class="post-meta">${formatted}</div>
+            ${link}
+            <p>${post.excerpt}</p>
+            <div class="post-tags">${tags}</div>
+        </article>
+    `;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ name }} — Curriculum Vitae</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Merriweather:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="cv-header">
+    <div class="header-inner">
+      <div class="name-block">
+        <h1 class="name">{{ name }}</h1>
+        <p class="tagline">{{ title }}</p>
+      </div>
+      <div class="contact-block">
+        {% if email %}<span class="contact-item">{{ email }}</span>{% endif %}
+        {% if phone %}<span class="contact-item">{{ phone }}</span>{% endif %}
+        {% if location %}<span class="contact-item">{{ location }}</span>{% endif %}
+        {% if linkedin %}<span class="contact-item">{{ linkedin }}</span>{% endif %}
+        {% if website %}<span class="contact-item">{{ website }}</span>{% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="cv-body">
+
+    {% if summary %}
+    <!-- SUMMARY -->
+    <section class="section summary-section">
+      <p class="summary-text">{{ summary }}</p>
+    </section>
+    {% endif %}
+
+    {% if experience %}
+    <!-- EXPERIENCE -->
+    <section class="section experience-section">
+      <h2 class="section-heading">Experience</h2>
+      {% for job in experience %}
+      <div class="entry">
+        <div class="entry-meta">
+          <span class="entry-date">{{ exp.start_date }}{% if exp.end_date %} – {{ exp.end_date }}{% endif %}</span>
+          <span class="entry-location">{{ exp.location }}</span>
+        </div>
+        <div class="entry-content">
+          <h3 class="entry-title">{{ exp.title }}</h3>
+          <p class="entry-org">{{ exp.company }}{% if exp.city %}, {{ exp.city }}{% endif %}</p>
+          {% if exp.description %}
+          <p class="entry-desc">{{ exp.description }}</p>
+          {% endif %}
+          {% if exp.highlights %}
+          <ul class="entry-highlights">
+            {% for highlight in exp.highlights %}
+            <li>{{ highlight }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if education %}
+    <!-- EDUCATION -->
+    <section class="section education-section">
+      <h2 class="section-heading">Education</h2>
+      {% for edu in education %}
+      <div class="entry">
+        <div class="entry-meta">
+          <span class="entry-date">{{ edu.start_date }}{% if edu.end_date %} – {{ edu.end_date }}{% endif %}</span>
+          <span class="entry-location">{{ edu.location }}</span>
+        </div>
+        <div class="entry-content">
+          <h3 class="entry-title">{{ edu.degree }}{% if edu.field %} in {{ edu.field }}{% endif %}</h3>
+          <p class="entry-org">{{ edu.institution }}</p>
+          {% if edu.description %}
+          <p class="entry-desc">{{ edu.description }}</p>
+          {% endif %}
+          {% if edu.gpa %}
+          <p class="entry-desc">GPA: {{ edu.gpa }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if skills %}
+    <!-- SKILLS -->
+    <section class="section skills-section">
+      <h2 class="section-heading">Skills</h2>
+      <div class="skills-grid">
+        {% for skill in skills %}
+        <div class="skill-item">
+          <span class="skill-name">{{ skill.name }}</span>
+          {% if skill.level %}
+          <span class="skill-level">{{ skill.level }}</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if certifications %}
+    <!-- CERTIFICATIONS -->
+    <section class="section certifications-section">
+      <h2 class="section-heading">Certifications</h2>
+      {% for cert in certifications %}
+      <div class="entry">
+        <div class="entry-meta">
+          <span class="entry-date">{{ cert.date }}</span>
+        </div>
+        <div class="entry-content">
+          <h3 class="entry-title">{{ cert.name }}</h3>
+          <p class="entry-org">{{ cert.issuer }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if languages %}
+    <!-- LANGUAGES -->
+    <section class="section languages-section">
+      <h2 class="section-heading">Languages</h2>
+      <div class="languages-list">
+        {% for lang in languages %}
+        <div class="lang-item">
+          <span class="lang-name">{{ lang.name }}</span>
+          <span class="lang-level">{{ lang.level }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if projects %}
+    <!-- PROJECTS -->
+    <section class="section projects-section">
+      <h2 class="section-heading">Projects</h2>
+      {% for project in projects %}
+      <div class="entry">
+        <div class="entry-meta">
+          {% if project.date %}<span class="entry-date">{{ project.date }}</span>{% endif %}
+        </div>
+        <div class="entry-content">
+          <h3 class="entry-title">{{ project.name }}</h3>
+          {% if project.description %}
+          <p class="entry-desc">{{ project.description }}</p>
+          {% endif %}
+          {% if project.url %}
+          <p class="entry-desc">🔗 {{ project.url }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if interests %}
+    <!-- INTERESTS -->
+    <section class="section interests-section">
+      <h2 class="section-heading">Interests</h2>
+      <p class="interests-text">{{ interests }}</p>
+    </section>
+    {% endif %}
+
+  </main>
+
+  <footer class="cv-footer">
+    <p>Last updated: {{ last_updated }}</p>
+  </footer>
+
+</body>
+</html>

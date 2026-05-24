@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ cv.name }} - Tailored CV</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #4f46e5;
+        }
+        
+        .name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .contact-info {
+            color: #64748b;
+            font-size: 10pt;
+        }
+        
+        .contact-info span {
+            margin: 0 8px;
+        }
+        
+        /* Sections */
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #4f46e5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        /* Summary */
+        .summary {
+            text-align: justify;
+            color: #475569;
+        }
+        
+        /* Experience */
+        .experience-item {
+            margin-bottom: 14px;
+        }
+        
+        .experience-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        
+        .job-title {
+            font-weight: bold;
+            color: #1e293b;
+        }
+        
+        .company {
+            color: #64748b;
+        }
+        
+        .dates {
+            color: #94a3b8;
+            font-size: 10pt;
+        }
+        
+        .bullets {
+            margin-left: 16px;
+            list-style-type: disc;
+        }
+        
+        .bullets li {
+            margin-bottom: 3px;
+            color: #475569;
+        }
+        
+        /* Skills */
+        .skills-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .skill-tag {
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 9pt;
+            color: #475569;
+        }
+        
+        /* Education */
+        .education-item {
+            margin-bottom: 8px;
+        }
+        
+        .degree {
+            font-weight: bold;
+            color: #1e293b;
+        }
+        
+        .school {
+            color: #64748b;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                padding: 0;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="name">{{ cv.name or 'Your Name' }}</div>
+        <div class="contact-info">
+            {% if cv.email %}<span>{{ cv.email }}</span>{% endif %}
+            {% if cv.phone %}<span>{{ cv.phone }}</span>{% endif %}
+            {% if cv.location %}<span>{{ cv.location }}</span>{% endif %}
+        </div>
+    </div>
+    
+    {% if cv.summary %}
+    <div class="section">
+        <div class="section-title">Professional Summary</div>
+        <p class="summary">{{ cv.summary }}</p>
+    </div>
+    {% endif %}
+    
+    {% if cv.experience and cv.experience|length > 0 %}
+    <div class="section">
+        <div class="section-title">Experience</div>
+        {% for exp in cv.experience %}
+        <div class="experience-item">
+            <div class="experience-header">
+                <div>
+                    <span class="job-title">{{ exp.title or 'Position' }}</span>
+                    {% if exp.company %}<span class="company">at {{ exp.company }}</span>{% endif %}
+                </div>
+                {% if exp.dates %}<span class="dates">{{ exp.dates }}</span>{% endif %}
+            </div>
+            {% if exp.bullets and exp.bullets|length > 0 %}
+            <ul class="bullets">
+                {% for bullet in exp.bullets %}
+                <li>{{ bullet }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if cv.skills and cv.skills|length > 0 %}
+    <div class="section">
+        <div class="section-title">Skills</div>
+        <div class="skills-grid">
+            {% for skill in cv.skills %}
+            <span class="skill-tag">{{ skill }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if cv.education and cv.education|length > 0 %}
+    <div class="section">
+        <div class="section-title">Education</div>
+        {% for edu in cv.education %}
+        <div class="education-item">
+            <span class="degree">{{ edu.degree or 'Degree' }}</span>
+            {% if edu.school %}— <span class="school">{{ edu.school }}</span>{% endif %}
+            {% if edu.year %}— <span class="year">{{ edu.year }}</span>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="no-print" style="margin-top: 40px; text-align: center; padding: 20px; background: #f8fafc; border-radius: 8px;">
+        <p style="color: #64748b; margin-bottom: 16px;">Generated by TailorMyCV</p>
+        <button onclick="window.print()" class="btn" style="background: #4f46e5; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Print / Download PDF</button>
+    </div>
+</body>
+</html>

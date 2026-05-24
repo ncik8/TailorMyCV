@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ name }} - Curriculum Vitae</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+    <!-- LEFT SIDEBAR - Color Block -->
+    <aside class="sidebar">
+        <div class="sidebar-inner">
+            <div class="photo-block">
+                {% if profile_image %}
+                <img src="{{ profile_image }}" alt="{{ name }}" class="profile-photo">
+                {% else %}
+                <div class="photo-placeholder">
+                    <span>{{ name|first }}{{ surname|first }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="contact-section">
+                <h3 class="sidebar-heading">Contact</h3>
+                <ul class="contact-list">
+                    {% if email %}<li><span class="contact-icon">✉</span> {{ email }}</li>{% endif %}
+                    {% if phone %}<li><span class="contact-icon">☎</span> {{ phone }}</li>{% endif %}
+                    {% if location %}<li><span class="contact-icon">⌖</span> {{ location }}</li>{% endif %}
+                    {% if linkedin %}<li><span class="contact-icon">in</span> {{ linkedin }}</li>{% endif %}
+                    {% if website %}<li><span class="contact-icon">⊛</span> {{ website }}</li>{% endif %}
+                </ul>
+            </div>
+
+            <div class="skills-section">
+                <h3 class="sidebar-heading">Skills</h3>
+                <ul class="skills-list">
+                    {% for skill in skills %}
+                    <li class="skill-item">
+                        <span class="skill-name">{{ skill.name }}</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill" style="width: {% if skill.level %}{{ skill.level }}{% else %}80{% endif %}%"></div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="languages-section">
+                <h3 class="sidebar-heading">Languages</h3>
+                <ul class="languages-list">
+                    {% for lang in languages %}
+                    <li>
+                        <span class="lang-name">{{ lang.name }}</span>
+                        <span class="lang-level">{{ lang.level }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </aside>
+
+    <!-- RIGHT CONTENT - Main Area -->
+    <main class="main-content">
+        <header class="main-header">
+            <h1 class="name-title">{{ name }} <span class="surname">{{ surname }}</span></h1>
+            <p class="job-title">{{ job_title }}</p>
+        </header>
+
+        {% if summary %}
+        <section class="section summary-section">
+            <div class="section-label">Profile</div>
+            <p class="summary-text">{{ summary }}</p>
+        </section>
+        {% endif %}
+
+        {% if experience %}
+        <section class="section experience-section">
+            <div class="section-label">Experience</div>
+            {% for job in experience %}
+            <div class="experience-item">
+                <div class="exp-meta">
+                    <span class="exp-period">{{ exp.start_date }} — {{ exp.end_date }}</span>
+                    <span class="exp-company">{{ exp.company }}</span>
+                </div>
+                <div class="exp-details">
+                    <h4 class="exp-title">{{ exp.position }}</h4>
+                    <p class="exp-description">{{ exp.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if education %}
+        <section class="section education-section">
+            <div class="section-label">Education</div>
+            {% for edu in education %}
+            <div class="education-item">
+                <div class="edu-meta">
+                    <span class="edu-period">{{ edu.start_date }} — {{ edu.end_date }}</span>
+                    <span class="edu-institution">{{ edu.institution }}</span>
+                </div>
+                <div class="edu-details">
+                    <h4 class="edu-degree">{{ edu.degree }}</h4>
+                    <p class="edu-description">{{ edu.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if certifications %}
+        <section class="section certs-section">
+            <div class="section-label">Certifications</div>
+            <ul class="certs-list">
+                {% for cert in certifications %}
+                <li>{{ cert.name }}{% if cert.date %} — {{ cert.date }}{% endif %}</li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+        {% if hobbies %}
+        <section class="section hobbies-section">
+            <div class="section-label">Interests</div>
+            <div class="hobbies-tags">
+                {% for hobby in hobbies %}
+                <span class="hobby-tag">{{ hobby }}</span>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+</div>
+
+</body>
+</html>

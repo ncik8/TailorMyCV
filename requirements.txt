@@ -1,0 +1,10 @@
+flask
+flask-cors
+python-docx
+pdfplumber
+beautifulsoup4
+requests
+supabase
+python-dotenv
+weasyprint
+jinja2

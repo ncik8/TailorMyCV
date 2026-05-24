@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ personal.name }} - CV</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="cv-container">
+
+    <!-- LEFT COLUMN -->
+    <aside class="cv-left">
+
+        <!-- Profile Photo -->
+        {% if personal.photo %}
+        <div class="photo-wrapper">
+            <img src="{{ personal.photo }}" alt="{{ personal.name }}" class="profile-photo">
+        </div>
+        {% endif %}
+
+        <!-- Contact -->
+        <section class="sidebar-section">
+            <h3 class="sidebar-heading">Contact</h3>
+            <ul class="contact-list">
+                {% if personal.email %}
+                <li>
+                    <span class="contact-icon">✉</span>
+                    <a href="mailto:{{ personal.email }}">{{ personal.email }}</a>
+                </li>
+                {% endif %}
+                {% if personal.phone %}
+                <li>
+                    <span class="contact-icon">☎</span>
+                    <a href="tel:{{ personal.phone }}">{{ personal.phone }}</a>
+                </li>
+                {% endif %}
+                {% if personal.location %}
+                <li>
+                    <span class="contact-icon">⌖</span>
+                    <span>{{ personal.location }}</span>
+                </li>
+                {% endif %}
+                {% if personal.website %}
+                <li>
+                    <span class="contact-icon">⊛</span>
+                    <a href="{{ personal.website }}" target="_blank">{{ personal.website }}</a>
+                </li>
+                {% endif %}
+                {% if personal.linkedin %}
+                <li>
+                    <span class="contact-icon">in</span>
+                    <a href="{{ personal.linkedin }}" target="_blank">{{ personal.linkedin }}</a>
+                </li>
+                {% endif %}
+            </ul>
+        </section>
+
+        <!-- Skills -->
+        {% if skills %}
+        <section class="sidebar-section">
+            <h3 class="sidebar-heading">Skills</h3>
+            <ul class="skills-list">
+                {% for skill in skills %}
+                <li class="skill-item">
+                    <span class="skill-name">{{ skill.name }}</span>
+                    {% if skill.level %}
+                    <div class="skill-bar">
+                        <div class="skill-bar-fill" style="width: {{ skill.level }}%"></div>
+                    </div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+        <!-- Languages -->
+        {% if languages %}
+        <section class="sidebar-section">
+            <h3 class="sidebar-heading">Languages</h3>
+            <ul class="languages-list">
+                {% for lang in languages %}
+                <li class="language-item">
+                    <span class="language-name">{{ lang.name }}</span>
+                    {% if lang.level %}
+                    <span class="language-level">{{ lang.level }}</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+        <!-- Certifications -->
+        {% if certifications %}
+        <section class="sidebar-section">
+            <h3 class="sidebar-heading">Certifications</h3>
+            <ul class="cert-list">
+                {% for cert in certifications %}
+                <li class="cert-item">
+                    <span class="cert-name">{{ cert.name }}</span>
+                    {% if cert.year %}
+                    <span class="cert-year">{{ cert.year }}</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+    </aside>
+
+    <!-- RIGHT COLUMN -->
+    <main class="cv-right">
+
+        <!-- Header -->
+        <header class="cv-header">
+            <h1 class="candidate-name">{{ personal.name }}</h1>
+            {% if personal.title %}
+            <p class="candidate-title">{{ personal.title }}</p>
+            {% endif %}
+            {% if personal.summary %}
+            <p class="candidate-summary">{{ personal.summary }}</p>
+            {% endif %}
+        </header>
+
+        <!-- Work Experience -->
+        {% if experience %}
+        <section class="cv-section">
+            <h2 class="section-title">Work Experience</h2>
+            <div class="timeline">
+                {% for job in experience %}
+                <div class="timeline-item">
+                    <div class="timeline-header">
+                        <div class="timeline-meta">
+                            <span class="job-period">{{ job.start_date }} – {{ job.end_date }}</span>
+                        </div>
+                        <h3 class="job-title">{{ job.title }}</h3>
+                        <div class="job-company-line">
+                            {% if job.company %}
+                            <span class="job-company">{{ job.company }}</span>
+                            {% endif %}
+                            {% if job.location %}
+                            <span class="job-location-sep">·</span>
+                            <span class="job-location">{{ job.location }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if job.description %}
+                    <p class="job-description">{{ job.description }}</p>
+                    {% endif %}
+                    {% if job.highlights %}
+                    <ul class="job-highlights">
+                        {% for highlight in job.highlights %}
+                        <li>{{ highlight }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Education -->
+        {% if education %}
+        <section class="cv-section">
+            <h2 class="section-title">Education</h2>
+            <div class="timeline">
+                {% for edu in education %}
+                <div class="timeline-item">
+                    <div class="timeline-header">
+                        <span class="job-period">{{ edu.start_date }} – {{ edu.end_date }}</span>
+                    </div>
+                    <h3 class="job-title">{{ edu.degree }}</h3>
+                    {% if edu.institution %}
+                    <div class="job-company-line">
+                        <span class="job-company">{{ edu.institution }}</span>
+                        {% if edu.location %}
+                        <span class="job-location-sep">·</span>
+                        <span class="job-location">{{ edu.location }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if edu.description %}
+                    <p class="job-description">{{ edu.description }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Projects -->
+        {% if projects %}
+        <section class="cv-section">
+            <h2 class="section-title">Projects</h2>
+            <div class="timeline">
+                {% for project in projects %}
+                <div class="timeline-item">
+                    <div class="timeline-header">
+                        <span class="job-period">{{ project.year }}</span>
+                    </div>
+                    <h3 class="job-title">{{ project.name }}</h3>
+                    {% if project.description %}
+                    <p class="job-description">{{ project.description }}</p>
+                    {% endif %}
+                    {% if project.technologies %}
+                    <p class="job-company-line"><span class="job-company">Technologies: {{ project.technologies }}</span></p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+    </main>
+
+</div>
+
+</body>
+</html>

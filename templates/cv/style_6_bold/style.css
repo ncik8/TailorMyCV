@@ -1,0 +1,340 @@
+/* ============================================================
+   style_6_bold — Large Type Editorial, Single Column
+   A4 print-ready CV template
+   ============================================================ */
+
+@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 18mm;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --font-sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-serif: 'Merriweather', Georgia, 'Times New Roman', serif;
+  --color-bg: #ffffff;
+  --color-text: #111111;
+  --color-accent: #e63946;
+  --color-muted: #666666;
+  --color-border: #dddddd;
+  --color-light: #f5f5f5;
+  --size-base: 10pt;
+}
+
+html {
+  font-size: var(--size-base);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-bg);
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* ── HEADER ──────────────────────────────────────────── */
+.cv-header {
+  border-bottom: 4px solid var(--color-text);
+  padding-bottom: 1.4rem;
+  margin-bottom: 1.8rem;
+}
+
+.header-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.name {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: 3rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.tagline {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-style: italic;
+  color: var(--color-accent);
+  margin-top: 0.3rem;
+}
+
+.contact-block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.2rem;
+  margin-top: 0.8rem;
+}
+
+.contact-item {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  letter-spacing: 0.01em;
+}
+
+/* ── BODY ─────────────────────────────────────────────── */
+.cv-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ── SECTIONS ─────────────────────────────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.section-heading {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-bg);
+  background: var(--color-text);
+  padding: 0.3rem 0.8rem;
+  display: inline-block;
+  margin-bottom: 1.2rem;
+  align-self: flex-start;
+}
+
+/* ── SUMMARY ──────────────────────────────────────────── */
+.summary-section .summary-text {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  line-height: 1.75;
+  color: var(--color-text);
+}
+
+/* ── ENTRIES (experience / education / etc.) ──────────── */
+.entry {
+  display: grid;
+  grid-template-columns: 36% 1fr;
+  gap: 0 1rem;
+  padding-bottom: 1.4rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.entry:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.entry-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-top: 0.1rem;
+}
+
+.entry-date {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  letter-spacing: 0.02em;
+}
+
+.entry-location {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.entry-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.entry-title {
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-size: 1.2rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.entry-org {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.entry-desc {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  margin-top: 0.25rem;
+  line-height: 1.55;
+}
+
+.entry-highlights {
+  list-style: none;
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.entry-highlights li {
+  font-size: 0.88rem;
+  padding-left: 0.9rem;
+  position: relative;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.entry-highlights li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+/* ── SKILLS ────────────────────────────────────────────── */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem 1rem;
+}
+
+.skill-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.skill-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--color-text);
+}
+
+.skill-level {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── LANGUAGES ─────────────────────────────────────────── */
+.languages-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 2rem;
+}
+
+.lang-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.lang-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.lang-level {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* ── INTERESTS ─────────────────────────────────────────── */
+.interests-text {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  line-height: 1.6;
+}
+
+/* ── FOOTER ────────────────────────────────────────────── */
+.cv-footer {
+  margin-top: 2rem;
+  padding-top: 0.8rem;
+  border-top: 2px solid var(--color-text);
+  text-align: center;
+}
+
+.cv-footer p {
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ── PRINT ─────────────────────────────────────────────── */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 14mm 18mm 16mm;
+  }
+
+  body {
+    font-size: 9.5pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .name {
+    font-size: 2.6rem;
+  }
+
+  .tagline {
+    font-size: 1.1rem;
+  }
+
+  .section-heading {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .cv-footer {
+    page-break-inside: avoid;
+  }
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .entry {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .skills-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .languages-list {
+    grid-template-columns: 1fr;
+  }
+
+  .name {
+    font-size: 2.2rem;
+  }
+}

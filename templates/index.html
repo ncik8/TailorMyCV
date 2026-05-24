@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}TailorMyCV — Your CV, Tailored to Any Job{% endblock %}
+
+{% block content %}
+<!-- ===== HERO ===== -->
+<section class="hero" style="padding: 120px 0 100px; text-align: center; min-height: 70vh; display: flex; align-items: center;">
+    <div class="container" style="max-width: 900px; margin: 0 auto;">
+        <!-- Badge -->
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 32px;">
+            Stop guessing. Start getting interviews.
+        </div>
+
+        <!-- Headline -->
+        <h1 style="font-size: clamp(40px, 7vw, 72px); font-weight: 300; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 28px;">
+            Your CV, tailored to<br>
+            <span style="color: var(--text-3);">any job — in 30 seconds.</span>
+        </h1>
+
+        <!-- Sub -->
+        <p style="font-size: 18px; color: var(--text-2); max-width: 560px; margin: 0 auto 48px; line-height: 1.7;">
+            Upload your CV. Paste a job URL. Get a tailored resume that matches exactly what each employer wants — plus a cover letter, automatically.
+        </p>
+
+        <!-- CTA -->
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <a href="/cv/upload" class="btn btn-primary" style="font-size: 14px; padding: 16px 36px;">
+                Upload Your CV →
+            </a>
+            <a href="#how" class="btn btn-secondary" style="font-size: 14px; padding: 16px 36px;">
+                See How It Works
+            </a>
+        </div>
+
+        <!-- Trust line -->
+        <p style="margin-top: 32px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); letter-spacing: .05em;">
+            Free to try — no account needed
+        </p>
+    </div>
+</section>
+
+<!-- ===== STATS ===== -->
+<section style="padding: 60px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="container">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; text-align: center;">
+            <div>
+                <div style="font-size: 40px; font-weight: 300; letter-spacing: -0.03em;">30s</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-top: 8px;">To tailor a CV</div>
+            </div>
+            <div>
+                <div style="font-size: 40px; font-weight: 300; letter-spacing: -0.03em;">70%</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-top: 8px;">more interviews claimed</div>
+            </div>
+            <div>
+                <div style="font-size: 40px; font-weight: 300; letter-spacing: -0.03em;">Zero</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-top: 8px;">guessing which skills to highlight</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how" style="padding: 100px 0;">
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 72px;">
+            <div class="section-label" style="text-align: center;">Process</div>
+            <h2 style="font-size: clamp(28px, 4vw, 44px); font-weight: 300; line-height: 1.2;">
+                Four steps to a CV<br>
+                <span style="color: var(--text-3);">employers can't ignore.</span>
+            </h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 32px;">
+            <!-- Step 01 -->
+            <div class="card">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .06em; color: var(--text-3); margin-bottom: 20px;">01</div>
+                <h3 style="font-size: 18px; font-weight: 400; margin-bottom: 10px; color: var(--text);">Upload Your CV</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">DOCX or PDF — whatever format you already have. Our AI reads it and extracts everything.</p>
+            </div>
+            <!-- Step 02 -->
+            <div class="card">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .06em; color: var(--text-3); margin-bottom: 20px;">02</div>
+                <h3 style="font-size: 18px; font-weight: 400; margin-bottom: 10px; color: var(--text);">Paste Job URL</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">From Indeed, LinkedIn, or any job board. We'll read it — or you can paste the text directly.</p>
+            </div>
+            <!-- Step 03 -->
+            <div class="card">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .06em; color: var(--text-3); margin-bottom: 20px;">03</div>
+                <h3 style="font-size: 18px; font-weight: 400; margin-bottom: 10px; color: var(--text);">Answer Gap Questions</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">We find what's missing from your CV vs. the job. You answer a few targeted questions — we turn your answers into professional language.</p>
+            </div>
+            <!-- Step 04 -->
+            <div class="card">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .06em; color: var(--text-3); margin-bottom: 20px;">04</div>
+                <h3 style="font-size: 18px; font-weight: 400; margin-bottom: 10px; color: var(--text);">Download & Apply</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">Get an ATS-safe tailored CV PDF, plus a cover letter — ready to send in under a minute.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section style="padding: 100px 0; border-top: 1px solid var(--border);">
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 72px;">
+            <div class="section-label" style="text-align: center;">What You Get</div>
+            <h2 style="font-size: clamp(28px, 4vw, 44px); font-weight: 300; line-height: 1.2;">
+                Not just a reworded CV.<br>
+                <span style="color: var(--text-3);">A strategic advantage.</span>
+            </h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+            <!-- Feature 1 -->
+            <div style="padding: 28px 0; border-bottom: 1px solid var(--border);">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; margin-bottom: 12px;">—</div>
+                <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">Gap Analysis</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">We compare your CV against every requirement in the job post. You see exactly what's missing — and why it matters.</p>
+            </div>
+            <!-- Feature 2 -->
+            <div style="padding: 28px 0; border-bottom: 1px solid var(--border);">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; margin-bottom: 12px;">—</div>
+                <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">Your Voice, Amplified</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">The tailored CV sounds like you — not AI gibberish. We preserve how you communicate while matching the job's keywords.</p>
+            </div>
+            <!-- Feature 3 -->
+            <div style="padding: 28px 0; border-bottom: 1px solid var(--border);">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; margin-bottom: 12px;">—</div>
+                <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">Cover Letter, Included</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">Generated from your CV, your gap answers, and the specific job. One click — no more staring at a blank page.</p>
+            </div>
+            <!-- Feature 4 -->
+            <div style="padding: 28px 0; border-bottom: 1px solid var(--border);">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; margin-bottom: 12px;">—</div>
+                <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">You Always Confirm First</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">Every step — CV parse, job scrape, gap answers — shows you what was extracted before it's used. No blind faith.</p>
+            </div>
+            <!-- Feature 5 -->
+            <div style="padding: 28px 0; border-bottom: 1px solid var(--border);">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; margin-bottom: 12px;">—</div>
+                <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">ATS-Safe PDF Output</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">Clean formatting that passes applicant tracking systems. Recruiter-approved layout.</p>
+            </div>
+            <!-- Feature 6 -->
+            <div style="padding: 28px 0; border-bottom: 1px solid var(--border);">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; margin-bottom: 12px;">—</div>
+                <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">No Account Needed</h3>
+                <p style="font-size: 14px; color: var(--text-2); line-height: 1.7;">Start using it immediately. No signup, no paywall, no friction — just upload and go.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section style="padding: 100px 0; border-top: 1px solid var(--border); text-align: center;">
+    <div class="container" style="max-width: 680px; margin: 0 auto;">
+        <div class="section-label" style="text-align: center;">Get Started</div>
+        <h2 style="font-size: clamp(28px, 4vw, 44px); font-weight: 300; line-height: 1.2; margin-bottom: 20px;">
+            Your next job starts<br>
+            <span style="color: var(--text-3);">with one upload.</span>
+        </h2>
+        <p style="font-size: 16px; color: var(--text-2); margin-bottom: 40px; line-height: 1.7;">
+            Stop sending the same CV to every job. Spend 30 seconds tailoring it — and stand out to every recruiter.
+        </p>
+        <a href="/cv/upload" class="btn btn-primary" style="font-size: 14px; padding: 18px 48px;">
+            Upload Your CV →
+        </a>
+        <p style="margin-top: 20px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); letter-spacing: .05em;">
+            Free to start — takes 30 seconds
+        </p>
+    </div>
+</section>
+{% endblock %}

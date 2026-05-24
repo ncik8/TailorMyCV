@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Gap Analysis - TailorMyCV{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container" style="max-width: 900px;">
+        <div class="page-header">
+            <h1>Your Gap Analysis</h1>
+            <p>Here's how your CV matches up against the job requirements.</p>
+        </div>
+        
+        {% if gaps %}
+        {% set total_gaps = (gaps.partials|length if gaps.partials else 0) + (gaps.missing|length if gaps.missing else 0) %}
+        
+        <div style="margin-bottom: 32px;">
+            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                {% if gaps.matches %}
+                <div style="flex: 1; min-width: 200px; background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #059669;">
+                    <div style="font-size: 32px; font-weight: 600; color: #059669;">{{ gaps.matches|length }}</div>
+                    <div style="font-size: 14px; color: #64748b;">Requirements Met</div>
+                </div>
+                {% endif %}
+                {% if gaps.partials %}
+                <div style="flex: 1; min-width: 200px; background: #fffbeb; padding: 20px; border-radius: 8px; border-left: 4px solid #d97706;">
+                    <div style="font-size: 32px; font-weight: 600; color: #d97706;">{{ gaps.partials|length }}</div>
+                    <div style="font-size: 14px; color: #64748b;">Partial Match</div>
+                </div>
+                {% endif %}
+                {% if gaps.missing %}
+                <div style="flex: 1; min-width: 200px; background: #fef2f2; padding: 20px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                    <div style="font-size: 32px; font-weight: 600; color: #dc2626;">{{ gaps.missing|length }}</div>
+                    <div style="font-size: 14px; color: #64748b;">Missing</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div style="display: grid; gap: 24px;">
+            {% if gaps.matches and gaps.matches.length > 0 %}
+            <div class="card" style="border-left: 4px solid #059669;">
+                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #059669;">
+                    ✓ Matches ({{ gaps.matches|length }})
+                </h3>
+                <div style="display: grid; gap: 12px;">
+                    {% for match in gaps.matches %}
+                    <div style="background: #f0fdf4; padding: 12px 16px; border-radius: 8px;">
+                        <strong>{{ match.requirement }}</strong>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">{{ match.cv_evidence }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if gaps.partials and gaps.partials.length > 0 %}
+            {% for partial in gaps.partials %}
+            <div class="card" style="border-left: 4px solid #d97706;">
+                <div style="margin-bottom: 16px;">
+                    <h3 style="font-size: 18px; font-weight: 600; color: #d97706;">
+                        ⚠️ {{ partial.requirement }}
+                    </h3>
+                    <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Your CV: {{ partial.cv_evidence }}</p>
+                    {% if partial.gap %}
+                    <p style="color: #b45309; font-size: 14px; margin-top: 4px;">Gap: {{ partial.gap }}</p>
+                    {% endif %}
+                </div>
+                
+                {% if questions and questions[partial.requirement] %}
+                <div style="background: #fffbeb; padding: 16px; border-radius: 8px;">
+                    <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #92400e;">Targeted Questions</h4>
+                    <div style="display: grid; gap: 12px;">
+                        {% for q in questions[partial.requirement] %}
+                        <div style="background: #fef3c7; padding: 10px 14px; border-radius: 6px;">
+                            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #92400e; margin-right: 8px;">Q{{ loop.index }}</span>
+                            {{ q }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <a href="/gap/answer?requirement={{ partial.requirement|urlencode }}" class="btn btn-success" style="padding: 10px 20px; font-size: 14px;">
+                            Answer These Questions →
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+            
+            {% if gaps.missing and gaps.missing.length > 0 %}
+            {% for miss in gaps.missing %}
+            <div class="card" style="border-left: 4px solid #dc2626;">
+                <div style="margin-bottom: 16px;">
+                    <h3 style="font-size: 18px; font-weight: 600; color: #dc2626;">
+                        ✗ {{ miss.requirement }}
+                    </h3>
+                    {% if miss.question %}
+                    <p style="color: #64748b; font-size: 14px; margin-top: 8px;">{{ miss.question }}</p>
+                    {% endif %}
+                </div>
+                
+                {% if questions and questions[miss.requirement] %}
+                <div style="background: #fef2f2; padding: 16px; border-radius: 8px;">
+                    <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #991b1b;">Targeted Questions</h4>
+                    <div style="display: grid; gap: 12px;">
+                        {% for q in questions[miss.requirement] %}
+                        <div style="background: #fee2e2; padding: 10px 14px; border-radius: 6px;">
+                            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #991b1b; margin-right: 8px;">Q{{ loop.index }}</span>
+                            {{ q }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <a href="/gap/answer?requirement={{ miss.requirement|urlencode }}" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                            Answer These Questions →
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        
+        <div style="margin-top: 40px; text-align: center;">
+            <a href="/gap/answer" class="btn btn-success" style="font-size: 18px; padding: 16px 40px;">
+                Fill in the Gaps →
+            </a>
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 60px 40px;">
+            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 16px;">No Gap Analysis Available</h3>
+            <p style="color: #64748b; margin-bottom: 32px;">Please upload your CV and paste a job description first.</p>
+            <a href="/cv/upload" class="btn btn-primary">Upload CV</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

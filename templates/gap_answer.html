@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Answer Gap Questions - TailorMyCV{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container" style="max-width: 800px;">
+        <div class="page-header">
+            <h1>Fill in the Gaps</h1>
+            <p>Answer these questions to strengthen your tailored CV.</p>
+        </div>
+        
+        {% if gaps %}
+        {% set all_gaps = [] %}
+        {% if gaps.partials %}
+            {% for p in gaps.partials %}
+                {% set _ = all_gaps.append({'requirement': p.requirement, 'type': 'partial', 'gap': p}) %}
+            {% endfor %}
+        {% endif %}
+        {% if gaps.missing %}
+            {% for m in gaps.missing %}
+                {% set _ = all_gaps.append({'requirement': m.requirement, 'type': 'missing', 'gap': m}) %}
+            {% endfor %}
+        {% endif %}
+        
+        {% set total_gaps = all_gaps|length %}
+        
+        <div style="margin-bottom: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight: 500;">Progress</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #64748b;">
+                    {{ answers|length }} / {{ total_gaps }} questions answered
+                </span>
+            </div>
+            <div style="background: #e2e8f0; height: 8px; border-radius: 4px;">
+                <div style="background: #0a0a0a; height: 100%; border-radius: 4px; width: {{ (answers|length / total_gaps * 100) if total_gaps > 0 else 0 }}%; transition: width 0.3s;"></div>
+            </div>
+        </div>
+        
+        <div style="display: grid; gap: 24px;">
+            {% for item in all_gaps %}
+            {% set requirement = item.requirement %}
+            {% set gap = item.gap %}
+            
+            {% set answered = namespace(value=false) %}
+            {% set current_answer = namespace(value=null) %}
+            {% for a in answers %}
+                {% if a.requirement == requirement %}
+                    {% set answered.value = true %}
+                    {% set current_answer.value = a %}
+                {% endif %}
+            {% endfor %}
+            
+            <div class="card" style="{{ 'border-left: 4px solid #059669;' if answered.value else '' }}">
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748b; margin-bottom: 4px; display: block;">
+                                {{ 'PARTIAL MATCH' if item.type == 'partial' else 'MISSING' }}
+                            </span>
+                            <h3 style="font-size: 18px; font-weight: 600;">{{ requirement }}</h3>
+                            {% if gap.cv_evidence %}
+                            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Your CV: {{ gap.cv_evidence }}</p>
+                            {% endif %}
+                        </div>
+                        {% if answered.value %}
+                        <span class="badge badge-success">✓ Answered</span>
+                        {% else %}
+                        <span class="badge badge-error">Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if questions and questions[requirement] %}
+                <div style="background: #f5f3ff; padding: 20px; border-radius: 8px;">
+                    <form onsubmit="submitAnswer(event, '{{ requirement|escape }}')">
+                        {% for q in questions[requirement] %}
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 500; margin-bottom: 8px;">
+                                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #7c3aed; margin-right: 8px;">Q{{ loop.index }}</span>
+                                {{ q }}
+                            </label>
+                            {% if loop.index == 1 %}
+                            <!-- Yes/No question -->
+                            <div style="display: flex; gap: 12px;">
+                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e0e0db'">
+                                    <input type="radio" name="has_skill" value="yes" required style="width: 18px; height: 18px;" {{ 'checked' if current_answer.value and 'yes' in current_answer.value.user_answer|lower else '' }}>
+                                    <span>Yes, I have this</span>
+                                </label>
+                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e0e0db'">
+                                    <input type="radio" name="has_skill" value="no" style="width: 18px; height: 18px;" {{ 'checked' if current_answer.value and 'no' in current_answer.value.user_answer|lower else '' }}>
+                                    <span>No, I don't</span>
+                                </label>
+                            </div>
+                            {% elif loop.index == 2 %}
+                            <!-- Which job/context question -->
+                            <textarea name="job_context" rows="3" placeholder="e.g., Senior Developer at Acme Corp (2021-2023)..." style="width: 100%; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; font-size: 15px; font-family: inherit; resize: vertical;">{{ current_answer.value.job_context if current_answer.value else '' }}</textarea>
+                            {% elif loop.index == 3 %}
+                            <!-- Can we update profile? -->
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="update_profile" id="update_{{ loop.index }}_{{ requirement|replace(' ', '_') }}" value="true" style="width: 18px; height: 18px;" {{ 'checked' if not current_answer.value or current_answer.value.update_profile else '' }}>
+                                <label for="update_{{ loop.index }}_{{ requirement|replace(' ', '_') }}" style="cursor: pointer;">Yes, add this to my CV profile</label>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        {% if answered.value %}
+                        <div style="margin-top: 20px; padding: 16px; background: #f0fdf4; border-radius: 8px;">
+                            <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Your answer:</p>
+                            <p style="font-size: 15px;">{{ current_answer.value.user_answer }}</p>
+                            <p style="font-size: 13px; color: #059669; margin-top: 12px; font-weight: 500;">AI phrasing:</p>
+                            <p style="font-size: 15px; color: #059669;">{{ current_answer.value.ai_phrased }}</p>
+                        </div>
+                        <button type="submit" class="btn btn-secondary" style="margin-top: 16px;">
+                            Update Answer
+                        </button>
+                        {% else %}
+                        <button type="submit" class="btn btn-success" style="width: 100%; padding: 14px; font-size: 15px;">
+                            Submit Answer
+                        </button>
+                        {% endif %}
+                    </form>
+                </div>
+                {% else %}
+                <!-- Fallback if no generated questions -->
+                <div style="background: #f5f3ff; padding: 20px; border-radius: 8px;">
+                    <form onsubmit="submitAnswer(event, '{{ requirement|escape }}')">
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 500; margin-bottom: 8px;">Do you have experience with this requirement?</label>
+                            <div style="display: flex; gap: 12px;">
+                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; cursor: pointer;">
+                                    <input type="radio" name="has_skill" value="yes" required style="width: 18px; height: 18px;">
+                                    <span>Yes</span>
+                                </label>
+                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; cursor: pointer;">
+                                    <input type="radio" name="has_skill" value="no" style="width: 18px; height: 18px;">
+                                    <span>No</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 500; margin-bottom: 8px;">Which job or project did you gain this in?</label>
+                            <textarea name="job_context" rows="2" placeholder="Describe the role, company, and time period..." style="width: 100%; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; font-size: 15px; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="update_profile" value="true" style="width: 18px; height: 18px;" checked>
+                                <label>Add this to my CV profile</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success" style="width: 100%; padding: 14px; font-size: 15px;">
+                            Submit Answer
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="margin-top: 40px; text-align: center;">
+            <a href="/cv/tailor" class="btn btn-success" style="font-size: 18px; padding: 16px 40px;">
+                Generate Tailored CV →
+            </a>
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 60px 40px;">
+            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 16px;">No gaps to fill</h3>
+            <p style="color: #64748b; margin-bottom: 32px;">Your CV looks great for this job!</p>
+            <a href="/cv/tailor" class="btn btn-primary">Generate Tailored CV</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function submitAnswer(event, requirement) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    // Build answer string from form
+    let answer = '';
+    const hasSkill = formData.get('has_skill');
+    const jobContext = formData.get('job_context');
+    const updateProfile = formData.get('update_profile') === 'true';
+    
+    if (hasSkill) {
+        answer = hasSkill === 'yes' ? 'Yes, I have this experience.' : 'No, I don\'t have this experience.';
+    }
+    if (jobContext) {
+        answer += ' ' + jobContext;
+    }
+    
+    if (!answer.trim()) {
+        alert('Please provide an answer.');
+        return;
+    }
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Processing...';
+    
+    try {
+        const response = await fetch('/gap/answer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                requirement: requirement,
+                answer: answer.trim(),
+                update_profile: updateProfile
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success and reload
+            alert('Answer saved! AI phrasing: ' + data.ai_phrased);
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to save answer');
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+</script>
+{% endblock %}

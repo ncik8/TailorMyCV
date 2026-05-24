@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Choose a Style — TailorMyCV{% endblock %}
+
+{% block extra_css %}
+<style>
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin: 32px 0;
+}
+@media (max-width: 900px) {
+    .templates-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .templates-grid { grid-template-columns: 1fr; }
+}
+
+.template-card {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    background: var(--bg-2);
+}
+.template-card:hover {
+    border-color: var(--text-2);
+    transform: translateY(-2px);
+}
+.template-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.template-preview {
+    height: 160px;
+    overflow: hidden;
+    position: relative;
+}
+.template-preview iframe {
+    width: 200%;
+    height: 400%;
+    border: none;
+    transform: scale(0.5);
+    transform-origin: top left;
+    pointer-events: none;
+}
+
+.template-info {
+    padding: 16px;
+}
+.template-info h3 {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+}
+.template-info p {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+.template-select-btn {
+    width: 100%;
+    padding: 8px 0;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.template-select-btn:hover { opacity: 0.8; }
+.template-card.selected .template-select-btn {
+    background: transparent;
+    border: 1px solid var(--text-3);
+    color: var(--text-3);
+}
+.template-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.template-card.selected .template-badge { opacity: 1; }
+
+/* Mini CSS previews for each style */
+.mini-modern {
+    background: #0d1117;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    height: 100%;
+}
+.mini-modern .mp-name { color: #58a6ff; font-size: 10px; font-weight: bold; margin-bottom: 4px; }
+.mini-modern .mp-bar { background: #30363d; height: 4px; margin-bottom: 3px; border-radius: 2px; }
+.mini-modern .mp-bar span { display: block; height: 100%; background: #58a6ff; border-radius: 2px; width: 70%; }
+.mini-modern .mp-line { background: #21262d; height: 3px; margin-bottom: 3px; }
+.mini-modern .mp-skill { display: inline-block; background: #1f6feb33; color: #58a6ff; font-size: 7px; padding: 2px 5px; border-radius: 3px; margin: 2px 2px 0 0; }
+
+.mini-classic {
+    background: #fff;
+    padding: 16px;
+    font-family: Georgia, serif;
+    height: 100%;
+    display: flex;
+    gap: 8px;
+}
+.mini-classic .mc-sidebar { width: 35%; background: #1a3355; height: 100%; border-radius: 4px; }
+.mini-classic .mc-main { flex: 1; }
+.mini-classic .mc-name { color: #1a3355; font-size: 10px; font-weight: bold; margin-bottom: 4px; }
+.mini-classic .mc-line { background: #ddd; height: 3px; margin-bottom: 3px; }
+.mini-classic .mc-line.short { width: 60%; }
+.mini-classic .mc-line.accent { background: #1a3355; width: 40%; height: 5px; margin-bottom: 6px; }
+
+.mini-minimal {
+    background: #faf9f7;
+    padding: 20px;
+    font-family: 'Georgia', serif;
+    height: 100%;
+}
+.mini-minimal .mm-name { font-size: 14px; font-weight: normal; color: #2c2c2c; margin-bottom: 2px; letter-spacing: 0.05em; }
+.mini-minimal .mm-title { font-size: 8px; color: #888; font-style: italic; margin-bottom: 10px; }
+.mini-minimal .mm-line { background: #ddd; height: 2px; margin-bottom: 4px; }
+.mini-minimal .mm-line.short { width: 50%; }
+.mini-minimal .mm-heading { font-size: 7px; text-transform: uppercase; letter-spacing: 0.1em; color: #999; margin: 8px 0 4px; }
+
+.mini-creative {
+    background: #fff;
+    padding: 12px;
+    height: 100%;
+    display: flex;
+    gap: 6px;
+}
+.mini-creative .mc-sidebar { width: 30%; background: #1a1a2e; border-radius: 4px; }
+.mini-creative .mc-main { flex: 1; }
+.mc-accent-bar { height: 4px; background: #e94560; margin-bottom: 6px; border-radius: 2px; }
+.mc-accent-bar.teal { background: #0f969c; }
+.mc-line { background: #eee; height: 3px; margin-bottom: 3px; }
+.mc-line.short { width: 55%; }
+.mc-dot { display: inline-block; width: 6px; height: 6px; background: #e94560; border-radius: 50%; margin-right: 3px; }
+
+.mini-academic {
+    background: #fff;
+    padding: 14px;
+    font-family: Georgia, serif;
+    height: 100%;
+}
+.mi-header { border-bottom: 2px solid #1e3a5f; padding-bottom: 6px; margin-bottom: 8px; }
+.mi-name { font-size: 10px; color: #1e3a5f; font-weight: bold; }
+.mi-label { font-size: 7px; text-transform: uppercase; letter-spacing: 0.1em; color: #1e3a5f; margin: 6px 0 3px; border-bottom: 1px solid #ddd; padding-bottom: 2px; }
+.mi-line { background: #eee; height: 3px; margin-bottom: 3px; }
+.mi-line.short { width: 65%; }
+
+.mini-bold {
+    background: #1a1a2e;
+    padding: 16px;
+    height: 100%;
+}
+.mb-name { color: #fff; font-size: 16px; font-weight: 900; margin-bottom: 2px; }
+.mb-title { color: #e63946; font-size: 7px; margin-bottom: 10px; }
+.mb-line { background: #333; height: 3px; margin-bottom: 3px; }
+.mb-line.accent { background: #e63946; width: 30%; height: 4px; margin-bottom: 6px; }
+.mb-heading { color: #fff; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 8px 0 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container">
+        <div class="page-header">
+            <div class="section-label" style="text-align: center;">Step 4 of 4</div>
+            <h1>Choose Your CV Style</h1>
+            <p>Pick a visual style for your tailored CV. Each one is print-ready and ATS-safe.</p>
+        </div>
+
+        <div class="templates-grid">
+            <!-- Style 1: Modern -->
+            <div class="template-card {% if session.get('cv_template') == 'modern' %}selected{% endif %}" onclick="selectTemplate('modern')">
+                <div class="template-badge">Selected</div>
+                <div class="template-preview">
+                    <div class="mini-modern">
+                        <div class="mp-name">ALEX CHEN</div>
+                        <div class="mp-bar"><span></span></div>
+                        <div class="mp-line" style="width:75%;"></div>
+                        <div class="mp-line" style="width:60%;"></div>
+                        <div style="margin-top:8px;">
+                            <span class="mp-skill">Python</span>
+                            <span class="mp-skill">AWS</span>
+                            <span class="mp-skill">Docker</span>
+                        </div>
+                        <div style="margin-top:8px;">
+                            <div class="mp-line" style="width:90%;"></div>
+                            <div class="mp-line" style="width:80%;"></div>
+                            <div class="mp-line" style="width:55%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Modern Tech</h3>
+                    <p>Dark sidebar, code aesthetic. Perfect for developers and tech roles.</p>
+                    <button class="template-select-btn" data-style="modern">
+                        {% if session.get('cv_template') == 'modern' %}✓ Selected{% else %}Select Style{% endif %}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Style 2: Classic -->
+            <div class="template-card {% if session.get('cv_template') == 'classic' %}selected{% endif %}" onclick="selectTemplate('classic')">
+                <div class="template-badge">Selected</div>
+                <div class="template-preview">
+                    <div class="mini-classic">
+                        <div class="mc-sidebar"></div>
+                        <div class="mc-main">
+                            <div class="mc-name">John Smith</div>
+                            <div class="mc-accent-bar"></div>
+                            <div class="mc-line short"></div>
+                            <div class="mc-line"></div>
+                            <div class="mc-line short"></div>
+                            <div class="mc-line"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Classic Corporate</h3>
+                    <p>Two-column navy sidebar. Recruiter-approved, ATS-safe layout.</p>
+                    <button class="template-select-btn" data-style="classic">
+                        {% if session.get('cv_template') == 'classic' %}✓ Selected{% else %}Select Style{% endif %}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Style 3: Minimal -->
+            <div class="template-card {% if session.get('cv_template') == 'minimal' %}selected{% endif %}" onclick="selectTemplate('minimal')">
+                <div class="template-badge">Selected</div>
+                <div class="template-preview">
+                    <div class="mini-minimal">
+                        <div class="mm-name">ALEXANDER CHEN</div>
+                        <div class="mm-title">Senior Software Engineer</div>
+                        <div class="mm-line"></div>
+                        <div class="mm-heading">Experience</div>
+                        <div class="mm-line short"></div>
+                        <div class="mm-line"></div>
+                        <div class="mm-heading">Education</div>
+                        <div class="mm-line short"></div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Minimal Editorial</h3>
+                    <p>Serif type, generous whitespace. Elegant and sophisticated.</p>
+                    <button class="template-select-btn" data-style="minimal">
+                        {% if session.get('cv_template') == 'minimal' %}✓ Selected{% else %}Select Style{% endif %}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Style 4: Creative -->
+            <div class="template-card {% if session.get('cv_template') == 'creative' %}selected{% endif %}" onclick="selectTemplate('creative')">
+                <div class="template-badge">Selected</div>
+                <div class="template-preview">
+                    <div class="mini-creative">
+                        <div class="mc-sidebar"></div>
+                        <div class="mc-main">
+                            <div class="mc-accent-bar"></div>
+                            <div class="mc-accent-bar teal"></div>
+                            <div class="mc-line"></div>
+                            <div class="mc-line short"></div>
+                            <div class="mc-line"></div>
+                            <div class="mc-line short"></div>
+                            <div style="margin-top:6px;">
+                                <span class="mc-dot"></span>
+                                <span class="mc-dot" style="background:#0f969c;"></span>
+                                <span class="mc-dot" style="background:#ffc947;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Creative Color</h3>
+                    <p>Asymmetric color blocks. Stands out for marketing and creative roles.</p>
+                    <button class="template-select-btn" data-style="creative">
+                        {% if session.get('cv_template') == 'creative' %}✓ Selected{% else %}Select Style{% endif %}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Style 5: Academic -->
+            <div class="template-card {% if session.get('cv_template') == 'academic' %}selected{% endif %}" onclick="selectTemplate('academic')">
+                <div class="template-badge">Selected</div>
+                <div class="template-preview">
+                    <div class="mini-academic">
+                        <div class="mi-header">
+                            <div class="mi-name">J. DOE</div>
+                            <div style="font-size:7px; color:#888;">London, UK · j@example.com</div>
+                        </div>
+                        <div class="mi-label">Professional Experience</div>
+                        <div class="mi-line" style="width:80%;"></div>
+                        <div class="mi-line short"></div>
+                        <div class="mi-label">Education</div>
+                        <div class="mi-line" style="width:70%;"></div>
+                        <div class="mi-line short"></div>
+                        <div class="mi-label">Publications</div>
+                        <div class="mi-line short"></div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Academic Formal</h3>
+                    <p>Structured, serif headers, all-caps section labels. For law, academia, finance.</p>
+                    <button class="template-select-btn" data-style="academic">
+                        {% if session.get('cv_template') == 'academic' %}✓ Selected{% else %}Select Style{% endif %}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Style 6: Bold -->
+            <div class="template-card {% if session.get('cv_template') == 'bold' %}selected{% endif %}" onclick="selectTemplate('bold')">
+                <div class="template-badge">Selected</div>
+                <div class="template-preview">
+                    <div class="mini-bold">
+                        <div class="mb-name">ALEX CHEN</div>
+                        <div class="mb-title">SENIOR ENGINEER</div>
+                        <div class="mb-accent-bar"></div>
+                        <div class="mb-line"></div>
+                        <div class="mb-line short"></div>
+                        <div class="mb-heading">Experience</div>
+                        <div class="mb-line"></div>
+                        <div class="mb-line short"></div>
+                        <div class="mb-heading">Skills</div>
+                        <div class="mb-line"></div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Bold Editorial</h3>
+                    <p>Large type, dark background, strong red accent. Memorable and dramatic.</p>
+                    <button class="template-select-btn" data-style="bold">
+                        {% if session.get('cv_template') == 'bold' %}✓ Selected{% else %}Select Style{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Continue button -->
+        <div style="text-align: center; margin-top: 32px;">
+            <a href="/cv/download" class="btn btn-primary" id="continue-btn" style="padding: 16px 48px; font-size: 14px;">
+                Download PDF →
+            </a>
+            <p style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3);">
+                Or <a href="/cv/preview" style="color: var(--text-2);">preview first</a>
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 32px;">
+            <a href="/gap/qna" class="btn btn-secondary">← Back to Gap Q&A</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectTemplate(style) {
+    // Update UI
+    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.template-select-btn').forEach(b => {
+        b.textContent = 'Select Style';
+        b.disabled = false;
+    });
+    const card = document.querySelector(`[data-style="${style}"]`).closest('.template-card');
+    card.classList.add('selected');
+    const btn = document.querySelector(`.template-select-btn[data-style="${style}"]`);
+    btn.textContent = '✓ Selected';
+
+    // Save to server
+    fetch('/cv/select-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ template: style })
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            console.log('Template saved:', style);
+        }
+    });
+}
+</script>
+{% endblock %}

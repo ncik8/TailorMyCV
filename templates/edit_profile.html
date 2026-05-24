@@ -1,0 +1,683 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - TailorMyCV{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.profile-header {
+    margin-bottom: 40px;
+}
+
+.profile-header h1 {
+    font-size: 32px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+}
+
+.profile-header p {
+    color: var(--text-2);
+    font-size: 16px;
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.form-section {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+}
+
+.form-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--text);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Experience Cards */
+.experience-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.exp-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    position: relative;
+}
+
+.exp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.exp-card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.exp-card-header .remove-btn {
+    background: none;
+    border: none;
+    color: #991b1b;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.exp-card-header .remove-btn:hover {
+    background: #fee2e2;
+}
+
+.exp-bullets {
+    margin-top: 12px;
+}
+
+.bullet-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+
+.bullet-item input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.bullet-item .remove-bullet {
+    background: none;
+    border: none;
+    color: #991b1b;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.bullet-item .remove-bullet:hover {
+    background: #fee2e2;
+}
+
+.add-bullet-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-2);
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    width: 100%;
+    margin-top: 8px;
+    transition: all 0.2s;
+}
+
+.add-bullet-btn:hover {
+    border-color: var(--text);
+    color: var(--text);
+}
+
+.add-exp-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-2);
+    cursor: pointer;
+    padding: 14px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.add-exp-btn:hover {
+    border-color: var(--text);
+    color: var(--text);
+}
+
+/* Skills Pills */
+.skills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.skill-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.skill-pill .remove-skill {
+    background: none;
+    border: none;
+    color: #3730a3;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.skill-pill .remove-skill:hover {
+    opacity: 1;
+}
+
+.add-skill-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.add-skill-row input {
+    flex: 1;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.add-skill-row button {
+    padding: 8px 16px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Education Cards */
+.edu-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.edu-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    position: relative;
+}
+
+.edu-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.edu-card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-2);
+}
+
+.edu-card-header .remove-btn {
+    background: none;
+    border: none;
+    color: #991b1b;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.edu-card-header .remove-btn:hover {
+    background: #fee2e2;
+}
+
+.edu-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.add-edu-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-2);
+    cursor: pointer;
+    padding: 14px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.add-edu-btn:hover {
+    border-color: var(--text);
+    color: var(--text);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 0;
+}
+
+.save-success {
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 12px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page profile-page">
+    <div class="profile-header">
+        <h1>Edit Your Profile</h1>
+        <p>Review and correct the information parsed from your CV, then continue to the next step.</p>
+    </div>
+
+    {% if success %}
+    <div class="save-success" style="margin-bottom: 20px;">✓ Profile saved successfully!</div>
+    {% endif %}
+
+    <form id="profile-form" action="/cv/save-profile" method="POST" class="profile-form">
+        <!-- Contact Info -->
+        <div class="form-section">
+            <h2>Contact Information</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" value="{{ profile.name or '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="title">Professional Title</label>
+                    <input type="text" id="title" name="title" value="{{ profile.title or '' }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ profile.email or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone" name="phone" value="{{ profile.phone or '' }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" value="{{ profile.location or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="linkedin">LinkedIn URL</label>
+                    <input type="url" id="linkedin" name="linkedin" value="{{ profile.linkedin or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="summary">Professional Summary</label>
+                <textarea id="summary" name="summary" rows="3">{{ profile.summary or '' }}</textarea>
+            </div>
+        </div>
+
+        <!-- Work Experience -->
+        <div class="form-section">
+            <h2>Work Experience</h2>
+            <div id="experience-list" class="experience-cards">
+                {% for exp in profile.experience %}
+                <div class="exp-card" data-index="{{ loop.index0 }}">
+                    <div class="exp-card-header">
+                        <h3>Position {{ loop.index }}</h3>
+                        <button type="button" class="remove-btn" onclick="removeExp({{ loop.index0 }})">×</button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Job Title</label>
+                            <input type="text" name="exp_title_{{ loop.index0 }}" value="{{ exp.title or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Company</label>
+                            <input type="text" name="exp_company_{{ loop.index0 }}" value="{{ exp.company or '' }}">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Start Date</label>
+                            <input type="text" name="exp_start_{{ loop.index0 }}" value="{{ exp.start_date or exp.dates or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label>End Date</label>
+                            <input type="text" name="exp_end_{{ loop.index0 }}" value="{{ exp.end_date or '' }}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Key Achievements / Responsibilities</label>
+                        <div class="exp-bullets">
+                            {% for bullet in exp.bullets %}
+                            <div class="bullet-item" data-bullet-index="{{ loop.index0 }}">
+                                <input type="text" name="exp_bullet_{{ loop.index0 }}_{{ loop.index0 }}" value="{{ bullet }}">
+                                <button type="button" class="remove-bullet" onclick="removeBullet(this)">×</button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="add-bullet-btn" onclick="addBullet({{ loop.index0 }})">+ Add Achievement</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="add-exp-btn" onclick="addExperience()">+ Add Position</button>
+        </div>
+
+        <!-- Skills -->
+        <div class="form-section">
+            <h2>Skills</h2>
+            <div id="skills-list" class="skills-container">
+                {% for skill in profile.skills %}
+                <span class="skill-pill" data-skill="{{ skill }}">
+                    {{ skill }}
+                    <button type="button" class="remove-skill" onclick="removeSkill('{{ skill }}')">×</button>
+                </span>
+                {% endfor %}
+            </div>
+            <input type="hidden" id="skills-hidden" name="skills" value="{{ profile.skills | join(',') }}">
+            <div class="add-skill-row">
+                <input type="text" id="new-skill-input" placeholder="Type a skill and press Enter or click Add">
+                <button type="button" onclick="addSkill()">Add</button>
+            </div>
+        </div>
+
+        <!-- Education -->
+        <div class="form-section">
+            <h2>Education</h2>
+            <div id="education-list" class="edu-cards">
+                {% for edu in profile.education %}
+                <div class="edu-card" data-index="{{ loop.index0 }}">
+                    <div class="edu-card-header">
+                        <h3>Education {{ loop.index }}</h3>
+                        <button type="button" class="remove-btn" onclick="removeEdu({{ loop.index0 }})">×</button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Degree / Qualification</label>
+                            <input type="text" name="edu_degree_{{ loop.index0 }}" value="{{ edu.degree or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Field of Study</label>
+                            <input type="text" name="edu_field_{{ loop.index0 }}" value="{{ edu.field or '' }}">
+                        </div>
+                    </div>
+                    <div class="edu-form-row">
+                        <div class="form-group">
+                            <label>School / Institution</label>
+                            <input type="text" name="edu_school_{{ loop.index0 }}" value="{{ edu.school or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Year</label>
+                            <input type="text" name="edu_year_{{ loop.index0 }}" value="{{ edu.year or '' }}">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="add-edu-btn" onclick="addEducation()">+ Add Education</button>
+        </div>
+
+        <div class="form-actions">
+            <a href="/job/paste" class="btn btn-secondary">Skip & Paste Job →</a>
+            <button type="submit" class="btn btn-primary">Save Profile</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Skills management
+let skills = [{% for s in profile.skills %}'{{ s }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+
+function updateSkillsHidden() {
+    document.getElementById('skills-hidden').value = skills.join(',');
+}
+
+function addSkill() {
+    const input = document.getElementById('new-skill-input');
+    const val = input.value.trim();
+    if (val && !skills.includes(val)) {
+        skills.push(val);
+        renderSkills();
+        input.value = '';
+    }
+}
+
+document.getElementById('new-skill-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addSkill();
+    }
+});
+
+function removeSkill(skill) {
+    skills = skills.filter(s => s !== skill);
+    renderSkills();
+}
+
+function renderSkills() {
+    const container = document.getElementById('skills-list');
+    container.innerHTML = skills.map(s => `
+        <span class="skill-pill" data-skill="${s}">
+            ${s}
+            <button type="button" class="remove-skill" onclick="removeSkill('${s.replace(/'/g, "\\'")}')">×</button>
+        </span>
+    `).join('');
+    updateSkillsHidden();
+}
+
+// Experience management
+let expCounter = {{ profile.experience | length }};
+
+function addExperience() {
+    const list = document.getElementById('experience-list');
+    const idx = expCounter++;
+    const html = `
+    <div class="exp-card" data-index="${idx}">
+        <div class="exp-card-header">
+            <h3>Position ${list.children.length + 1}</h3>
+            <button type="button" class="remove-btn" onclick="removeExp(${idx})">×</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Job Title</label>
+                <input type="text" name="exp_title_${idx}">
+            </div>
+            <div class="form-group">
+                <label>Company</label>
+                <input type="text" name="exp_company_${idx}">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Start Date</label>
+                <input type="text" name="exp_start_${idx}">
+            </div>
+            <div class="form-group">
+                <label>End Date</label>
+                <input type="text" name="exp_end_${idx}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Key Achievements / Responsibilities</label>
+            <div class="exp-bullets" id="exp-bullets-${idx}"></div>
+            <button type="button" class="add-bullet-btn" onclick="addBullet(${idx})">+ Add Achievement</button>
+        </div>
+    </div>
+    `;
+    list.insertAdjacentHTML('beforeend', html);
+}
+
+function removeExp(idx) {
+    const card = document.querySelector(`.exp-card[data-index="${idx}"]`);
+    if (card) card.remove();
+}
+
+function addBullet(expIdx) {
+    const container = document.getElementById(`exp-bullets-${expIdx}`);
+    if (!container) return;
+    const bulletIdx = container.children.length;
+    const html = `
+    <div class="bullet-item">
+        <input type="text" name="exp_bullet_${expIdx}_${bulletIdx}">
+        <button type="button" class="remove-bullet" onclick="removeBullet(this)">×</button>
+    </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+function removeBullet(btn) {
+    btn.parentElement.remove();
+}
+
+// Education management
+let eduCounter = {{ profile.education | length }};
+
+function addEducation() {
+    const list = document.getElementById('education-list');
+    const idx = eduCounter++;
+    const html = `
+    <div class="edu-card" data-index="${idx}">
+        <div class="edu-card-header">
+            <h3>Education ${list.children.length + 1}</h3>
+            <button type="button" class="remove-btn" onclick="removeEdu(${idx})">×</button>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Degree / Qualification</label>
+                <input type="text" name="edu_degree_${idx}">
+            </div>
+            <div class="form-group">
+                <label>Field of Study</label>
+                <input type="text" name="edu_field_${idx}">
+            </div>
+        </div>
+        <div class="edu-form-row">
+            <div class="form-group">
+                <label>School / Institution</label>
+                <input type="text" name="edu_school_${idx}">
+            </div>
+            <div class="form-group">
+                <label>Year</label>
+                <input type="text" name="edu_year_${idx}">
+            </div>
+        </div>
+    </div>
+    `;
+    list.insertAdjacentHTML('beforeend', html);
+}
+
+function removeEdu(idx) {
+    const card = document.querySelector(`.edu-card[data-index="${idx}"]`);
+    if (card) card.remove();
+}
+
+// Form submission — rebuild experience/education arrays server-side
+document.getElementById('profile-form').addEventListener('submit', function(e) {
+    updateSkillsHidden();
+    // Let the form submit normally to /cv/save-profile
+});
+
+// Init skills hidden field
+updateSkillsHidden();
+</script>
+{% endblock %}

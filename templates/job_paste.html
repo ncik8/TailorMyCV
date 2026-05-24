@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Paste Job - TailorMyCV{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container" style="max-width: 800px;">
+        <div class="page-header">
+            <h1>Paste Job Description</h1>
+            <p>Provide a job posting URL or paste the job description directly.</p>
+        </div>
+        
+        <!-- Step 1: Input -->
+        <div id="input-section" class="card">
+            <div class="form-group">
+                <label for="job-url">Job Posting URL</label>
+                <input type="url" id="job-url" placeholder="https://www.indeed.com/job/example..." style="font-size: 16px;">
+                <small style="color: #64748b; margin-top: 4px; display: block;">We'll try to read the job description from the URL. If it fails, you can paste it manually below.</small>
+            </div>
+            
+            <div style="text-align: center; margin: 24px 0; color: #94a3b8;">— or —</div>
+            
+            <div class="form-group">
+                <label for="job-text">Paste Job Description</label>
+                <textarea id="job-text" rows="10" placeholder="Paste the full job description here..." style="font-size: 16px; resize: vertical;"></textarea>
+            </div>
+            
+            <div id="scrape-status" class="hidden" style="margin: 20px 0;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="spinner"></div>
+                    <span id="scrape-status-text">Scraping job description...</span>
+                </div>
+            </div>
+            
+            <div id="scrape-error" class="alert alert-error hidden" style="margin-top: 20px;"></div>
+            
+            <button onclick="submitJob()" class="btn btn-primary" style="width: 100%; font-size: 16px; padding: 14px;">Extract Job Description</button>
+        </div>
+        
+        <!-- Step 2: Review (hidden initially) -->
+        <div id="review-section" class="card hidden">
+            <div style="margin-bottom: 16px;">
+                <h2 style="font-size: 20px; margin-bottom: 8px;">Review Job Description</h2>
+                <p style="color: #64748b; font-size: 14px;">Here's what we extracted. Does it look right? Edit if needed, then confirm to continue.</p>
+            </div>
+            
+            <div id="review-source" style="margin-bottom: 12px; font-size: 13px; color: #64748b;"></div>
+            
+            <div class="form-group">
+                <label for="job-review-text">Job Description</label>
+                <textarea id="job-review-text" rows="12" style="font-size: 15px; resize: vertical; background: #1e293b; color: #e2e8f0; border: 1px solid #334155;" placeholder="Job description will appear here..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button onclick="confirmJob()" class="btn btn-primary" style="flex: 1; font-size: 16px; padding: 14px;">
+                    ✓ Looks Good — Continue
+                </button>
+                <button onclick="editJob()" class="btn btn-secondary" style="flex: 1; font-size: 16px; padding: 14px;">
+                    ✍ Edit First
+                </button>
+            </div>
+            
+            <div id="confirm-error" class="alert alert-error hidden" style="margin-top: 16px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let extractedText = '';
+let sourceType = '';
+
+// Step 1: Submit URL or pasted text
+async function submitJob() {
+    const url = document.getElementById('job-url').value.trim();
+    const text = document.getElementById('job-text').value.trim();
+    
+    if (!url && !text) {
+        showError('Please provide either a URL or paste a job description.');
+        return;
+    }
+    
+    hideError();
+    showStatus('Extracting job description...');
+    
+    const body = {};
+    if (url) body.url = url;
+    if (text) body.text = text;
+    
+    try {
+        const response = await fetch('/job/scrape', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Store extracted text
+            extractedText = data.text || text;
+            sourceType = data.source || (url ? 'url' : 'pasted');
+            
+            // Show review section
+            document.getElementById('job-review-text').value = extractedText;
+            
+            let sourceLabel = '';
+            if (sourceType === 'url') sourceLabel = 'Extracted from URL';
+            else if (sourceType === 'scraped') sourceLabel = 'Scraped from job posting';
+            else sourceLabel = 'From your pasted text';
+            document.getElementById('review-source').textContent = sourceLabel;
+            
+            document.getElementById('input-section').classList.add('hidden');
+            document.getElementById('review-section').classList.remove('hidden');
+            hideStatus();
+        } else {
+            showError(data.error || 'Failed to extract job description. Try pasting the text directly.');
+        }
+    } catch (err) {
+        showError('Network error: ' + err.message + '. Try pasting the job description directly.');
+    }
+}
+
+// Step 2a: Confirm (looks good)
+async function confirmJob() {
+    const confirmedText = document.getElementById('job-review-text').value.trim();
+    
+    if (!confirmedText || confirmedText.length < 50) {
+        showConfirmError('The job description seems too short. Please check it before continuing.');
+        return;
+    }
+    
+    hideConfirmError();
+    
+    try {
+        const response = await fetch('/job/confirm', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ text: confirmedText })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = '/gap/analyze';
+        } else {
+            showConfirmError(data.error || 'Failed to save job description.');
+        }
+    } catch (err) {
+        showConfirmError('Network error: ' + err.message);
+    }
+}
+
+// Step 2b: Edit (switch back to input with text pre-filled)
+function editJob() {
+    const editedText = document.getElementById('job-review-text').value;
+    document.getElementById('job-text').value = editedText;
+    document.getElementById('job-url').value = '';
+    document.getElementById('review-section').classList.add('hidden');
+    document.getElementById('input-section').classList.remove('hidden');
+    hideError();
+}
+
+function showStatus(text) {
+    document.getElementById('scrape-status-text').textContent = text;
+    document.getElementById('scrape-status').classList.remove('hidden');
+}
+
+function hideStatus() {
+    document.getElementById('scrape-status').classList.add('hidden');
+}
+
+function showError(text) {
+    const el = document.getElementById('scrape-error');
+    el.textContent = text;
+    el.classList.remove('hidden');
+    hideStatus();
+}
+
+function hideError() {
+    document.getElementById('scrape-error').classList.add('hidden');
+}
+
+function showConfirmError(text) {
+    const el = document.getElementById('confirm-error');
+    el.textContent = text;
+    el.classList.remove('hidden');
+}
+
+function hideConfirmError() {
+    document.getElementById('confirm-error').classList.add('hidden');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Cover Letter - TailorMyCV{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container" style="max-width: 800px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div>
+                <h1 style="font-size: 28px; font-weight: 700;">Your Cover Letter</h1>
+                <p style="color: #64748b;">Generated based on your CV and gap answers.</p>
+            </div>
+            <a href="/cv/preview" class="btn btn-secondary">← Back to CV</a>
+        </div>
+        
+        <div class="card" style="background: white;">
+            <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0;">
+                <label style="font-weight: 500; margin-right: 12px;">Tone:</label>
+                <select id="tone-select" onchange="regenerateCoverLetter()" style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    <option value="professional" selected>Professional</option>
+                    <option value="confident">Confident</option>
+                    <option value="friendly">Friendly</option>
+                </select>
+                <button onclick="regenerateCoverLetter()" class="btn btn-secondary" style="margin-left: 12px;">
+                    Regenerate
+                </button>
+            </div>
+            
+            <div id="cover-letter-content" style="font-size: 16px; line-height: 1.8; color: #374151;">
+                {{ cover_letter|nl2br if cover_letter else 'No cover letter generated yet.' }}
+            </div>
+            
+            <div id="cover-letter-loading" class="hidden" style="text-align: center; padding: 40px;">
+                <div class="spinner"></div>
+                <p style="margin-top: 16px; color: #64748b;">Generating cover letter...</p>
+            </div>
+        </div>
+        
+        {% if cover_letter %}
+        <div style="text-align: center; margin-top: 24px;">
+            <button onclick="copyCoverLetter()" class="btn btn-secondary">Copy to Clipboard</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function regenerateCoverLetter() {
+    const tone = document.getElementById('tone-select').value;
+    const content = document.getElementById('cover-letter-content');
+    const loading = document.getElementById('cover-letter-loading');
+    
+    content.classList.add('hidden');
+    loading.classList.remove('hidden');
+    
+    try {
+        const response = await fetch('/cover-letter', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({tone: tone})
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            content.innerHTML = data.cover_letter.replace(/\n/g, '<br>');
+        } else {
+            content.innerHTML = '<p style="color: #dc2626;">Error: ' + (data.error || 'Failed to generate') + '</p>';
+        }
+    } catch (err) {
+        content.innerHTML = '<p style="color: #dc2626;">Network error: ' + err.message + '</p>';
+    } finally {
+        content.classList.remove('hidden');
+        loading.classList.add('hidden');
+    }
+}
+
+function copyCoverLetter() {
+    const content = document.getElementById('cover-letter-content').innerText;
+    navigator.clipboard.writeText(content).then(() => {
+        alert('Cover letter copied to clipboard!');
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Upload CV - TailorMyCV{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container" style="max-width: 800px;">
+        <div class="page-header">
+            <h1>Upload Your CV</h1>
+            <p>We'll parse it and extract your experience, skills, and achievements.</p>
+        </div>
+        
+        <div class="card">
+            <div id="upload-area" style="border: 2px dashed #d1d5db; border-radius: 12px; padding: 60px 40px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                <div style="font-size: 48px; margin-bottom: 16px;">📄</div>
+                <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px;">Drag & Drop your CV here</h3>
+                <p style="color: #64748b; margin-bottom: 24px;">or click to browse</p>
+                <p style="color: #94a3b8; font-size: 14px;">Supports DOCX and PDF · Max 10MB</p>
+                <input type="file" id="file-input" accept=".docx,.doc,.pdf" style="display: none;">
+            </div>
+            
+            <div id="upload-status" class="hidden" style="margin-top: 24px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="spinner"></div>
+                    <span id="status-text">Parsing your CV...</span>
+                </div>
+            </div>
+            
+            <div id="upload-error" class="alert alert-error hidden" style="margin-top: 24px;"></div>
+            
+            <div id="parsed-result" class="hidden" style="margin-top: 24px;">
+                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Parsed CV Data</h3>
+                <div id="cv-preview" style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px;"></div>
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="proceedToJob()" class="btn btn-success">Looks Good → Paste Job</button>
+                    <button onclick="retryUpload()" class="btn btn-secondary">Upload Different File</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const uploadArea = document.getElementById('upload-area');
+const fileInput = document.getElementById('file-input');
+const uploadStatus = document.getElementById('upload-status');
+const statusText = document.getElementById('status-text');
+const uploadError = document.getElementById('upload-error');
+const parsedResult = document.getElementById('parsed-result');
+const cvPreview = document.getElementById('cv-preview');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#4f46e5';
+    uploadArea.style.background = '#f5f3ff';
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.borderColor = '#d1d5db';
+    uploadArea.style.background = 'white';
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#d1d5db';
+    uploadArea.style.background = 'white';
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFile(files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+function handleFile(file) {
+    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+    const validExtensions = ['.pdf', '.docx', '.doc'];
+    
+    const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!validExtensions.includes(ext)) {
+        showError('Please upload a DOCX or PDF file.');
+        return;
+    }
+    
+    uploadFile(file);
+}
+
+async function uploadFile(file) {
+    hideError();
+    showStatus('Uploading and parsing your CV...');
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/cv/parse', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            sessionStorage.setItem('cv_confirmed', 'true');
+            // Redirect to edit profile page
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                window.location.href = '/cv/edit-profile';
+            }
+        } else {
+            showError(data.error || 'Failed to parse CV');
+        }
+    } catch (err) {
+        showError('Network error: ' + err.message);
+    }
+}
+
+function showStatus(text) {
+    statusText.textContent = text;
+    uploadStatus.classList.remove('hidden');
+    parsedResult.classList.add('hidden');
+    uploadError.classList.add('hidden');
+}
+
+function showError(text) {
+    uploadError.textContent = text;
+    uploadError.classList.remove('hidden');
+    uploadStatus.classList.add('hidden');
+}
+
+function hideError() {
+    uploadError.classList.add('hidden');
+}
+
+function showParsedResult(cv) {
+    uploadStatus.classList.add('hidden');
+    
+    let html = '<div style="display: grid; gap: 24px;">';
+    
+    // Contact info at top
+    html += '<div style="background: #f0f7ff; border-radius: 8px; padding: 16px 20px;">';
+    if (cv.name) html += `<div style="font-size: 20px; font-weight: 700; color: #1e40af;">${cv.name}</div>`;
+    html += '<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; color: #475569; font-size: 14px;">';
+    if (cv.email) html += `<span>📧 ${cv.email}</span>`;
+    if (cv.phone) html += `<span>📱 ${cv.phone}</span>`;
+    if (cv.location) html += `<span>📍 ${cv.location}</span>`;
+    html += '</div>';
+    if (cv.title) html += `<div style="margin-top: 8px; color: #64748b; font-size: 14px;">${cv.title}</div>`;
+    html += '</div>';
+    
+    // Summary
+    if (cv.summary) {
+        html += `<div style="background: #f8fafc; border-radius: 8px; padding: 16px 20px; border-left: 4px solid #4f46e5;">
+            <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">About</div>
+            <div style="color: #374151; line-height: 1.6;">${cv.summary}</div>
+        </div>`;
+    }
+    
+    // Experience - full job entries
+    if (cv.experience && cv.experience.length > 0) {
+        html += '<div>';
+        html += '<div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 12px;">Work Experience</div>';
+        cv.experience.forEach(exp => {
+            const title = exp.title || exp.position || 'Unknown Title';
+            const company = exp.company || '';
+            const start = exp.start_date || exp.dates || '';
+            const end = exp.end_date || '';
+            const dates = start && end ? `${start} → ${end}` : (start || end || '');
+            
+            html += `<div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">`;
+            
+            // Job title and dates row
+            html += `<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">`;
+            html += `<div style="font-size: 16px; font-weight: 700; color: #1e293b;">${title}</div>`;
+            if (dates) html += `<div style="font-size: 13px; color: #64748b; font-family: monospace;">${dates}</div>`;
+            html += `</div>`;
+            
+            // Company
+            if (company) html += `<div style="font-size: 14px; color: #4f46e5; margin-bottom: 12px;">${company}</div>`;
+            
+            // Bullets - what they did
+            const bullets = exp.bullets || [];
+            if (bullets.length > 0) {
+                html += '<ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 1.7;">';
+                bullets.forEach(b => {
+                    html += `<li style="margin-bottom: 4px;">${b}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+    
+    // Skills
+    if (cv.skills && cv.skills.length > 0) {
+        html += `<div style="background: #f8fafc; border-radius: 8px; padding: 16px 20px;">
+            <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 10px;">Skills</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">`;
+        cv.skills.forEach(skill => {
+            html += `<span style="background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 20px; font-size: 12px;">${skill}</span>`;
+        });
+        html += '</div></div>';
+    }
+    
+    // Education
+    if (cv.education && cv.education.length > 0) {
+        html += '<div style="margin-top: 8px;">';
+        html += '<div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 10px;">Education</div>';
+        cv.education.forEach(edu => {
+            html += `<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;">`;
+            if (edu.degree) html += `<div style="font-weight: 600; color: #1e293b;">${edu.degree}</div>`;
+            if (edu.school || edu.year) {
+                let eduInfo = [];
+                if (edu.school) eduInfo.push(edu.school);
+                if (edu.year) eduInfo.push(edu.year);
+                html += `<div style="color: #64748b; font-size: 13px;">${eduInfo.join(' · ')}</div>`;
+            }
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+    
+    html += '</div>';
+    
+    cvPreview.innerHTML = html;
+    parsedResult.classList.remove('hidden');
+    uploadArea.classList.add('hidden');
+}
+
+function proceedToJob() {
+    window.location.href = '/job/paste';
+}
+
+function retryUpload() {
+    parsedResult.classList.add('hidden');
+    uploadArea.classList.remove('hidden');
+    fileInput.value = '';
+}
+</script>
+{% endblock %}
