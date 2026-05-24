@@ -8,3 +8,4 @@ supabase
 python-dotenv
 weasyprint
 jinja2
+stripe
