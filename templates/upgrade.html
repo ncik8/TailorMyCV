@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upgrade — Rezmycv</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f8f8f5;
+            min-height: 100vh;
+            padding: 60px 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 36px; font-weight: 600; text-align: center; margin-bottom: 12px; letter-spacing: -0.03em; }
+        .subtitle { text-align: center; color: rgba(10,10,10,.65); font-size: 18px; margin-bottom: 60px; }
+
+        .tiers {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .tier {
+            background: #fff;
+            border: 1px solid #e0e0db;
+            border-radius: 8px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tier.highlighted {
+            border-color: #0a0a0a;
+            box-shadow: 0 0 0 1px #0a0a0a;
+        }
+
+        .tier-name {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 12px;
+            color: rgba(10,10,10,.5);
+        }
+
+        .tier-price {
+            font-size: 40px;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            margin-bottom: 4px;
+        }
+
+        .tier-price span {
+            font-size: 16px;
+            font-weight: 400;
+            color: rgba(10,10,10,.5);
+        }
+
+        .tier-desc {
+            font-size: 14px;
+            color: rgba(10,10,10,.65);
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        .tier-features {
+            list-style: none;
+            margin-bottom: 32px;
+            flex: 1;
+        }
+
+        .tier-features li {
+            font-size: 14px;
+            padding: 6px 0;
+            color: #0a0a0a;
+        }
+
+        .tier-features li::before {
+            content: "—";
+            margin-right: 8px;
+            color: rgba(10,10,10,.3);
+        }
+
+        .tier-btn {
+            display: block;
+            text-align: center;
+            padding: 14px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+        }
+
+        .tier-btn-primary {
+            background: #0a0a0a;
+            color: #f8f8f5;
+        }
+
+        .tier-btn-secondary {
+            background: transparent;
+            color: #0a0a0a;
+            border: 1px solid #e0e0db;
+        }
+
+        .tier-btn:hover { opacity: 0.85; }
+
+        .tier.current {
+            background: #f8f8f5;
+        }
+
+        .tier.current .tier-btn {
+            background: #d4d4d0;
+            color: rgba(10,10,10,.5);
+            cursor: default;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #0a0a0a;
+            color: #f8f8f5;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 12px;
+        }
+
+        .annual-note {
+            text-align: center;
+            margin-top: 32px;
+            font-size: 14px;
+            color: rgba(10,10,10,.65);
+        }
+
+        .annual-note strong { color: #0a0a0a; }
+
+        .contact-note {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 14px;
+            color: rgba(10,10,10,.5);
+        }
+
+        .contact-note a { color: #0a0a0a; }
+    </style>
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block content %}
+    <div class="container">
+        <h1>Choose your plan</h1>
+        <p class="subtitle">Upgrade for unlimited CVs and cover letters</p>
+
+        <div class="tiers">
+            <!-- Free -->
+            <div class="tier {% if tier == 'free' %}current{% endif %}">
+                <div class="tier-name">Free</div>
+                <div class="tier-price">$0 <span>/mo</span></div>
+                <p class="tier-desc">10 tailored CV generations per account</p>
+                <ul class="tier-features">
+                    <li>10 CV generations</li>
+                    <li>6 CV templates</li>
+                    <li>Gap Q&amp;A feature</li>
+                    <li>PDF download</li>
+                </ul>
+                <div class="tier-btn tier-btn-secondary">Current Plan</div>
+            </div>
+
+            <!-- Pro -->
+            <div class="tier highlighted">
+                <div class="badge">Most Popular</div>
+                <div class="tier-name">Pro</div>
+                <div class="tier-price">$19 <span>/mo</span></div>
+                <p class="tier-desc">Unlimited CV generations for power users</p>
+                <ul class="tier-features">
+                    <li>Unlimited CV generations</li>
+                    <li>6 CV templates</li>
+                    <li>Gap Q&amp;A feature</li>
+                    <li>PDF download</li>
+                    <li>Priority support</li>
+                </ul>
+                <div class="tier-btn tier-btn-primary">Coming Soon</div>
+            </div>
+
+            <!-- Pro+ -->
+            <div class="tier">
+                <div class="tier-name">Pro +</div>
+                <div class="tier-price">$25 <span>/mo</span></div>
+                <p class="tier-desc">Everything in Pro, plus cover letters</p>
+                <ul class="tier-features">
+                    <li>Unlimited CV generations</li>
+                    <li>6 CV templates</li>
+                    <li>Gap Q&amp;A feature</li>
+                    <li>PDF download</li>
+                    <li>Cover letter generation</li>
+                    <li>Priority support</li>
+                </ul>
+                <div class="tier-btn tier-btn-primary">Coming Soon</div>
+            </div>
+        </div>
+
+        <p class="annual-note">
+            Or <strong>save 50%</strong> with annual billing — contact us for annual plans.
+        </p>
+
+        <p class="contact-note">
+            Questions? <a href="mailto:hello@rezmycv.com">hello@rezmycv.com</a>
+        </p>
+    </div>
+    {% endblock %}
+</body>
+</html>

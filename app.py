@@ -13,6 +13,7 @@ from services.job_scraper import scrape_job_url, parse_job_text
 from services.gap_analyzer import extract_requirements, analyze_gaps, convert_answer_to_cv_language, generate_gap_questions
 from services.tailor import tailor_cv, generate_cv_pdf
 from services.cover_letter import generate_cover_letter
+from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count
 
 load_dotenv()
 
@@ -92,6 +93,81 @@ def init_session():
         session['cv_template'] = 'classic'  # default template
     if 'profile' not in session:
         session['profile'] = None
+
+
+# ============ AUTH ROUTES ============
+
+@app.route('/auth/signup', methods=['GET', 'POST'])
+def auth_signup():
+    """Sign up new user."""
+    if request.method == 'GET':
+        return render_template('auth/signup.html', error=None)
+    
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
+    confirm = request.form.get('confirm_password', '')
+    
+    if not email or not password:
+        return render_template('auth/signup.html', error='Email and password are required.')
+    if password != confirm:
+        return render_template('auth/signup.html', error='Passwords do not match.')
+    if len(password) < 6:
+        return render_template('auth/signup.html', error='Password must be at least 6 characters.')
+    
+    result = sign_up(email, password)
+    if 'error' in result:
+        return render_template('auth/signup.html', error=result['error'])
+    
+    user = result['user']
+    session['user_id'] = user.id
+    session['user_email'] = user.email
+    profile = get_or_create_profile(user.id)
+    session['tier'] = profile.get('tier', 'free')
+    session['cv_count'] = profile.get('cv_count', 0)
+    session.permanent = True
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/auth/login', methods=['GET', 'POST'])
+def auth_login():
+    """Login existing user."""
+    if request.method == 'GET':
+        return render_template('auth/login.html', error=None)
+    
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
+    
+    if not email or not password:
+        return render_template('auth/login.html', error='Email and password are required.')
+    
+    result = sign_in(email, password)
+    if 'error' in result:
+        return render_template('auth/login.html', error=result['error'])
+    
+    user = result['user']
+    session['user_id'] = user.id
+    session['user_email'] = user.email
+    profile = get_or_create_profile(user.id)
+    session['tier'] = profile.get('tier', 'free')
+    session['cv_count'] = profile.get('cv_count', 0)
+    session.permanent = True
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/auth/logout', methods=['POST'])
+def auth_logout():
+    """Logout user."""
+    sign_out()
+    session.clear()
+    return redirect(url_for('index'))
+
+
+@app.route('/upgrade')
+def upgrade_page():
+    """Pricing / upgrade page."""
+    init_session()
+    user_tier = session.get('tier', 'free')
+    return render_template('upgrade.html', tier=user_tier)
 
 
 # ============ ROUTES ============
@@ -436,6 +512,7 @@ def tailor_cv_route():
     cv_data = session.get('cv_data')
     job_data = session.get('job_data')
     gap_answers = session.get('gap_answers', [])
+    user_id = session.get('user_id')
     
     if not cv_data:
         return jsonify({'error': 'No CV data'}), 400
@@ -443,10 +520,22 @@ def tailor_cv_route():
     if not job_data:
         return jsonify({'error': 'No job data'}), 400
     
+    # Check CV count gating if user is logged in
+    if user_id:
+        allowed, reason, profile = can_generate_cv(user_id)
+        if not allowed:
+            return jsonify({'error': 'limit_reached', 'redirect': url_for('upgrade_page')}), 403
+    
     try:
         job_description = job_data.get('description', '')
         tailored = tailor_cv(cv_data, gap_answers, job_description)
         session['tailored_cv'] = tailored
+        
+        # Increment CV count if user is logged in
+        if user_id:
+            increment_cv_count(user_id)
+            session['cv_count'] = profile.get('cv_count', 0) + 1
+        
         return jsonify({'success': True, 'tailored_cv': tailored})
     except Exception as e:
         return jsonify({'error': f'Failed to tailor CV: {str(e)}'}), 500
