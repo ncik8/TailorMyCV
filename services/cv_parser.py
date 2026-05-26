@@ -717,7 +717,7 @@ def parse_cv(file_storage) -> dict:
 
     # Step 2: Try AI parsing first (primary method)
     api_key = os.getenv("MINIMAX_API_KEY", "")
-    base_url = os.getenv("MINIMAX_BASE_URL", "https://api.minimax.io/anthropic")
+    base_url = os.getenv("MINIMAX_BASE_URL", "https://api.minimax.io")
 
     if api_key and not api_key.startswith("your_"):
         ai_result = parse_with_ai(raw_text, api_key, base_url)
