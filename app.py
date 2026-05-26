@@ -16,6 +16,7 @@ from services.tailor import tailor_cv, generate_cv_pdf
 from services.cover_letter import generate_cover_letter
 from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS
 from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count, get_client as get_supabase_client
+from services.user_cv import save_cv, load_cv, upload_raw_file
 
 load_dotenv()
 
@@ -315,6 +316,10 @@ def cv_upload_page():
 @app.route('/cv/parse', methods=['POST'])
 def parse_cv_route():
     """API: Parse uploaded CV file, then redirect to edit profile page."""
+    init_session()
+    if not session.get('user_id'):
+        return jsonify({'error': 'Not authenticated'}), 401
+
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
 
@@ -326,8 +331,31 @@ def parse_cv_route():
         return jsonify({'error': 'Unsupported file type. Please upload DOCX or PDF.'}), 400
 
     try:
+        # Read file bytes for storage
+        file_bytes = file.read()
+        file.seek(0)  # Reset for re-reading in parse_cv
+
+        # Get content type
+        content_type = file.content_type or ('application/pdf' if file.filename.lower().endswith('.pdf') else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+
+        # Parse the CV
         cv_data = parse_cv(file)
+        if cv_data.get('error'):
+            return jsonify({'error': cv_data['error']}), 400
+
+        # Store in session for this session
         session['cv_data'] = cv_data
+        session['cv_filename'] = file.filename
+
+        # Persist to Supabase if user is logged in
+        user_id = session.get('user_id')
+        if user_id:
+            save_cv(user_id, cv_data)
+            # Also upload raw file to Supabase Storage
+            ext = file.filename.lower().split('.')[-1]
+            stored_filename = f"cv_{user_id[:8]}.{ext}"
+            upload_raw_file(user_id, file_bytes, stored_filename, content_type)
+
         return jsonify({'success': True, 'redirect': url_for('edit_profile_page')})
     except Exception as e:
         return jsonify({'error': f'Failed to parse CV: {str(e)}'}), 500
@@ -338,6 +366,15 @@ def edit_profile_page():
     """Edit profile page — shows parsed CV data for review/editing."""
     init_session()
     cv_data = session.get('cv_data')
+
+    # If no CV in session but user is logged in, try to load from Supabase
+    user_id = session.get('user_id')
+    if not cv_data and user_id:
+        saved_cv = load_cv(user_id)
+        if saved_cv:
+            session['cv_data'] = saved_cv
+            cv_data = saved_cv
+
     if cv_data:
         profile = cv_data.copy()
     else:
@@ -414,6 +451,11 @@ def save_profile_route():
 
     session['profile'] = profile
     session['cv_data'] = profile
+
+    # Persist updated CV to Supabase
+    user_id = session.get('user_id')
+    if user_id:
+        save_cv(user_id, profile)
 
     return redirect(url_for('job_paste_page'))
 

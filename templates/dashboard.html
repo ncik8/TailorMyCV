@@ -56,6 +56,18 @@
                 <a href="/cv/preview" class="btn btn-secondary">Preview Current CV</a>
             </div>
         </div>
+        {% elif session.get('user_id') %}
+        <div class="card" style="text-align: center; padding: 40px 40px;">
+            <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 12px;">Upload your CV</h3>
+            <p style="color: #64748b; margin-bottom: 24px;">We support DOCX and PDF formats.</p>
+            <a href="/cv/upload" class="btn btn-primary" style="font-size: 18px; padding: 14px 36px;">Upload CV</a>
+            {% if session.get('user_id') %}
+            <p style="margin-top: 16px; font-size: 13px; color: #94a3b8;">
+                Already uploaded before?
+                <a href="/cv/edit-profile" style="color: #4f46e5;">Load saved CV →</a>
+            </p>
+            {% endif %}
+        </div>
         {% else %}
         <div class="card" style="text-align: center; padding: 60px 40px;">
             <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 16px;">Start by uploading your CV</h3>
