@@ -6,7 +6,7 @@ beautifulsoup4
 requests
 supabase
 python-dotenv
-weasyprint
+xhtml2pdf
 gunicorn
 jinja2
 stripe

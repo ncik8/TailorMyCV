@@ -821,15 +821,18 @@ def download_cv_pdf():
     html_content = render_template(template_file, **template_context)
     
     try:
-        from weasyprint import HTML
+        from xhtml2pdf import pisa
         import io
-        
+
         pdf_buffer = io.BytesIO()
-        HTML(string=html_content).write_pdf(pdf_buffer)
+        pisa.CreatePDF(
+            io.BytesIO(html_content.encode('utf-8')),
+            pdf_buffer
+        )
         pdf_buffer.seek(0)
-        
+
         filename = f"{tailored_cv.get('name', 'CV').replace(' ', '_')}_tailored_{job_data.get('title', 'job').replace(' ', '_')}.pdf"
-        
+
         return send_file(pdf_buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
     except Exception as e:
         return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
