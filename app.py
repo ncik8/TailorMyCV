@@ -691,6 +691,37 @@ def gap_qna_page():
     return render_template('gap_qna.html', gaps=gaps)
 
 
+@app.route('/cv/tailor', methods=['GET'])
+def tailor_cv_page():
+    """Page: Generate tailored CV and redirect to preview."""
+    init_session()
+    tailored_cv = session.get('tailored_cv')
+    if tailored_cv:
+        return redirect(url_for('cv_preview_page'))
+
+    cv_data = session.get('cv_data')
+    job_data = session.get('job_data')
+    gap_answers = session.get('gap_answers', [])
+    user_id = session.get('user_id')
+
+    if not cv_data or not job_data:
+        return redirect(url_for('cv_upload_page'))
+
+    if user_id:
+        allowed, reason, profile = can_generate_cv(user_id)
+        if not allowed:
+            return redirect(url_for('upgrade_page'))
+
+    job_description = job_data.get('description', '')
+    tailored = tailor_cv(cv_data, gap_answers, job_description)
+    session['tailored_cv'] = tailored
+
+    if user_id:
+        increment_cv_count(user_id)
+
+    return redirect(url_for('cv_preview_page'))
+
+
 @app.route('/cv/tailor', methods=['POST'])
 def tailor_cv_route():
     """API: Generate tailored CV."""
