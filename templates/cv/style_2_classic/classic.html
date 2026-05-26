@@ -29,31 +29,24 @@
             <ul class="contact-list">
                 {% if personal.email %}
                 <li>
-                    <span class="contact-icon">✉</span>
                     <a href="mailto:{{ personal.email }}">{{ personal.email }}</a>
                 </li>
                 {% endif %}
                 {% if personal.phone %}
                 <li>
-                    <span class="contact-icon">☎</span>
                     <a href="tel:{{ personal.phone }}">{{ personal.phone }}</a>
                 </li>
                 {% endif %}
                 {% if personal.location %}
-                <li>
-                    <span class="contact-icon">⌖</span>
-                    <span>{{ personal.location }}</span>
-                </li>
+                <li>{{ personal.location }}</li>
                 {% endif %}
                 {% if personal.website %}
                 <li>
-                    <span class="contact-icon">⊛</span>
                     <a href="{{ personal.website }}" target="_blank">{{ personal.website }}</a>
                 </li>
                 {% endif %}
                 {% if personal.linkedin %}
                 <li>
-                    <span class="contact-icon">in</span>
                     <a href="{{ personal.linkedin }}" target="_blank">{{ personal.linkedin }}</a>
                 </li>
                 {% endif %}

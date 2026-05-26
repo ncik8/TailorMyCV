@@ -28,11 +28,11 @@
             <div class="contact-section">
                 <h3 class="sidebar-heading">Contact</h3>
                 <ul class="contact-list">
-                    {% if email %}<li><span class="contact-icon">✉</span> {{ email }}</li>{% endif %}
-                    {% if phone %}<li><span class="contact-icon">☎</span> {{ phone }}</li>{% endif %}
-                    {% if location %}<li><span class="contact-icon">⌖</span> {{ location }}</li>{% endif %}
-                    {% if linkedin %}<li><span class="contact-icon">in</span> {{ linkedin }}</li>{% endif %}
-                    {% if website %}<li><span class="contact-icon">⊛</span> {{ website }}</li>{% endif %}
+                    {% if email %}<li>{{ email }}</li>{% endif %}
+                    {% if phone %}<li>{{ phone }}</li>{% endif %}
+                    {% if location %}<li>{{ location }}</li>{% endif %}
+                    {% if linkedin %}<li>{{ linkedin }}</li>{% endif %}
+                    {% if website %}<li>{{ website }}</li>{% endif %}
                 </ul>
             </div>
 
@@ -73,7 +73,7 @@
 
         {% if summary %}
         <section class="section summary-section">
-            <div class="section-label">Profile</div>
+            <div class="section-label">Professional Summary</div>
             <p class="summary-text">{{ summary }}</p>
         </section>
         {% endif %}

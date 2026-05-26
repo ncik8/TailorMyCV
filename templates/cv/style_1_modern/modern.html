@@ -26,45 +26,27 @@
         
         <div class="cv-contact-row">
           {% if cv.email %}
-          <div class="cv-contact-item">
-            <span>📧</span>
-            <a href="mailto:{{ cv.email }}">{{ cv.email }}</a>
-          </div>
+          <a href="mailto:{{ cv.email }}">{{ cv.email }}</a>
           {% endif %}
           
           {% if cv.phone %}
-          <div class="cv-contact-item">
-            <span>📱</span>
-            <span>{{ cv.phone }}</span>
-          </div>
+          <span>{{ cv.phone }}</span>
           {% endif %}
           
           {% if cv.location %}
-          <div class="cv-contact-item">
-            <span>📍</span>
-            <span>{{ cv.location }}</span>
-          </div>
+          <span>{{ cv.location }}</span>
           {% endif %}
           
           {% if cv.website %}
-          <div class="cv-contact-item">
-            <span>🌐</span>
-            <a href="{{ cv.website }}" target="_blank">{{ cv.website }}</a>
-          </div>
+          <a href="{{ cv.website }}" target="_blank">{{ cv.website }}</a>
           {% endif %}
           
           {% if cv.linkedin %}
-          <div class="cv-contact-item">
-            <span>💼</span>
-            <a href="{{ cv.linkedin }}" target="_blank">LinkedIn</a>
-          </div>
+          <a href="{{ cv.linkedin }}" target="_blank">LinkedIn</a>
           {% endif %}
           
           {% if cv.github %}
-          <div class="cv-contact-item">
-            <span>💻</span>
-            <a href="{{ cv.github }}" target="_blank">GitHub</a>
-          </div>
+          <a href="{{ cv.github }}" target="_blank">GitHub</a>
           {% endif %}
         </div>
       </div>
@@ -96,8 +78,7 @@
       {% if experience %}
       <section class="cv-section">
         <div class="cv-section-header">
-          <span class="cv-section-icon">💼</span>
-          <h2 class="cv-section-title">Experience</h2>
+          <h2 class="cv-section-title">Work Experience</h2>
         </div>
         <div class="cv-section-content">
           {% for job in experience %}
@@ -126,7 +107,6 @@
       {% if education %}
       <section class="cv-section">
         <div class="cv-section-header">
-          <span class="cv-section-icon">🎓</span>
           <h2 class="cv-section-title">Education</h2>
         </div>
         <div class="cv-section-content">
@@ -147,7 +127,6 @@
       {% if projects %}
       <section class="cv-section">
         <div class="cv-section-header">
-          <span class="cv-section-icon">🚀</span>
           <h2 class="cv-section-title">Projects</h2>
         </div>
         <div class="cv-section-content">
@@ -182,7 +161,6 @@
         {% for section in custom_sections %}
         <section class="cv-section">
           <div class="cv-section-header">
-            <span class="cv-section-icon">{{ section.icon or '📋' }}</span>
             <h2 class="cv-section-title">{{ section.title }}</h2>
           </div>
           <div class="cv-section-content">
@@ -234,7 +212,6 @@
         <div class="cv-cert-list">
           {% for cert in certifications %}
           <div class="cv-cert-item">
-            <span class="cv-cert-icon">🏆</span>
             <span>{{ cert.name }}{% if cert.date %} · {{ cert.date }}{% endif %}</span>
           </div>
           {% endfor %}
@@ -249,7 +226,6 @@
         <div class="cv-cert-list">
           {% for achievement in achievements %}
           <div class="cv-cert-item">
-            <span class="cv-cert-icon">⭐</span>
             <span>{{ achievement }}</span>
           </div>
           {% endfor %}

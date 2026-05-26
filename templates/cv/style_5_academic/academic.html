@@ -36,42 +36,36 @@
     <div class="cv-contact-bar">
       {% if cv.email %}
       <div class="cv-contact-item">
-        <span class="cv-contact-icon">✉</span>
         <a href="mailto:{{ cv.email }}">{{ cv.email }}</a>
       </div>
       {% endif %}
       
       {% if cv.phone %}
       <div class="cv-contact-item">
-        <span class="cv-contact-icon">☎</span>
         <span>{{ cv.phone }}</span>
       </div>
       {% endif %}
       
       {% if cv.location %}
       <div class="cv-contact-item">
-        <span class="cv-contact-icon">⌖</span>
         <span>{{ cv.location }}</span>
       </div>
       {% endif %}
       
       {% if cv.website %}
       <div class="cv-contact-item">
-        <span class="cv-contact-icon">⊕</span>
         <a href="{{ cv.website }}" target="_blank">{{ cv.website }}</a>
       </div>
       {% endif %}
       
       {% if cv.linkedin %}
       <div class="cv-contact-item">
-        <span class="cv-contact-icon">in</span>
         <a href="{{ cv.linkedin }}" target="_blank">LinkedIn</a>
       </div>
       {% endif %}
       
       {% if cv.github %}
       <div class="cv-contact-item">
-        <span class="cv-contact-icon">GH</span>
         <a href="{{ cv.github }}" target="_blank">GitHub</a>
       </div>
       {% endif %}
