@@ -346,6 +346,9 @@ def parse_cv_route():
         # Store in session for this session
         session['cv_data'] = cv_data
         session['cv_filename'] = file.filename
+        # Store raw_text so edit-profile can show debug panel if extraction worked but parsing didn't
+        if cv_data.get('raw_text'):
+            session['raw_text'] = cv_data['raw_text']
 
         # Persist to Supabase if user is logged in
         user_id = session.get('user_id')
@@ -368,6 +371,8 @@ def edit_profile_page():
     """Edit profile page — shows parsed CV data for review/editing."""
     init_session()
     cv_data = session.get('cv_data')
+    session_cv = bool(cv_data)
+    supabase_cv = False
 
     # If no CV in session but user is logged in, try to load from Supabase
     user_id = session.get('user_id')
@@ -376,6 +381,7 @@ def edit_profile_page():
         if saved_cv:
             session['cv_data'] = saved_cv
             cv_data = saved_cv
+            supabase_cv = True
 
     if cv_data:
         profile = cv_data.copy()
@@ -386,7 +392,26 @@ def edit_profile_page():
             'experience': [], 'skills': [], 'education': [],
             'projects': [], 'certifications': [], 'languages': [],
         }
-    return render_template('edit_profile.html', profile=profile)
+
+    # Show debug panel when profile is nearly empty AND raw_text is available
+    raw_text = session.get('raw_text', '')
+    raw_text_len = len(raw_text) if raw_text else 0
+    show_debug = (
+        not profile.get('name')
+        and not profile.get('email')
+        and not profile.get('experience')
+        and raw_text_len > 50
+    )
+
+    return render_template(
+        'edit_profile.html',
+        profile=profile,
+        success=request.args.get('success'),
+        session_cv=session_cv,
+        supabase_cv=supabase_cv,
+        raw_text_len=raw_text_len,
+        debug_raw=raw_text if show_debug else None
+    )
 
 
 @app.route('/cv/save-profile', methods=['POST'])

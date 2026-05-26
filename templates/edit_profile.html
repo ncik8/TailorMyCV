@@ -371,9 +371,24 @@
         <p>Review and correct the information parsed from your CV, then continue to the next step.</p>
     </div>
 
-    {% if success %}
+{% if success %}
     <div class="save-success" style="margin-bottom: 20px;">✓ Profile saved successfully!</div>
+{% endif %}
+
+{% if debug_raw %}
+<div style="background: #1e1e2e; color: #a6e3a1; border: 1px solid #313244; border-radius: 8px; padding: 20px; margin-bottom: 24px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+    <div style="color: #f9e2af; font-weight: 700; margin-bottom: 12px; font-size: 14px;">🐛 DEBUG INFO</div>
+    <div style="margin-bottom: 8px;"><span style="color: #89dceb;">session_has_cv_data:</span> {{ 'true' if session_cv else 'false' }}</div>
+    <div style="margin-bottom: 8px;"><span style="color: #89dceb;">supabase_has_cv:</span> {{ 'true' if supabase_cv else 'false' }}</div>
+    <div style="margin-bottom: 8px;"><span style="color: #89dceb;">raw_text_length:</span> {{ raw_text_len }}</div>
+    {% if debug_raw %}
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #313244;">
+        <div style="color: #f9e2af; margin-bottom: 8px;">Raw extracted text:</div>
+        <div style="color: #cdd6f4; white-space: pre-wrap; max-height: 300px; overflow-y: auto; background: #11111b; border-radius: 4px; padding: 12px;">{{ debug_raw }}</div>
+    </div>
     {% endif %}
+</div>
+{% endif %}
 
     <form id="profile-form" action="/cv/save-profile" method="POST" class="profile-form">
         <!-- Contact Info -->
