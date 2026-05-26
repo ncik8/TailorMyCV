@@ -733,7 +733,7 @@ def parse_cv(file_storage) -> dict:
             "raw_text": raw_text,
             "ai_error": ai_error,
             "warning": "AI parsing failed — check ai_error below for details."
-        }
+    }
 
     # Step 3: Fall back - AI key not configured
     return {
@@ -743,5 +743,4 @@ def parse_cv(file_storage) -> dict:
         "projects": [], "certifications": [], "languages": [],
         "raw_text": raw_text,
         "warning": "AI key not configured. Fill in fields manually using the raw text."
-    }
     }
