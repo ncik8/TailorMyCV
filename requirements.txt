@@ -7,5 +7,6 @@ requests
 supabase
 python-dotenv
 weasyprint
+gunicorn
 jinja2
 stripe
