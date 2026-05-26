@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Answer Gap Questions - ResMyCV{% endblock %}
+{% block title %}Fill in the Gaps - RezMyCV{% endblock %}
 
 {% block content %}
 <div class="page">
@@ -24,20 +24,42 @@
         {% endif %}
         
         {% set total_gaps = all_gaps|length %}
+        {% set answered_count = namespace(value=0) %}
+        {% for item in all_gaps %}
+            {% for a in answers %}
+                {% if a.requirement == item.requirement %}
+                    {% set answered_count.value = answered_count.value + 1 %}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
         
+        {# ====== PROGRESS INDICATOR ====== #}
         <div style="margin-bottom: 32px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-weight: 500;">Progress</span>
+                <span style="font-weight: 500;">Progress — {{ answered_count.value }} of {{ total_gaps }} gaps answered</span>
                 <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #64748b;">
-                    {{ answers|length }} / {{ total_gaps }} questions answered
+                    {{ ((answered_count.value / total_gaps * 100) if total_gaps > 0 else 0)|int }}%
                 </span>
             </div>
-            <div style="background: #e2e8f0; height: 8px; border-radius: 4px;">
-                <div style="background: #0a0a0a; height: 100%; border-radius: 4px; width: {{ (answers|length / total_gaps * 100) if total_gaps > 0 else 0 }}%; transition: width 0.3s;"></div>
+            <div style="background: #e2e8f0; height: 10px; border-radius: 5px;">
+                <div style="background: #16a34a; height: 100%; border-radius: 5px; width: {{ (answered_count.value / total_gaps * 100) if total_gaps > 0 else 0 }}%; transition: width 0.3s;"></div>
             </div>
         </div>
         
-        <div style="display: grid; gap: 24px;">
+        {# ====== SUMMARY OF ADDITIONS SO FAR ====== #}
+        {% if answers %}
+        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin-bottom: 32px; border-left: 4px solid #16a34a;">
+            <h4 style="font-size: 14px; font-weight: 600; color: #166534; margin-bottom: 12px;">✓ What's Being Added to Your CV</h4>
+            <ul style="margin: 0; padding-left: 20px; color: #166534; font-size: 14px;">
+                {% for a in answers %}
+                <li style="margin-bottom: 6px;"><strong>{{ a.requirement }}:</strong> {{ a.ai_phrased }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {# ====== PER-GAP Q&A ====== #}
+        <div style="display: grid; gap: 28px;">
             {% for item in all_gaps %}
             {% set requirement = item.requirement %}
             {% set gap = item.gap %}
@@ -51,107 +73,89 @@
                 {% endif %}
             {% endfor %}
             
-            <div class="card" style="{{ 'border-left: 4px solid #059669;' if answered.value else '' }}">
+            <div class="card" style="border-left: 4px solid {{ '#059669' if answered.value else ('#d97706' if item.type == 'partial' else '#dc2626') }};">
                 <div style="margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: start;">
                         <div>
                             <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748b; margin-bottom: 4px; display: block;">
                                 {{ 'PARTIAL MATCH' if item.type == 'partial' else 'MISSING' }}
                             </span>
-                            <h3 style="font-size: 18px; font-weight: 600;">{{ requirement }}</h3>
+                            <h3 style="font-size: 20px; font-weight: 600;">{{ requirement }}</h3>
                             {% if gap.cv_evidence %}
-                            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Your CV: {{ gap.cv_evidence }}</p>
+                            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Your CV currently shows: {{ gap.cv_evidence }}</p>
                             {% endif %}
                         </div>
                         {% if answered.value %}
-                        <span class="badge badge-success">✓ Answered</span>
+                        <span class="badge badge-success">✓ Done</span>
                         {% else %}
                         <span class="badge badge-error">Pending</span>
                         {% endif %}
                     </div>
                 </div>
                 
-                {% if questions and questions[requirement] %}
-                <div style="background: #f5f3ff; padding: 20px; border-radius: 8px;">
+                {% if not answered.value %}
+                <div style="background: #f8fafc; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <form onsubmit="submitAnswer(event, '{{ requirement|escape }}')">
-                        {% for q in questions[requirement] %}
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; font-weight: 500; margin-bottom: 8px;">
-                                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #7c3aed; margin-right: 8px;">Q{{ loop.index }}</span>
-                                {{ q }}
-                            </label>
-                            {% if loop.index == 1 %}
-                            <!-- Yes/No question -->
-                            <div style="display: flex; gap: 12px;">
-                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e0e0db'">
-                                    <input type="radio" name="has_skill" value="yes" required style="width: 18px; height: 18px;" {{ 'checked' if current_answer.value and 'yes' in current_answer.value.user_answer|lower else '' }}>
-                                    <span>Yes, I have this</span>
-                                </label>
-                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e0e0db'">
-                                    <input type="radio" name="has_skill" value="no" style="width: 18px; height: 18px;" {{ 'checked' if current_answer.value and 'no' in current_answer.value.user_answer|lower else '' }}>
-                                    <span>No, I don't</span>
-                                </label>
-                            </div>
-                            {% elif loop.index == 2 %}
-                            <!-- Which job/context question -->
-                            <textarea name="job_context" rows="3" placeholder="e.g., Senior Developer at Acme Corp (2021-2023)..." style="width: 100%; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; font-size: 15px; font-family: inherit; resize: vertical;">{{ current_answer.value.job_context if current_answer.value else '' }}</textarea>
-                            {% elif loop.index == 3 %}
-                            <!-- Can we update profile? -->
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <input type="checkbox" name="update_profile" id="update_{{ loop.index }}_{{ requirement|replace(' ', '_') }}" value="true" style="width: 18px; height: 18px;" {{ 'checked' if not current_answer.value or current_answer.value.update_profile else '' }}>
-                                <label for="update_{{ loop.index }}_{{ requirement|replace(' ', '_') }}" style="cursor: pointer;">Yes, add this to my CV profile</label>
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
                         
-                        {% if answered.value %}
-                        <div style="margin-top: 20px; padding: 16px; background: #f0fdf4; border-radius: 8px;">
-                            <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Your answer:</p>
-                            <p style="font-size: 15px;">{{ current_answer.value.user_answer }}</p>
-                            <p style="font-size: 13px; color: #059669; margin-top: 12px; font-weight: 500;">AI phrasing:</p>
-                            <p style="font-size: 15px; color: #059669;">{{ current_answer.value.ai_phrased }}</p>
+                        {# ====== Q1: Do you have this? ====== #}
+                        <div style="margin-bottom: 24px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 15px;">
+                                Do you have experience with <strong>{{ requirement }}</strong>?
+                            </label>
+                            <div style="display: flex; gap: 12px;">
+                                <label style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e2e8f0'">
+                                    <input type="radio" name="has_skill" value="yes" required style="width: 20px; height: 20px;">
+                                    <span style="font-size: 15px;">Yes, I have this</span>
+                                </label>
+                                <label style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e2e8f0'">
+                                    <input type="radio" name="has_skill" value="partially" style="width: 20px; height: 20px;">
+                                    <span style="font-size: 15px;">Partially</span>
+                                </label>
+                                <label style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e2e8f0'">
+                                    <input type="radio" name="has_skill" value="no" style="width: 20px; height: 20px;">
+                                    <span style="font-size: 15px;">No, I don't</span>
+                                </label>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-secondary" style="margin-top: 16px;">
-                            Update Answer
-                        </button>
-                        {% else %}
-                        <button type="submit" class="btn btn-success" style="width: 100%; padding: 14px; font-size: 15px;">
+                        
+                        {# ====== Q2: Which job/context? ====== #}
+                        <div style="margin-bottom: 24px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 15px;">
+                                Which job or project did you gain this experience in?
+                           　</label>
+                            <textarea name="job_context" rows="3" placeholder="e.g., Senior Engineer role at ABC Corp, or my freelance work" style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                        
+                        {# ====== Q3: Add to CV? ====== #}
+                        <div style="margin-bottom: 24px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="update_profile" id="update_{{ requirement|replace(' ', '_') }}" value="true" checked style="width: 20px; height: 20px;">
+                                <label for="update_{{ requirement|replace(' ', '_') }}" style="cursor: pointer; font-size: 15px; font-weight: 500;">
+                                    Add this to my CV profile
+                                </label>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success" style="width: 100%; padding: 16px; font-size: 16px; border-radius: 8px;">
                             Submit Answer
                         </button>
-                        {% endif %}
                     </form>
                 </div>
+                
                 {% else %}
-                <!-- Fallback if no generated questions -->
-                <div style="background: #f5f3ff; padding: 20px; border-radius: 8px;">
-                    <form onsubmit="submitAnswer(event, '{{ requirement|escape }}')">
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; font-weight: 500; margin-bottom: 8px;">Do you have experience with this requirement?</label>
-                            <div style="display: flex; gap: 12px;">
-                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; cursor: pointer;">
-                                    <input type="radio" name="has_skill" value="yes" required style="width: 18px; height: 18px;">
-                                    <span>Yes</span>
-                                </label>
-                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; cursor: pointer;">
-                                    <input type="radio" name="has_skill" value="no" style="width: 18px; height: 18px;">
-                                    <span>No</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div style="margin-bottom: 20px;">
-                            <label style="display: block; font-weight: 500; margin-bottom: 8px;">Which job or project did you gain this in?</label>
-                            <textarea name="job_context" rows="2" placeholder="Describe the role, company, and time period..." style="width: 100%; padding: 12px 16px; border: 1px solid #e0e0db; border-radius: 4px; font-size: 15px; font-family: inherit; resize: vertical;"></textarea>
-                        </div>
-                        <div style="margin-bottom: 20px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <input type="checkbox" name="update_profile" value="true" style="width: 18px; height: 18px;" checked>
-                                <label>Add this to my CV profile</label>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-success" style="width: 100%; padding: 14px; font-size: 15px;">
-                            Submit Answer
+                {# ====== SHOW ANSWERED RESULT ====== #}
+                <div style="background: #f0fdf4; padding: 20px; border-radius: 8px;">
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Your answer:</p>
+                    <p style="font-size: 15px; margin-bottom: 16px;">{{ current_answer.value.user_answer }}</p>
+                    <p style="font-size: 13px; color: #059669; margin-bottom: 8px; font-weight: 600;">Will be added to your CV as:</p>
+                    <p style="font-size: 15px; color: #059669;">{{ current_answer.value.ai_phrased }}</p>
+                </div>
+                <div style="margin-top: 16px;">
+                    <form onsubmit="submitAnswer(event, '{{ requirement|escape }}')" style="display: flex; gap: 12px;">
+                        <button type="submit" class="btn btn-secondary" style="flex: 1; padding: 12px; font-size: 14px;">
+                            Update Answer
                         </button>
+                        <input type="hidden" name="job_context" value="">
                     </form>
                 </div>
                 {% endif %}
@@ -159,11 +163,13 @@
             {% endfor %}
         </div>
         
+        {# ====== GENERATE TAILORED CV BUTTON ====== #}
         <div style="margin-top: 40px; text-align: center;">
-            <a href="/cv/tailor" class="btn btn-success" style="font-size: 18px; padding: 16px 40px;">
-                Generate Tailored CV →
+            <a href="/cv/tailor" class="btn btn-success" style="font-size: 18px; padding: 18px 48px; border-radius: 10px;">
+                Generate My Tailored CV →
             </a>
         </div>
+        
         {% else %}
         <div class="card" style="text-align: center; padding: 60px 40px;">
             <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 16px;">No gaps to fill</h3>
@@ -181,18 +187,19 @@ async function submitAnswer(event, requirement) {
     const form = event.target;
     const formData = new FormData(form);
     
-    // Build answer string from form
     let answer = '';
     const hasSkill = formData.get('has_skill');
     const jobContext = formData.get('job_context');
-    const updateProfile = formData.get('update_profile') === 'true';
     
     if (hasSkill) {
-        answer = hasSkill === 'yes' ? 'Yes, I have this experience.' : 'No, I don\'t have this experience.';
+        const labels = { 'yes': 'Yes, I have this experience.', 'partially': 'Partially.', 'no': 'No, I don\'t have this experience.' };
+        answer = labels[hasSkill] || '';
     }
     if (jobContext) {
         answer += ' ' + jobContext;
     }
+    
+    const updateProfile = formData.get('update_profile') === 'true';
     
     if (!answer.trim()) {
         alert('Please provide an answer.');
@@ -202,7 +209,7 @@ async function submitAnswer(event, requirement) {
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner"></span> Processing...';
+    submitBtn.innerHTML = 'Processing...';
     
     try {
         const response = await fetch('/gap/answer', {
@@ -218,8 +225,6 @@ async function submitAnswer(event, requirement) {
         const data = await response.json();
         
         if (data.success) {
-            // Show success and reload
-            alert('Answer saved! AI phrasing: ' + data.ai_phrased);
             location.reload();
         } else {
             alert(data.error || 'Failed to save answer');
