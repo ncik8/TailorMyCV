@@ -49,19 +49,19 @@
             <div class="experience-item">
                 <div class="item-header">
                     <div class="item-main">
-                        <h3 class="item-title">{{ exp.title }}</h3>
-                        <p class="item-org">{{ exp.company }}{% if exp.location %} — {{ exp.location }}{% endif %}</p>
+                        <h3 class="item-title">{{ job.title }}</h3>
+                        <p class="item-org">{{ job.company }}{% if job.location %} — {{ job.location }}{% endif %}</p>
                     </div>
                     <div class="item-meta">
-                        <span class="item-date">{{ exp.start_date }}{% if exp.end_date %} — {{ exp.end_date }}{% else %} — Present{% endif %}</span>
+                        <span class="item-date">{{ job.start_date }}{% if job.end_date %} — {{ job.end_date }}{% else %} — Present{% endif %}</span>
                     </div>
                 </div>
-                {% if exp.description %}
-                <p class="item-description">{{ exp.description }}</p>
+                {% if job.description %}
+                <p class="item-description">{{ job.description }}</p>
                 {% endif %}
-                {% if exp.achievements %}
+                {% if job.achievements %}
                 <ul class="achievements-list">
-                    {% for achievement in exp.achievements %}
+                    {% for achievement in job.achievements %}
                     <li>{{ achievement }}</li>
                     {% endfor %}
                 </ul>

@@ -74,7 +74,21 @@ def analyze_gaps(cv_json: dict, requirements: dict) -> dict:
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
-        return json.loads(text)
+        result = json.loads(text)
+        
+        # Calculate interview likelihood score
+        missing = result.get('missing', [])
+        partials = result.get('partials', [])
+        matches = result.get('matches', [])
+        interview_likelihood = max(0, min(100, 80 - len(missing) * 15 - len(partials) * 7))
+        requirement_count = len(matches) + len(partials) + len(missing)
+        covered_count = len(matches)
+        
+        result['interview_likelihood'] = interview_likelihood
+        result['requirement_count'] = requirement_count
+        result['covered_count'] = covered_count
+        
+        return result
     except json.JSONDecodeError:
         return {"error": "Failed to parse gaps", "raw": response}
 

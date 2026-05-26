@@ -104,16 +104,16 @@
           <div class="cv-entry">
             <div class="cv-entry-header">
               <div>
-                <h3 class="cv-entry-title">{{ exp.title }}</h3>
-                <p class="cv-entry-company">{{ exp.company }}{% if exp.location %} · {{ exp.location }}{% endif %}</p>
+                <h3 class="cv-entry-title">{{ job.title }}</h3>
+                <p class="cv-entry-company">{{ job.company }}{% if job.location %} · {{ job.location }}{% endif %}</p>
               </div>
-              {% if exp.start_date %}
-              <span class="cv-entry-date">{{ exp.start_date }}{% if exp.end_date %} — {{ exp.end_date }}{% else %} — Present{% endif %}</span>
+              {% if job.start_date %}
+              <span class="cv-entry-date">{{ job.start_date }}{% if job.end_date %} — {{ job.end_date }}{% else %} — Present{% endif %}</span>
               {% endif %}
             </div>
-            {% if exp.description %}
+            {% if job.description %}
             <div class="cv-entry-description">
-              {{ exp.description }}
+              {{ job.description }}
             </div>
             {% endif %}
           </div>
@@ -201,16 +201,13 @@
       <section class="cv-sidebar-section">
         <h3 class="cv-sidebar-title">Skills</h3>
         <div class="cv-skills-grid">
-          {% for category, items in skills.items() %}
           <div class="cv-skill-category">
-            <h4 class="cv-skill-category-title">{{ category }}</h4>
             <div class="cv-skill-tags">
-              {% for item in items %}
+              {% for item in skills %}
               <span class="cv-skill-tag">{{ item }}</span>
               {% endfor %}
             </div>
           </div>
-          {% endfor %}
         </div>
       </section>
       {% endif %}

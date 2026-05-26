@@ -44,18 +44,18 @@
       {% for job in experience %}
       <div class="entry">
         <div class="entry-meta">
-          <span class="entry-date">{{ exp.start_date }}{% if exp.end_date %} – {{ exp.end_date }}{% endif %}</span>
-          <span class="entry-location">{{ exp.location }}</span>
+          <span class="entry-date">{{ job.start_date }}{% if job.end_date %} – {{ job.end_date }}{% endif %}</span>
+          <span class="entry-location">{{ job.location }}</span>
         </div>
         <div class="entry-content">
-          <h3 class="entry-title">{{ exp.title }}</h3>
-          <p class="entry-org">{{ exp.company }}{% if exp.city %}, {{ exp.city }}{% endif %}</p>
-          {% if exp.description %}
-          <p class="entry-desc">{{ exp.description }}</p>
+          <h3 class="entry-title">{{ job.title }}</h3>
+          <p class="entry-org">{{ job.company }}{% if job.city %}, {{ job.city }}{% endif %}</p>
+          {% if job.description %}
+          <p class="entry-desc">{{ job.description }}</p>
           {% endif %}
-          {% if exp.highlights %}
+          {% if job.highlights %}
           <ul class="entry-highlights">
-            {% for highlight in exp.highlights %}
+            {% for highlight in job.highlights %}
             <li>{{ highlight }}</li>
             {% endfor %}
           </ul>

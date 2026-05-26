@@ -587,10 +587,12 @@ def gap_analyze_page():
     if not gaps:
         return redirect(url_for('analyze_gaps_route'))
     
+    interview_likelihood = gaps.get('interview_likelihood', 50)
+    
     # Generate targeted questions for each gap
     questions = generate_gap_questions(gaps)
     
-    return render_template('gap_analyze.html', gaps=gaps, questions=questions)
+    return render_template('gap_analyze.html', gaps=gaps, questions=questions, interview_likelihood=interview_likelihood)
 
 
 @app.route('/gap/answer', methods=['POST'])

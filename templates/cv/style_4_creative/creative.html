@@ -84,12 +84,12 @@
             {% for job in experience %}
             <div class="experience-item">
                 <div class="exp-meta">
-                    <span class="exp-period">{{ exp.start_date }} — {{ exp.end_date }}</span>
-                    <span class="exp-company">{{ exp.company }}</span>
+                    <span class="exp-period">{{ job.start_date }} — {{ job.end_date }}</span>
+                    <span class="exp-company">{{ job.company }}</span>
                 </div>
                 <div class="exp-details">
-                    <h4 class="exp-title">{{ exp.position }}</h4>
-                    <p class="exp-description">{{ exp.description }}</p>
+                    <h4 class="exp-title">{{ job.title }}</h4>
+                    <p class="exp-description">{{ job.description }}</p>
                 </div>
             </div>
             {% endfor %}

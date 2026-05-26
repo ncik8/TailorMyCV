@@ -451,7 +451,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Job Title</label>
-                            <input type="text" name="exp_title_{{ loop.index0 }}" value="{{ exp.title or '' }}">
+                            <input type="text" name="exp_title_{{ loop.index0 }}" value="{{ exp.title or exp.job_title or '' }}">
                         </div>
                         <div class="form-group">
                             <label>Company</label>

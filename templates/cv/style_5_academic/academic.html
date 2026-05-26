@@ -102,13 +102,13 @@
           {% for job in experience %}
           <div class="cv-entry">
             <div class="cv-entry-meta">
-              <span class="cv-entry-date">{{ exp.start_date }}{% if exp.end_date %} – {{ exp.end_date }}{% else %} – Present{% endif %}</span>
+              <span class="cv-entry-date">{{ job.start_date }}{% if job.end_date %} – {{ job.end_date }}{% else %} – Present{% endif %}</span>
             </div>
             <div class="cv-entry-content">
-              <h3 class="cv-entry-title">{{ exp.title }}</h3>
-              <p class="cv-entry-subtitle">{{ exp.company }}{% if exp.location %} · {{ exp.location }}{% endif %}</p>
-              {% if exp.description %}
-              <div class="cv-entry-description">{{ exp.description }}</div>
+              <h3 class="cv-entry-title">{{ job.title }}</h3>
+              <p class="cv-entry-subtitle">{{ job.company }}{% if job.location %} · {{ job.location }}{% endif %}</p>
+              {% if job.description %}
+              <div class="cv-entry-description">{{ job.description }}</div>
               {% endif %}
             </div>
           </div>
