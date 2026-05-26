@@ -350,11 +350,13 @@ def parse_cv_route():
         # Persist to Supabase if user is logged in
         user_id = session.get('user_id')
         if user_id:
-            save_cv(user_id, cv_data)
-            # Also upload raw file to Supabase Storage
+            app.logger.info(f"[CV] user_id={user_id}, cv_name={cv_data.get('name', 'N/A')}")
+            save_result = save_cv(user_id, cv_data)
+            app.logger.info(f"[CV] save_cv result: {save_result}")
             ext = file.filename.lower().split('.')[-1]
             stored_filename = f"cv_{user_id[:8]}.{ext}"
-            upload_raw_file(user_id, file_bytes, stored_filename, content_type)
+            upload_result = upload_raw_file(user_id, file_bytes, stored_filename, content_type)
+            app.logger.info(f"[CV] upload_raw_file result: {upload_result}")
 
         return jsonify({'success': True, 'redirect': url_for('edit_profile_page')})
     except Exception as e:

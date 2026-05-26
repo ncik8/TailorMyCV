@@ -32,9 +32,12 @@ def save_cv(user_id: str, cv_data: dict) -> dict | None:
         }, on_conflict="user_id").execute()
         if result.data:
             return result.data[0]
+        return result.data if result.data else {"success": True}
     except Exception as e:
-        print(f"save_cv error: {e}")
-    return None
+        # Log to stderr (Railway captures this via docker logs)
+        import sys
+        print(f"[CV] save_cv ERROR: {e}", file=sys.stderr)
+        return None
 
 
 def load_cv(user_id: str) -> dict | None:
