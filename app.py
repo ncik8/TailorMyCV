@@ -500,27 +500,17 @@ def job_paste_page():
 
 @app.route('/job/scrape', methods=['POST'])
 def scrape_job_route():
-    """API: Scrape job URL or parse pasted text."""
+    """API: Parse pasted job description text."""
     data = request.get_json()
     
-    if data.get('text'):
-        # User pasted raw job description
-        job_data = parse_job_text(data['text'])
-    elif data.get('url'):
-        # User provided a URL
-        job_data = scrape_job_url(data['url'])
-    else:
-        return jsonify({'error': 'No URL or text provided'}), 400
+    if not data.get('text'):
+        return jsonify({'error': 'No text provided'}), 400
     
+    # Parse pasted job description
+    job_data = parse_job_text(data['text'])
     session['job_data'] = job_data
     
-    # Determine source label
-    if data.get('text'):
-        source = 'pasted'
-    else:
-        source = 'url'
-    
-    # Also extract requirements
+    # Extract requirements
     if job_data.get('description'):
         requirements = extract_requirements(job_data['description'])
         session['requirements'] = requirements
@@ -532,7 +522,7 @@ def scrape_job_route():
         'job': job_data,
         'requirements': session['requirements'],
         'text': job_data.get('description', ''),
-        'source': source
+        'source': 'pasted'
     })
 
 

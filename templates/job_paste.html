@@ -6,22 +6,14 @@
 <div class="page">
     <div class="container" style="max-width: 800px;">
         <div class="page-header">
-            <h1>Paste Job Description</h1>
-            <p>Provide a job posting URL or paste the job description directly.</p>
+            <h1>Paste the Job Description</h1>
+            <p>Paste the full job description from the posting.</p>
         </div>
         
         <!-- Step 1: Input -->
         <div id="input-section" class="card">
             <div class="form-group">
-                <label for="job-url">Job Posting URL</label>
-                <input type="url" id="job-url" placeholder="https://www.indeed.com/job/example..." style="font-size: 16px;">
-                <small style="color: #64748b; margin-top: 4px; display: block;">We'll try to read the job description from the URL. If it fails, you can paste it manually below.</small>
-            </div>
-            
-            <div style="text-align: center; margin: 24px 0; color: #94a3b8;">— or —</div>
-            
-            <div class="form-group">
-                <label for="job-text">Paste Job Description</label>
+                <label for="job-text">Job Description</label>
                 <textarea id="job-text" rows="10" placeholder="Paste the full job description here..." style="font-size: 16px; resize: vertical;"></textarea>
             </div>
             
@@ -67,56 +59,43 @@
 
 <script>
 let extractedText = '';
-let sourceType = '';
 
-// Step 1: Submit URL or pasted text
+// Step 1: Submit pasted text
 async function submitJob() {
-    const url = document.getElementById('job-url').value.trim();
     const text = document.getElementById('job-text').value.trim();
     
-    if (!url && !text) {
-        showError('Please provide either a URL or paste a job description.');
+    if (!text) {
+        showError('Please paste a job description.');
         return;
     }
     
     hideError();
     showStatus('Extracting job description...');
     
-    const body = {};
-    if (url) body.url = url;
-    if (text) body.text = text;
-    
     try {
         const response = await fetch('/job/scrape', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(body)
+            body: JSON.stringify({ text: text })
         });
         
         const data = await response.json();
         
         if (data.success) {
-            // Store extracted text
             extractedText = data.text || text;
-            sourceType = data.source || (url ? 'url' : 'pasted');
             
             // Show review section
             document.getElementById('job-review-text').value = extractedText;
-            
-            let sourceLabel = '';
-            if (sourceType === 'url') sourceLabel = 'Extracted from URL';
-            else if (sourceType === 'scraped') sourceLabel = 'Scraped from job posting';
-            else sourceLabel = 'From your pasted text';
-            document.getElementById('review-source').textContent = sourceLabel;
+            document.getElementById('review-source').textContent = 'From your pasted text';
             
             document.getElementById('input-section').classList.add('hidden');
             document.getElementById('review-section').classList.remove('hidden');
             hideStatus();
         } else {
-            showError(data.error || 'Failed to extract job description. Try pasting the text directly.');
+            showError(data.error || 'Failed to extract job description.');
         }
     } catch (err) {
-        showError('Network error: ' + err.message + '. Try pasting the job description directly.');
+        showError('Network error: ' + err.message);
     }
 }
 
@@ -154,7 +133,6 @@ async function confirmJob() {
 function editJob() {
     const editedText = document.getElementById('job-review-text').value;
     document.getElementById('job-text').value = editedText;
-    document.getElementById('job-url').value = '';
     document.getElementById('review-section').classList.add('hidden');
     document.getElementById('input-section').classList.remove('hidden');
     hideError();
