@@ -108,7 +108,10 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
             return {"error": f"API error: {response.status_code} - {response.text[:200]}"}
 
         result = response.json()
-        content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+        # For MiniMax-M2.7, prefer content (field may be in content or reasoning_content)
+        raw_content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+        raw_reasoning = result.get("choices", [{}])[0].get("message", {}).get("reasoning_content", "")
+        content = raw_content if raw_content and len(raw_content) > 10 else raw_reasoning
 
         # Clean up any markdown code blocks or reasoning
         content = content.strip()
@@ -121,9 +124,13 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
         # Strip reasoning content that might be appended after JSON
         # Look for the last '}' that closes the main JSON object
         import re
+        # Try multiple extraction strategies: JSON object first, then fall back
         json_match = re.search(r'\{[\s\S]*\}', content)
         if json_match:
             content = json_match.group(0)
+        elif content.startswith("The user asks") or len(content) < 20:
+            # reasoning_content was used but yielded no usable JSON
+            return {"error": "AI returned reasoning but no parsable JSON. Check model output."}
         else:
             content = content  # Try to parse as-is
 
