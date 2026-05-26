@@ -723,18 +723,25 @@ def parse_cv(file_storage) -> dict:
         ai_result = parse_with_ai(raw_text, api_key, base_url)
         if ai_result and not ai_result.get("error"):
             return ai_result
+        # AI returned an error — capture it to surface to user
+        ai_error = ai_result.get("error", "unknown")
+        return {
+            "name": None, "title": None, "email": None, "phone": None,
+            "location": None, "summary": None,
+            "experience": [], "skills": [], "education": [],
+            "projects": [], "certifications": [], "languages": [],
+            "raw_text": raw_text,
+            "ai_error": ai_error,
+            "warning": "AI parsing failed — check ai_error below for details."
+        }
 
-    # Step 3: Fall back — return what we got, flag for manual review
+    # Step 3: Fall back - AI key not configured
     return {
-        "name": None,
-        "title": None,
-        "email": None,
-        "phone": None,
-        "location": None,
-        "summary": None,
-        "experience": [],
-        "skills": [],
-        "education": [],
+        "name": None, "title": None, "email": None, "phone": None,
+        "location": None, "summary": None,
+        "experience": [], "skills": [], "education": [],
+        "projects": [], "certifications": [], "languages": [],
         "raw_text": raw_text,
-        "warning": "AI parsing failed. Please review the raw extracted text manually."
+        "warning": "AI key not configured. Fill in fields manually using the raw text."
+    }
     }

@@ -402,6 +402,8 @@ def edit_profile_page():
         and not profile.get('experience')
         and raw_text_len > 50
     )
+    ai_error = cv_data.get('ai_error') if cv_data else None
+    warning_msg = cv_data.get('warning') if cv_data else None
 
     return render_template(
         'edit_profile.html',
@@ -410,7 +412,9 @@ def edit_profile_page():
         session_cv=session_cv,
         supabase_cv=supabase_cv,
         raw_text_len=raw_text_len,
-        debug_raw=raw_text if show_debug else None
+        debug_raw=raw_text if show_debug else None,
+        ai_error=ai_error,
+        warning_msg=warning_msg
     )
 
 
