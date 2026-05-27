@@ -104,7 +104,8 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
                 "temperature": 0.1,
                 "max_tokens": 2000
             },
-            timeout=30
+            timeout=30,
+            ensure_ascii=False
         )
 
         if response.status_code != 200:
