@@ -87,6 +87,51 @@
             align-items: center;
         }
 
+        /* Hamburger */
+        .hamburger-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 200;
+        }
+        .hamburger-btn span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: var(--text);
+            border-radius: 2px;
+            transition: all 0.25s;
+        }
+        .hamburger-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger-btn.open span:nth-child(2) { opacity: 0; }
+        .hamburger-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        /* Mobile nav overlay */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 150;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+        }
+        .mobile-nav.open { display: flex; }
+        .mobile-nav a {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: 0.04em;
+        }
+
         .nav-links a {
             font-family: 'JetBrains Mono', monospace;
             font-size: 13px;
@@ -331,16 +376,23 @@
             color: #991b1b;
         }
 
-        /* Footer */
+/* Footer */
         .footer {
-            text-align: center;
-            padding: 60px 0;
-            color: var(--text-3);
+            border-top: 1px solid var(--border);
+            padding: 28px 0;
+            margin-top: 80px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
-            border-top: 1px solid var(--border);
+            color: var(--text-3);
+            text-align: center;
         }
 
+        /* Mobile */
+        @media (max-width: 768px) {
+            .hamburger-btn { display: flex; }
+            .nav-links { display: none; }
+            .logo { position: relative; z-index: 200; }
+        }
         /* Loading spinner */
         .spinner {
             display: inline-block;
@@ -372,6 +424,11 @@
     <nav class="navbar">
         <div class="container">
             <a href="/" class="logo">Rezmycv</a>
+            <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <div class="nav-links">
                 <div class="nav-primary">
                     <a href="/dashboard">Dashboard</a>
@@ -391,6 +448,21 @@
             </div>
         </div>
     </nav>
+
+    <!-- Mobile nav overlay -->
+    <div class="mobile-nav" id="mobile-nav">
+        <a href="/dashboard" onclick="closeMobileNav()">Dashboard</a>
+        <a href="/upgrade" onclick="closeMobileNav()">Pricing</a>
+        <a href="/blog" onclick="closeMobileNav()">Blog</a>
+        {% if session.get('user_id') %}
+        <form action="/auth/logout" method="POST" style="display:inline;">
+            <button type="submit" class="btn-logout" style="font-size:20px;">Logout</button>
+        </form>
+        {% else %}
+        <a href="/auth/login" onclick="closeMobileNav()">Login</a>
+        <a href="/auth/signup" class="btn-nav-signup" onclick="closeMobileNav()">Sign Up</a>
+        {% endif %}
+    </div>
     {% endblock %}
 
     {% block content %}{% endblock %}
@@ -404,6 +476,22 @@
     {% endblock %}
 
     <script src="/static/js/app.js"></script>
+    <script>
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const mobileNav = document.getElementById('mobile-nav');
+
+    hamburgerBtn.addEventListener('click', () => {
+        hamburgerBtn.classList.toggle('open');
+        mobileNav.classList.toggle('open');
+        document.body.style.overflow = mobileNav.classList.contains('open') ? 'hidden' : '';
+    });
+
+    function closeMobileNav() {
+        hamburgerBtn.classList.remove('open');
+        mobileNav.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
