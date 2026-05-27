@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.railpack.com",
-  "buildAptPackages": ["libcairo2-dev", "pkg-config"],
+  "buildAptPackages": ["libcairo2-dev", "pkg-config", "libpango1.0-dev", "libjpeg-dev", "libgif-dev", "librsvg2-dev"],
   "deploy": {
     "aptPackages": ["libcairo2"]
   }
