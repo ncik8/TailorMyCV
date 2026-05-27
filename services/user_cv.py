@@ -79,7 +79,7 @@ def load_cv(user_id: str) -> dict | None:
             .maybe_single()
             .execute()
         )
-        if result.data:
+        if result and result.data:
             # Reassemble into cv_data dict shape so session['cv_data'] stays compatible
             return {
                 "name": result.data.get("name") or "",

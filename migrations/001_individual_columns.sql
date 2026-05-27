@@ -19,8 +19,13 @@ ALTER TABLE user_cvs
   ADD COLUMN IF NOT EXISTS certifications JSONB,
   ADD COLUMN IF NOT EXISTS languages      JSONB;
 
--- 2. Migrate existing cv_data JSON → individual columns (one-time)
--- Only runs if cv_data exists AND the individual column is still NULL
+-- 2. Set cv_data to empty JSON for migrated rows (satisfies NOT NULL constraint)
+UPDATE user_cvs
+SET cv_data = '{}'::jsonb
+WHERE cv_data IS NULL;
+
+-- 3. Migrate existing cv_data JSON → individual columns (one-time)
+-- Only runs if cv_data is non-empty AND the individual column is still NULL
 -- This preserves existing data during the transition
 UPDATE user_cvs
 SET
@@ -39,7 +44,10 @@ SET
   projects      = COALESCE(projects, cv_data->'projects'),
   certifications= COALESCE(certifications, cv_data->'certifications'),
   languages     = COALESCE(languages, cv_data->'languages')
-WHERE cv_data IS NOT NULL;
+WHERE cv_data IS NOT NULL AND cv_data != '{}'::jsonb;
+
+-- 4. Drop NOT NULL constraint on cv_data (no longer needed — we use individual columns)
+ALTER TABLE user_cvs ALTER COLUMN cv_data DROP NOT NULL;
 
 -- 3. Add NOT NULL constraints now that migration is done (optional — safe to skip)
 -- ALTER TABLE user_cvs ALTER COLUMN updated_at SET DEFAULT now();
