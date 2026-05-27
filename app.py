@@ -442,6 +442,13 @@ def edit_profile_page():
 @app.route('/cv/save-profile', methods=['POST'])
 def save_profile_route():
     """Save edited profile data to session, then redirect to job paste."""
+    
+    # DEBUG: log all exp/edu fields received
+    exp_fields = {k: v for k, v in request.form.items() if k.startswith('exp_')}
+    edu_fields = {k: v for k, v in request.form.items() if k.startswith('edu_')}
+    app.logger.info(f"[SAVE] exp fields received: {exp_fields}")
+    app.logger.info(f"[SAVE] edu fields received: {edu_fields}")
+    
     profile = {
         'name': request.form.get('name', '').strip(),
         'email': request.form.get('email', '').strip(),
@@ -510,6 +517,8 @@ def save_profile_route():
     if user_id:
         save_cv(user_id, profile)
 
+    app.logger.info(f"[SAVE] final profile experience: {profile['experience']}")
+    app.logger.info(f"[SAVE] final profile education: {profile['education']}")
     return redirect(url_for('job_paste_page'))
 
 
