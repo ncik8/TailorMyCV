@@ -375,10 +375,9 @@ def parse_cv_route():
 def delete_cv_route():
     """Delete the user's CV from session and Supabase."""
     init_session()
-    if not session.get('user_id'):
-        return redirect(url_for('auth_login', next='/cv/delete'))
-
     user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth_login', next='/cv/delete'))
 
     # Clear session
     session.pop('cv_data', None)
@@ -386,8 +385,9 @@ def delete_cv_route():
     session.pop('tailored_cv', None)
     session.pop('job_data', None)
 
-    # Clear from Supabase
-    delete_cv(user_id or '')
+    # Clear from Supabase — fail hard if user_id is empty (logs it)
+    deleted = delete_cv(user_id)
+    print(f"[DELETE] route: user_id={user_id}, deleted={deleted}")
 
     return redirect(url_for('dashboard'))
 
