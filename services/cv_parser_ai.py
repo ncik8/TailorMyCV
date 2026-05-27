@@ -75,6 +75,9 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
     if not api_key or api_key.startswith("your_"):
         return {"error": "MiniMax API key not configured. Please add your API key to .env"}
 
+    # Remove problematic Unicode characters that cause encoding errors
+    raw_text = raw_text.replace('\u2028', ' ').replace('\u2029', ' ').replace('\xa0', ' ')
+
     prompt = CV_EXTRACTION_PROMPT + raw_text[:8000]  # Cap at 8000 chars to control cost
 
     try:
