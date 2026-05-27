@@ -93,9 +93,14 @@ function handleFile(file) {
     uploadFile(file);
 }
 
-async function uploadFile(file) {
+async function uploadFile(file, attempt = 1) {
     hideError();
-    showStatus('Uploading and parsing your CV...');
+    const isRetry = attempt > 1;
+    if (isRetry) {
+        showStatus(`Our AI is thinking... (attempt ${attempt}/3)`);
+    } else {
+        showStatus('Uploading and parsing your CV...');
+    }
     
     const formData = new FormData();
     formData.append('file', file);
@@ -110,16 +115,31 @@ async function uploadFile(file) {
         
         if (data.success) {
             sessionStorage.setItem('cv_confirmed', 'true');
-            // Redirect to edit profile page
             if (data.redirect) {
                 window.location.href = data.redirect;
             } else {
                 window.location.href = '/cv/edit-profile';
             }
         } else {
-            showError(data.error || 'Failed to parse CV');
+            // Check for overload/retryable errors (529 = MiniMax overloaded)
+            const isRetryable = response.status === 529 || 
+                (data.error && (data.error.toLowerCase().includes('overload') || 
+                                data.error.toLowerCase().includes('high load') ||
+                                data.error.toLowerCase().includes('529')));
+            
+            if (isRetryable && attempt < 3) {
+                // Auto-retry without showing error
+                setTimeout(() => uploadFile(file, attempt + 1), 3000);
+                return;
+            }
+            
+            showError(data.error || 'Failed to parse CV. Please try again.');
         }
     } catch (err) {
+        if (attempt < 3) {
+            setTimeout(() => uploadFile(file, attempt + 1), 3000);
+            return;
+        }
         showError('Network error: ' + err.message);
     }
 }
