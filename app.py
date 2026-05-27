@@ -345,6 +345,7 @@ def parse_cv_route():
 
         # Parse the CV
         cv_data = parse_cv(file)
+        app.logger.info(f"[CV] parse_cv returned: name={cv_data.get('name')}, ai_error={cv_data.get('ai_error')}, error={cv_data.get('error')}")
         if cv_data.get('error'):
             return jsonify({'error': cv_data['error']}), 400
 
