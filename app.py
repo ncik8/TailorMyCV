@@ -16,7 +16,7 @@ from services.tailor import tailor_cv, generate_cv_pdf
 from services.cover_letter import generate_cover_letter
 from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS
 from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count, get_client as get_supabase_client
-from services.user_cv import save_cv, load_cv, upload_raw_file
+from services.user_cv import save_cv, load_cv, delete_cv, upload_raw_file
 
 load_dotenv()
 
@@ -364,6 +364,27 @@ def parse_cv_route():
         return jsonify({'success': True, 'redirect': url_for('edit_profile_page')})
     except Exception as e:
         return jsonify({'error': f'Failed to parse CV: {str(e)}'}), 500
+
+
+@app.route('/cv/delete', methods=['POST'])
+def delete_cv_route():
+    """Delete the user's CV from session and Supabase."""
+    init_session()
+    if not session.get('user_id'):
+        return redirect(url_for('login_page'))
+
+    user_id = session.get('user_id')
+
+    # Clear session
+    session.pop('cv_data', None)
+    session.pop('profile', None)
+    session.pop('tailored_cv', None)
+    session.pop('job_data', None)
+
+    # Clear from Supabase
+    delete_cv(user_id or '')
+
+    return redirect(url_for('dashboard_page'))
 
 
 @app.route('/cv/edit-profile')

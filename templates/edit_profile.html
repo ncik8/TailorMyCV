@@ -448,38 +448,38 @@
                         <h3>Position {{ loop.index }}</h3>
                         <button type="button" class="remove-btn" onclick="removeExp({{ loop.index0 }})">×</button>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Job Title</label>
-                            <input type="text" name="exp_title_{{ loop.index0 }}" value="{{ exp.title or exp.job_title or '' }}">
-                        </div>
-                        <div class="form-group">
-                            <label>Company</label>
-                            <input type="text" name="exp_company_{{ loop.index0 }}" value="{{ exp.company or '' }}">
-                        </div>
+<div class="form-row">
+                <div class="form-group">
+                    <label>Job Title</label>
+                    <input type="text" name="exp_title" value="{{ exp.title or exp.job_title or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Company</label>
+                    <input type="text" name="exp_company" value="{{ exp.company or '' }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="text" name="exp_start" value="{{ exp.start_date or exp.dates or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="text" name="exp_end" value="{{ exp.end_date or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Key Achievements / Responsibilities</label>
+                <div class="exp-bullets">
+                    {% for bullet in exp.bullets %}
+                    <div class="bullet-item">
+                        <input type="text" name="exp_bullet" value="{{ bullet }}">
+                        <button type="button" class="remove-bullet" onclick="removeBullet(this)">×</button>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Start Date</label>
-                            <input type="text" name="exp_start_{{ loop.index0 }}" value="{{ exp.start_date or exp.dates or '' }}">
-                        </div>
-                        <div class="form-group">
-                            <label>End Date</label>
-                            <input type="text" name="exp_end_{{ loop.index0 }}" value="{{ exp.end_date or '' }}">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Key Achievements / Responsibilities</label>
-                        <div class="exp-bullets">
-                            {% for bullet in exp.bullets %}
-                            <div class="bullet-item" data-bullet-index="{{ loop.index0 }}">
-                                <input type="text" name="exp_bullet_{{ loop.index0 }}_{{ loop.index0 }}" value="{{ bullet }}">
-                                <button type="button" class="remove-bullet" onclick="removeBullet(this)">×</button>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <button type="button" class="add-bullet-btn" onclick="addBullet({{ loop.index0 }})">+ Add Achievement</button>
-                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="add-bullet-btn" onclick="addBullet()">+ Add Achievement</button>
+            </div>
                 </div>
                 {% endfor %}
             </div>
@@ -517,21 +517,21 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Degree / Qualification</label>
-                            <input type="text" name="edu_degree_{{ loop.index0 }}" value="{{ edu.degree or '' }}">
+                            <input type="text" name="edu_degree" value="{{ edu.degree or '' }}">
                         </div>
                         <div class="form-group">
                             <label>Field of Study</label>
-                            <input type="text" name="edu_field_{{ loop.index0 }}" value="{{ edu.field or '' }}">
+                            <input type="text" name="edu_field" value="{{ edu.field or '' }}">
                         </div>
                     </div>
                     <div class="edu-form-row">
                         <div class="form-group">
                             <label>School / Institution</label>
-                            <input type="text" name="edu_school_{{ loop.index0 }}" value="{{ edu.school or '' }}">
+                            <input type="text" name="edu_school" value="{{ edu.school or '' }}">
                         </div>
                         <div class="form-group">
                             <label>Year</label>
-                            <input type="text" name="edu_year_{{ loop.index0 }}" value="{{ edu.year or '' }}">
+                            <input type="text" name="edu_year" value="{{ edu.year or '' }}">
                         </div>
                     </div>
                 </div>
@@ -603,21 +603,21 @@ function addExperience() {
         <div class="form-row">
             <div class="form-group">
                 <label>Job Title</label>
-                <input type="text" name="exp_title_${idx}">
+                <input type="text" name="exp_title">
             </div>
             <div class="form-group">
                 <label>Company</label>
-                <input type="text" name="exp_company_${idx}">
+                <input type="text" name="exp_company">
             </div>
         </div>
         <div class="form-row">
             <div class="form-group">
                 <label>Start Date</label>
-                <input type="text" name="exp_start_${idx}">
+                <input type="text" name="exp_start">
             </div>
             <div class="form-group">
                 <label>End Date</label>
-                <input type="text" name="exp_end_${idx}">
+                <input type="text" name="exp_end">
             </div>
         </div>
         <div class="form-group">
@@ -641,7 +641,7 @@ function addBullet(expIdx) {
     const bulletIdx = container.children.length;
     const html = `
     <div class="bullet-item">
-        <input type="text" name="exp_bullet_${expIdx}_${bulletIdx}">
+        <input type="text" name="exp_bullet">
         <button type="button" class="remove-bullet" onclick="removeBullet(this)">×</button>
     </div>
     `;
@@ -667,21 +667,21 @@ function addEducation() {
         <div class="form-row">
             <div class="form-group">
                 <label>Degree / Qualification</label>
-                <input type="text" name="edu_degree_${idx}">
+                <input type="text" name="edu_degree">
             </div>
             <div class="form-group">
                 <label>Field of Study</label>
-                <input type="text" name="edu_field_${idx}">
+                <input type="text" name="edu_field">
             </div>
         </div>
         <div class="edu-form-row">
             <div class="form-group">
                 <label>School / Institution</label>
-                <input type="text" name="edu_school_${idx}">
+                <input type="text" name="edu_school">
             </div>
             <div class="form-group">
                 <label>Year</label>
-                <input type="text" name="edu_year_${idx}">
+                <input type="text" name="edu_year">
             </div>
         </div>
     </div>
@@ -694,13 +694,58 @@ function removeEdu(idx) {
     if (card) card.remove();
 }
 
-// Form submission — rebuild experience/education arrays server-side
+// Form submission — rebuild indexed hidden fields from flat names in DOM order
 document.getElementById('profile-form').addEventListener('submit', function(e) {
     updateSkillsHidden();
-    // Let the form submit normally to /cv/save-profile
-});
 
-// Init skills hidden field
-updateSkillsHidden();
+    // Remove existing indexed fields from any prior submit attempt
+    ['exp_title_', 'exp_company_', 'exp_start_', 'exp_end_', 'edu_degree_', 'edu_field_', 'edu_school_', 'edu_year_'].forEach(prefix => {
+        document.querySelectorAll(`[name^="${prefix}"]`).forEach(el => el.remove());
+    });
+
+    // Remove the flat (non-indexed) fields — they won't be needed after we create indexed ones
+    ['exp_title', 'exp_company', 'exp_start', 'exp_end', 'edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
+        document.querySelectorAll(`[name="${name}"]`).forEach(el => el.remove());
+    });
+
+    // Rebuild exp_* indexed fields per .exp-card, in DOM order
+    document.querySelectorAll('.exp-card').forEach((card, cardIdx) => {
+        ['exp_title', 'exp_company', 'exp_start', 'exp_end'].forEach(name => {
+            const el = card.querySelector(`[name="${name}"]`);
+            if (el && el.value.trim()) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = `${name}_${cardIdx}`;
+                hidden.value = el.value.trim();
+                document.getElementById('profile-form').appendChild(hidden);
+            }
+        });
+        // Bullets for this card: exp_bullet_{cardIdx}_{bulletIdx}
+        const bulletEls = card.querySelectorAll('[name="exp_bullet"]');
+        bulletEls.forEach((el, bulletIdx) => {
+            if (el.value.trim()) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = `exp_bullet_${cardIdx}_${bulletIdx}`;
+                hidden.value = el.value.trim();
+                document.getElementById('profile-form').appendChild(hidden);
+            }
+        });
+    });
+
+    // Rebuild edu_* indexed fields per .edu-card, in DOM order
+    document.querySelectorAll('.edu-card').forEach((card, cardIdx) => {
+        ['edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
+            const el = card.querySelector(`[name="${name}"]`);
+            if (el && el.value.trim()) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = `${name}_${cardIdx}`;
+                hidden.value = el.value.trim();
+                document.getElementById('profile-form').appendChild(hidden);
+            }
+        });
+    });
+});
 </script>
 {% endblock %}

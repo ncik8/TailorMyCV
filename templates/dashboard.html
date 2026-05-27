@@ -113,13 +113,16 @@
                 {% endfor %}
             </div>
             {% endif %}
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
                 {% if not session.get('job_data') %}
                 <a href="/job/paste" class="btn btn-primary">Paste Job Description</a>
                 {% else %}
                 <a href="/gap/analysis" class="btn btn-primary">View Gap Analysis</a>
                 {% endif %}
-                <a href="/cv/preview" class="btn btn-secondary">Preview CV</a>
+                <a href="/cv/edit-profile" class="btn btn-secondary">Edit Profile</a>
+                <form action="/cv/delete" method="POST" onsubmit="return confirm('Delete your CV? You can upload a new one anytime.');" style="display:inline;">
+                    <button type="submit" class="btn" style="font-size: 12px; padding: 8px 16px; background: #ef4444; color: #fff; border: 1px solid #ef4444; border-radius: 6px; cursor: pointer;">Delete CV</button>
+                </form>
             </div>
         </div>
         {% else %}
