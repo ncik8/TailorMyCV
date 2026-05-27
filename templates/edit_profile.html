@@ -704,12 +704,9 @@ document.getElementById('profile-form').addEventListener('submit', function(e) {
         document.querySelectorAll(`[name^="${prefix}"]`).forEach(el => el.remove());
     });
 
-    // Remove the flat (non-indexed) fields — they won't be needed after we create indexed ones
+    // Remove flat (non-indexed) fields — submit JS rebuilds them as indexed before send
     ['exp_title', 'exp_company', 'exp_start', 'exp_end', 'edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
-        document.querySelectorAll(`[name="${name}"]`).forEach(el => {
-            if (el.form && el.form.id === 'delete-cv-form') return;
-            el.remove();
-        });
+        document.querySelectorAll(`[name="${name}"]`).forEach(el => el.remove());
     });
 
     // Rebuild exp_* indexed fields per .exp-card, in DOM order

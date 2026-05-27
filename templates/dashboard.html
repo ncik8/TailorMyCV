@@ -120,9 +120,7 @@
                 <a href="/gap/analysis" class="btn btn-primary">View Gap Analysis</a>
                 {% endif %}
                 <a href="/cv/edit-profile" class="btn btn-secondary">Edit Profile</a>
-                <form action="/cv/delete" method="POST" onsubmit="return confirm('Delete your CV? You can upload a new one anytime.');" style="display:inline;">
-                    <button type="submit" class="btn" style="background: #ef4444; color: #fff; border: 1px solid #ef4444;">Delete CV</button>
-                </form>
+                <button type="button" class="btn" style="background: #ef4444; color: #fff; border: 1px solid #ef4444;" onclick="if(confirm('Delete your CV? You can upload a new one anytime.')){fetch('/cv/delete',{method:'POST'}).then(()=>window.location='/dashboard'});}">Delete CV</button>
             </div>
         </div>
         {% else %}
