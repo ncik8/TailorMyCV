@@ -99,7 +99,7 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
         }, ensure_ascii=False)
         response = requests.post(
             endpoint,
-            data=payload,
+            data=payload.encode('utf-8'),
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json; charset=utf-8"
