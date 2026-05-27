@@ -42,21 +42,87 @@
 
         {% if session.get('cv_data') %}
         <div class="card" style="margin-bottom: 24px;">
-            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">✓ CV Uploaded</h3>
-            <p style="color: #64748b; margin-bottom: 16px;">
-                {% if session.cv_data.name %}{{ session.cv_data.name }}{% endif %}
-                {% if session.cv_data.email %} · {{ session.cv_data.email }}{% endif %}
-            </p>
-            <div style="display: flex; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                <h3 style="font-size: 18px; font-weight: 600;">Your Profile</h3>
+                <a href="/cv/edit-profile" class="btn btn-secondary" style="font-size: 12px; padding: 8px 16px;">Edit Profile</a>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Name</div>
+                    <div style="font-weight: 500;">{{ session.cv_data.name or '—' }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Title</div>
+                    <div style="font-weight: 500;">{{ session.cv_data.title or '—' }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Email</div>
+                    <div style="font-weight: 500;">{{ session.cv_data.email or '—' }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Phone</div>
+                    <div style="font-weight: 500;">{{ session.cv_data.phone or '—' }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Location</div>
+                    <div style="font-weight: 500;">{{ session.cv_data.location or '—' }}</div>
+                </div>
+            </div>
+            {% if session.cv_data.summary %}
+            <div style="margin-top: 16px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 4px;">Summary</div>
+                <div style="color: rgba(10,10,10,.7); font-size: 14px; line-height: 1.6;">{{ session.cv_data.summary[:200] }}{% if session.cv_data.summary|length > 200 %}...{% endif %}</div>
+            </div>
+            {% endif %}
+            {% if session.cv_data.experience and session.cv_data.experience|length > 0 %}
+            <div style="margin-top: 16px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Experience</div>
+                {% for exp in session.cv_data.experience[:3] %}
+                <div style="margin-bottom: 8px; padding-left: 12px; border-left: 2px solid var(--border);">
+                    <div style="font-weight: 500; font-size: 14px;">{{ exp.title or exp.job_title or '—' }}</div>
+                    <div style="font-size: 13px; color: rgba(10,10,10,.6);">{{ exp.company or '—' }}{% if exp.dates or exp.start_date %} · {{ exp.dates or exp.start_date }}{% endif %}</div>
+                </div>
+                {% endfor %}
+                {% if session.cv_data.experience|length > 3 %}
+                <div style="font-size: 13px; color: rgba(10,10,10,.4);">+ {{ session.cv_data.experience|length - 3 }} more</div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% if session.cv_data.skills and session.cv_data.skills|length > 0 %}
+            <div style="margin-top: 16px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Skills</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    {% for skill in session.cv_data.skills[:12] %}
+                    <span style="background: var(--bg-2, #f0f0eb); border: 1px solid var(--border, #e0e0db); border-radius: 4px; padding: 4px 10px; font-size: 12px;">{{ skill }}</span>
+                    {% endfor %}
+                    {% if session.cv_data.skills|length > 12 %}
+                    <span style="font-size: 12px; color: rgba(10,10,10,.4);">+ {{ session.cv_data.skills|length - 12 }} more</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% if session.cv_data.education and session.cv_data.education|length > 0 %}
+            <div style="margin-top: 16px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Education</div>
+                {% for edu in session.cv_data.education[:2] %}
+                <div style="font-size: 14px; margin-bottom: 4px;">
+                    <span style="font-weight: 500;">{{ edu.degree or edu.field or '—' }}</span>
+                    {% if edu.school %} · {{ edu.school }}{% endif %}
+                    {% if edu.year %} · {{ edu.year }}{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
                 {% if not session.get('job_data') %}
-                <a href="/job/paste" class="btn btn-primary">Paste Job URL</a>
+                <a href="/job/paste" class="btn btn-primary">Paste Job Description</a>
                 {% else %}
                 <a href="/gap/analysis" class="btn btn-primary">View Gap Analysis</a>
                 {% endif %}
-                <a href="/cv/preview" class="btn btn-secondary">Preview Current CV</a>
+                <a href="/cv/preview" class="btn btn-secondary">Preview CV</a>
             </div>
         </div>
-        {% elif session.get('user_id') %}
+        {% else %}
         <div class="card" style="text-align: center; padding: 40px 40px;">
             <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 12px;">Upload your CV</h3>
             <p style="color: #64748b; margin-bottom: 24px;">We support DOCX and PDF formats.</p>
@@ -67,12 +133,6 @@
                 <a href="/cv/edit-profile" style="color: #4f46e5;">Load saved CV →</a>
             </p>
             {% endif %}
-        </div>
-        {% else %}
-        <div class="card" style="text-align: center; padding: 60px 40px;">
-            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 16px;">Start by uploading your CV</h3>
-            <p style="color: #64748b; margin-bottom: 32px;">We support DOCX and PDF formats.</p>
-            <a href="/cv/upload" class="btn btn-primary" style="font-size: 18px; padding: 16px 40px;">Upload CV</a>
         </div>
         {% endif %}
 
