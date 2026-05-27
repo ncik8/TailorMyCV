@@ -463,11 +463,12 @@ def save_profile_route():
     if skills_raw:
         profile['skills'] = [s.strip() for s in skills_raw.split(',') if s.strip()]
 
-    # Parse experience entries
-    exp_titles = request.form.getlist('exp_title')
-    exp_companies = request.form.getlist('exp_company')
-    exp_starts = request.form.getlist('exp_start')
-    exp_ends = request.form.getlist('exp_end')
+    # Parse experience entries — submit JS creates indexed fields (exp_title_0, exp_title_1, etc.)
+    # so we collect all keys from form that match those patterns
+    exp_titles = [v for k, v in request.form.items() if k.startswith('exp_title_')]
+    exp_companies = [v for k, v in request.form.items() if k.startswith('exp_company_')]
+    exp_starts = [v for k, v in request.form.items() if k.startswith('exp_start_')]
+    exp_ends = [v for k, v in request.form.items() if k.startswith('exp_end_')]
 
     for i, title in enumerate(exp_titles):
         if title.strip():
@@ -485,11 +486,11 @@ def save_profile_route():
                         exp['bullets'].append(bullet_val)
             profile['experience'].append(exp)
 
-    # Parse education entries
-    edu_degrees = request.form.getlist('edu_degree')
-    edu_fields = request.form.getlist('edu_field')
-    edu_schools = request.form.getlist('edu_school')
-    edu_years = request.form.getlist('edu_year')
+    # Parse education entries — submit JS creates indexed fields
+    edu_degrees = [v for k, v in request.form.items() if k.startswith('edu_degree_')]
+    edu_fields = [v for k, v in request.form.items() if k.startswith('edu_field_')]
+    edu_schools = [v for k, v in request.form.items() if k.startswith('edu_school_')]
+    edu_years = [v for k, v in request.form.items() if k.startswith('edu_year_')]
 
     for i, degree in enumerate(edu_degrees):
         if degree.strip():
