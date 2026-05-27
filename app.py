@@ -376,7 +376,7 @@ def delete_cv_route():
     """Delete the user's CV from session and Supabase."""
     init_session()
     if not session.get('user_id'):
-        return redirect(url_for('login_page'))
+        return redirect(url_for('auth_login', next='/cv/delete'))
 
     user_id = session.get('user_id')
 
