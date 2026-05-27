@@ -541,7 +541,7 @@
         </div>
 
         <div class="form-actions">
-            <form action="/cv/delete" method="POST" onsubmit="return confirm('Delete your CV? You can upload a new one anytime.');" style="display:inline;">
+            <form id="delete-cv-form" action="/cv/delete" method="POST" onsubmit="return confirm('Delete your CV? You can upload a new one anytime.');" style="display:inline;">
                     <button type="submit" class="btn" style="background: #ef4444; color: #fff; border: 1px solid #ef4444;">Delete CV</button>
                 </form>
             <a href="/job/paste" class="btn btn-secondary">Skip & Paste Job →</a>
@@ -708,7 +708,10 @@ document.getElementById('profile-form').addEventListener('submit', function(e) {
 
     // Remove the flat (non-indexed) fields — they won't be needed after we create indexed ones
     ['exp_title', 'exp_company', 'exp_start', 'exp_end', 'edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
-        document.querySelectorAll(`[name="${name}"]`).forEach(el => el.remove());
+        document.querySelectorAll(`[name="${name}"]`).forEach(el => {
+            if (el.form && el.form.id === 'delete-cv-form') return;
+            el.remove();
+        });
     });
 
     // Rebuild exp_* indexed fields per .exp-card, in DOM order
