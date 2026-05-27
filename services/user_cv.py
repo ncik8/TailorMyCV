@@ -50,13 +50,16 @@ def save_cv(user_id: str, cv_data: dict) -> dict | None:
     }
 
     try:
+        print(f"[CV] save_cv upsert keys: {list(row.keys())}")
         result = client.table("user_cvs").upsert(row, on_conflict="user_id").execute()
         if result.data:
+            print(f"[CV] save_cv SUCCESS: id={result.data[0].get('id')}")
             return result.data[0]
+        print(f"[CV] save_cv returned no data: {result}")
         return result.data if result.data else {"success": True}
     except Exception as e:
         import sys
-        print(f"[CV] save_cv ERROR: {e}", file=sys.stderr)
+        print(f"[CV] save_cv ERROR: {type(e).__name__}: {e}", file=sys.stderr)
         return None
 
 
