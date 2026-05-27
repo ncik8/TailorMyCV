@@ -428,8 +428,8 @@
                     <input type="text" id="location" name="location" value="{{ profile.location or '' }}">
                 </div>
                 <div class="form-group">
-                    <label for="linkedin">LinkedIn URL</label>
-                    <input type="url" id="linkedin" name="linkedin" value="{{ profile.linkedin or '' }}">
+                    <label for="linkedin">LinkedIn URL <span style="font-size: 12px; color: rgba(10,10,10,.4);">(must start with https://)</span></label>
+                    <input type="url" id="linkedin" name="linkedin" value="{{ profile.linkedin or '' }}" placeholder="https://linkedin.com/in/your-profile">
                 </div>
             </div>
             <div class="form-group">
