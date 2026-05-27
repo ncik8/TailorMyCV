@@ -300,6 +300,11 @@ def index():
 def dashboard():
     """User dashboard after login."""
     init_session()
+    # Load CV from Supabase if not in session (fresh page load)
+    if not session.get('cv_data') and session.get('user_id'):
+        saved = load_cv(session['user_id'])
+        if saved:
+            session['cv_data'] = saved
     upgrade_success = request.args.get('upgrade') == 'success'
     return render_template('dashboard.html', upgrade_success=upgrade_success)
 
