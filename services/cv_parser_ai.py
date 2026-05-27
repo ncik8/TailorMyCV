@@ -75,44 +75,42 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
     if not api_key or api_key.startswith("your_"):
         return {"error": "MiniMax API key not configured. Please add your API key to .env"}
 
-    # Remove problematic Unicode characters that cause encoding errors
+    # Remove problematic Unicode characters
     raw_text = raw_text.replace('\u2028', ' ').replace('\u2029', ' ').replace('\xa0', ' ')
 
     prompt = CV_EXTRACTION_PROMPT + raw_text[:8000]  # Cap at 8000 chars to control cost
 
     try:
-        # Use the exact endpoint the user specified
         endpoint = f"{base_url}/v1/text/chatcompletion_v2"
+        payload = json.dumps({
+            "model": "MiniMax-M2.7",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a CV parsing expert. Extract structured data from raw CV text. Return only valid JSON matching the provided schema. No markdown code blocks — just raw JSON."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.1,
+            "max_tokens": 2000
+        }, ensure_ascii=False)
         response = requests.post(
             endpoint,
+            data=payload,
             headers={
                 "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json; charset=utf-8"
             },
-            json={
-                "model": "MiniMax-M2.7",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are a CV parsing expert. Extract structured data from raw CV text. Return only valid JSON matching the provided schema. No markdown code blocks — just raw JSON."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                "temperature": 0.1,
-                "max_tokens": 2000
-            },
-            timeout=30,
-            ensure_ascii=False
+            timeout=30
         )
 
         if response.status_code != 200:
             return {"error": f"API error: {response.status_code} - {response.text[:200]}"}
 
         result = response.json()
-        # For MiniMax-M2.7, prefer content (field may be in content or reasoning_content)
         raw_content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
         raw_reasoning = result.get("choices", [{}])[0].get("message", {}).get("reasoning_content", "")
         content = raw_content if raw_content and len(raw_content) > 10 else raw_reasoning
@@ -126,22 +124,15 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
             content = content.strip()
 
         # Strip reasoning content that might be appended after JSON
-        # Look for the last '}' that closes the main JSON object
         import re
-        # Try multiple extraction strategies: JSON object first, then fall back
         json_match = re.search(r'\{[\s\S]*\}', content)
         if json_match:
             content = json_match.group(0)
         elif content.startswith("The user asks") or len(content) < 20:
-            # reasoning_content was used but yielded no usable JSON
             return {"error": "AI returned reasoning but no parsable JSON. Check model output."}
-        else:
-            content = content  # Try to parse as-is
 
-        # Parse JSON
         cv_data = json.loads(content)
 
-        # Validate minimum required fields
         if not cv_data.get("name"):
             cv_data["name"] = raw_text.split("\n")[0][:100]
 
@@ -160,8 +151,4 @@ def build_fallback_cv(raw_text: str) -> Dict:
     Fallback rules-based parser for when AI is unavailable.
     Based on the existing robust parser logic.
     """
-    import re
-    from services.cv_parser import parse_docx_bytes, parse_pdf_bytes
-
-    # This is a simplified fallback — use the existing parser for full fallback
     return {"error": "AI parsing unavailable. Please configure MINIMAX_API_KEY."}
