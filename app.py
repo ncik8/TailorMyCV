@@ -384,7 +384,7 @@ def delete_cv_route():
     # Clear from Supabase
     delete_cv(user_id or '')
 
-    return redirect(url_for('dashboard_page'))
+    return redirect(url_for('dashboard'))
 
 
 @app.route('/cv/edit-profile')
