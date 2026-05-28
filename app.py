@@ -301,11 +301,13 @@ def index():
 def dashboard():
     """User dashboard after login."""
     init_session()
-    # Load CV from Supabase if not in session (fresh page load)
-    if not session.get('cv_data') and session.get('user_id'):
-        saved = load_cv(session['user_id'])
-        if saved:
-            session['cv_data'] = saved
+    # Load CV from Supabase directly for template (don't store in session cookie)
+    cv_data = None
+    if session.get('user_id'):
+        cv_data = load_cv(session['user_id'])
+    # Also check session for CV just uploaded this session
+    if not cv_data:
+        cv_data = session.get('cv_data')
     upgrade_success = request.args.get('upgrade') == 'success'
     return render_template('dashboard.html', upgrade_success=upgrade_success)
 
