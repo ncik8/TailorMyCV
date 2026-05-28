@@ -117,6 +117,7 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
         logger.info(f"[CV] MiniMax raw response: {json.dumps(result, ensure_ascii=False)[:1000]}")
         raw_content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
         raw_reasoning = result.get("choices", [{}])[0].get("message", {}).get("reasoning_content", "")
+        logger.info(f"[CV] raw_content length={len(raw_content)}, raw_reasoning length={len(raw_reasoning)}")
 
         # Prefer content field, fall back to reasoning, then combine both
         if raw_content and len(raw_content.strip()) > 10:
