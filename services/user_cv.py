@@ -168,23 +168,29 @@ def upload_raw_file(user_id: str, file_data: bytes, filename: str, content_type:
     Upload raw PDF/DOCX to Supabase Storage (bucket: 'cv-files').
     Returns the public URL or None on failure.
     """
+    print(f"[upload_raw_file] START — user_id={user_id}, filename={repr(filename)}, "
+          f"content_type={content_type}, file_data_len={len(file_data) if file_data else 'None'}")
     client = get_client()
     bucket = "cv-files"
     path = f"{user_id}/{filename}"
 
     try:
+        print(f"[upload_raw_file] uploading to bucket={bucket}, path={path}")
         client.storage.from_(bucket).upload(path, file_data, {"content-type": content_type})
         url = client.storage.from_(bucket).get_public_url(path)
+        print(f"[upload_raw_file] SUCCESS: {url}")
         return url
     except Exception as e:
+        print(f"[upload_raw_file] upload error: {type(e).__name__}: {e}")
         # Try to create bucket if it doesn't exist
         try:
             client.storage.create_bucket(bucket, {"public": True})
             client.storage.from_(bucket).upload(path, file_data, {"content-type": content_type})
             url = client.storage.from_(bucket).get_public_url(path)
+            print(f"[upload_raw_file] SUCCESS after bucket create: {url}")
             return url
         except Exception as ex:
-            print(f"upload_raw_file error: {ex}")
+            print(f"[upload_raw_file] bucket-create retry error: {type(ex).__name__}: {ex}")
     return None
 
 
