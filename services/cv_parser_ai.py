@@ -85,6 +85,7 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
 
     try:
         endpoint = f"{base_url}/v1/text/chatcompletion_v2"
+        logger.info(f"[CV] Calling MiniMax: endpoint={endpoint}, model=MiniMax-M2.7, text_len={len(raw_text)}")
         payload = json.dumps({
             "model": "MiniMax-M2.7",
             "messages": [
