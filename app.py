@@ -765,7 +765,15 @@ def gap_answer_page():
 
     gaps = session.get('gaps')
     if not gaps:
-        return redirect(url_for('gap_analysis_page'))
+        job_data = {}
+        if user_id:
+            job_data = load_job_description(user_id)
+        if job_data and job_data.get('description'):
+            requirements = extract_requirements(job_data.get('description', ''))
+            gaps = analyze_gaps(cv_data, requirements)
+            session['gaps'] = gaps
+        else:
+            return redirect(url_for('job_paste_page'))
 
     questions = generate_gap_questions(gaps)
     answers = session.get('gap_answers', [])
