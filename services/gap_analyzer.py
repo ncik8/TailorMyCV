@@ -177,11 +177,149 @@ def convert_answer_to_cv_language(requirement: str, user_answer: str) -> str:
     """Convert user's informal answer to professional CV language."""
     prompt = GAP_QNA_PROMPT.format(requirement=requirement, answer=user_answer)
     response = chat(prompt, prompt)
-    
+
     if isinstance(response, dict) and "error" in response:
         return user_answer
-    
+
     return response.strip()
+
+
+GAP_INTERPRET_PROMPT = """You are an expert CV analyst and career coach. The user just answered a question about a job requirement gap.
+
+Their answer: "{answer}"
+Requirement: "{requirement}"
+
+Step 1 - Rewrite their answer in professional CV bullet language.
+- Third person, past tense
+- 1-2 sentences max
+- Impactful but honest, don't exaggerate
+
+Step 2 - Decide where this information belongs on their CV. Choose one:
+- "job_bullet": A work experience bullet point (most common)
+- "skill": A hard/soft skill to add to their skills list
+- "language": A spoken/programming language
+- "certification": A professional certification or degree
+- "project": A project they worked on
+- "other": Doesn't fit above categories
+
+Step 3 - If "job_bullet", generate up to 3 destination options from their work history.
+If another category, describe what would be added.
+
+CV structure:
+{cv_str}
+
+Return ONLY a valid JSON object. No markdown, no explanation:
+{{
+  "interpreted": "Rewritten CV bullet or skill description in professional language",
+  "category": "job_bullet" | "skill" | "language" | "certification" | "project" | "other",
+  "category_label": "Short human label for the pick button",
+  "destinations": [
+    {{"type": "job", "job_idx": 0, "title": "Software Engineer", "company": "Amazon", "years": "2020-2022"}},
+    ...up to 3 most relevant jobs...
+    {{"type": "category", "label": "Add as Skill"}},
+    {{"type": "category", "label": "Add as Language"}},
+    {{"type": "category", "label": "Add as Certification"}},
+    {{"type": "category", "label": "Add as Project"}},
+    {{"type": "category", "label": "Add to Summary"}}
+  ]
+}}"""
+
+
+def interpret_gap_answer(cv_json: dict, requirement: str, user_answer: str) -> dict:
+    """
+    Step 1 of the gap Q&A flow.
+    Takes user's raw answer, rewrites it professionally, figures out category + destinations.
+    """
+    cv_str = json.dumps(cv_json, indent=2)
+    prompt = GAP_INTERPRET_PROMPT.format(
+        answer=user_answer,
+        requirement=requirement,
+        cv_str=cv_str
+    )
+    response = chat(prompt, prompt)
+
+    if isinstance(response, dict) and "error" in response:
+        return {
+            "interpreted": user_answer,
+            "category": "other",
+            "category_label": "Other",
+            "destinations": [{"type": "category", "label": "Add to Summary"}]
+        }
+
+    try:
+        text = response.strip()
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return {
+            "interpreted": user_answer,
+            "category": "other",
+            "category_label": "Other",
+            "destinations": [{"type": "category", "label": "Add to Summary"}]
+        }
+
+
+GAP_UPDATE_PROFILE_PROMPT = """You are an expert CV writer. Apply a confirmed answer to a CV profile.
+
+Original user answer: "{answer}"
+Professional rewrite: "{interpreted}"
+Requirement: "{requirement}"
+Category: "{category}"
+
+CV current state (partial):
+{cv_str}
+
+Apply the interpreted text to the appropriate place in the CV structure.
+
+For job bullets: Add to the specified job's bullets list.
+For skills: Add to the skills array.
+For certifications: Add to the certs array.
+For projects: Add to the projects array.
+For summary: Append to the summary field.
+
+Return ONLY a valid JSON object representing the UPDATED CV section (the part that was modified):
+{{
+  "applied_to": "job_0" | "skills" | "certifications" | "projects" | "summary",
+  "applied_text": "The exact text that was added or updated",
+  "cv_modification": {{ ...full updated section... }}
+}}
+
+All other CV sections must be included in cv_modification unchanged.
+
+Return pure JSON only, no markdown."""
+
+
+def apply_gap_answer_to_profile(cv_json: dict, requirement: str, user_answer: str,
+                                  interpreted: str, category: str,
+                                  destination: dict) -> dict:
+    """
+    Apply a confirmed gap answer to the CV profile and return the updated CV data.
+    """
+    cv_str = json.dumps(cv_json, indent=2)
+    prompt = GAP_UPDATE_PROFILE_PROMPT.format(
+        answer=user_answer,
+        interpreted=interpreted,
+        requirement=requirement,
+        category=category,
+        cv_str=cv_str
+    )
+    response = chat(prompt, prompt)
+
+    if isinstance(response, dict) and "error" in response:
+        return {"error": "Failed to apply answer", "raw": response}
+
+    try:
+        text = response.strip()
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse CV modification", "raw": response}
 
 
 GAP_QUESTIONS_PROMPT = """You are an expert career coach. For each gap (PARTIAL or MISSING requirement), generate exactly 3 targeted questions:

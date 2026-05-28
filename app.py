@@ -12,7 +12,7 @@ import base64
 # Services
 from services.cv_parser import parse_cv
 from services.job_scraper import scrape_job_url, parse_job_text
-from services.gap_analyzer import extract_requirements, analyze_gaps, convert_answer_to_cv_language, generate_gap_questions
+from services.gap_analyzer import extract_requirements, analyze_gaps, convert_answer_to_cv_language, generate_gap_questions, interpret_gap_answer, apply_gap_answer_to_profile
 from services.tailor import tailor_cv, generate_cv_pdf
 from services.cover_letter import generate_cover_letter
 from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS
@@ -773,29 +773,120 @@ def gap_answer_page():
     return render_template('gap_answer.html', gaps=gaps, questions=questions, answers=answers)
 
 
-@app.route('/gap/answer', methods=['POST'])
-def gap_answer_route():
-    """API: Record a gap answer and update profile."""
+@app.route('/gap/interpret', methods=['POST'])
+def gap_interpret_route():
+    """Step 1: User gave initial answer. AI rewrites it + figures out category + destinations."""
     data = request.get_json()
-    requirement = data.get('requirement')
-    answer = data.get('answer')
-    update_profile = data.get('update_profile', False)
+    requirement = data.get('requirement', '').strip()
+    answer = data.get('answer', '').strip()
+    user_id = session.get('user_id')
 
     if not requirement or not answer:
         return jsonify({'error': 'Missing requirement or answer'}), 400
 
-    try:
-        ai_phrased = convert_answer_to_cv_language(requirement, answer)
+    if not user_id:
+        return jsonify({'error': 'Not logged in'}), 401
 
+    cv_data = load_cv(user_id)
+    if not cv_data:
+        return jsonify({'error': 'No CV found'}), 400
+
+    try:
+        result = interpret_gap_answer(cv_data, requirement, answer)
+        return jsonify({'success': True, **result})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/gap/confirm-destination', methods=['POST'])
+def gap_confirm_destination_route():
+    """Step 2: User picked destination. Apply it to CV, return preview for confirmation."""
+    data = request.get_json()
+    requirement = data.get('requirement', '').strip()
+    answer = data.get('answer', '').strip()
+    interpreted = data.get('interpreted', '').strip()
+    category = data.get('category', 'other')
+    destination = data.get('destination', {})  # {type, job_idx, label}
+    user_id = session.get('user_id')
+
+    if not all([requirement, answer, interpreted]):
+        return jsonify({'error': 'Missing fields'}), 400
+
+    if not user_id:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    cv_data = load_cv(user_id)
+    if not cv_data:
+        return jsonify({'error': 'No CV found'}), 400
+
+    try:
+        modification = apply_gap_answer_to_profile(
+            cv_data, requirement, answer, interpreted, category, destination
+        )
+        if 'error' in modification:
+            return jsonify({'error': modification['error']}), 500
+
+        # Build human-readable confirmation label
+        if destination.get('type') == 'job':
+            idx = destination.get('job_idx', 0)
+            jobs = cv_data.get('experience', [])
+            job = jobs[idx] if idx < len(jobs) else jobs[-1]
+            label = f"{job.get('title', 'Job')} @ {job.get('company', '')}"
+        else:
+            label = destination.get('label', category.title())
+
+        return jsonify({
+            'success': True,
+            'applied_to': modification.get('applied_to', ''),
+            'applied_text': modification.get('applied_text', interpreted),
+            'confirmation_label': label,
+            'cv_modification': modification.get('cv_modification', {})
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/gap/confirm-answer', methods=['POST'])
+def gap_confirm_answer_route():
+    """Step 3: User confirmed. Save the updated/modified CV back to Supabase."""
+    data = request.get_json()
+    requirement = data.get('requirement', '').strip()
+    answer = data.get('answer', '').strip()
+    interpreted = data.get('interpreted', '').strip()
+    category = data.get('category', 'other')
+    destination = data.get('destination', {})
+    cv_modification = data.get('cv_modification', {})
+    user_id = session.get('user_id')
+
+    if not all([requirement, interpreted]) or not user_id:
+        return jsonify({'error': 'Missing data'}), 400
+
+    try:
+        cv_data = load_cv(user_id)
+        if not cv_data:
+            return jsonify({'error': 'No CV found'}), 400
+
+        applied_to = cv_modification.get('applied_to', '')
+
+        # Deep merge cv_modification into cv_data
+        updated_cv = merge_cv_sections(cv_data, cv_modification)
+
+        # Save updated CV to Supabase
+        save_result = save_cv(user_id, updated_cv)
+        if not save_result:
+            return jsonify({'error': 'Failed to save updated CV'}), 500
+
+        # Save gap answer to session
         gap_answer = {
             'requirement': requirement,
             'user_answer': answer,
-            'ai_phrased': ai_phrased,
-            'update_profile': update_profile
+            'ai_phrased': interpreted,
+            'category': category,
+            'destination': destination,
+            'applied_to': applied_to
         }
 
         answers = session.get('gap_answers', [])
-        # Replace existing answer for same requirement or append
         for i, a in enumerate(answers):
             if a.get('requirement') == requirement:
                 answers[i] = gap_answer
@@ -804,9 +895,58 @@ def gap_answer_route():
             answers.append(gap_answer)
         session['gap_answers'] = answers
 
-        return jsonify({'success': True, 'ai_phrased': ai_phrased})
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+def merge_cv_sections(cv_data: dict, modification: dict) -> dict:
+    """
+    Merge cv_modification into cv_data.
+    modification keys: 'job_0', 'job_1', ..., 'skills', 'certifications', 'projects', 'summary'
+    """
+    updated = dict(cv_data)
+
+    applied_to = modification.get('applied_to', '')
+
+    if applied_to.startswith('job_'):
+        idx = int(applied_to.split('_')[1])
+        if 'experience' not in updated:
+            updated['experience'] = []
+        while len(updated['experience']) <= idx:
+            updated['experience'].append({'title': '', 'company': '', 'bullets': []})
+        new_bullets = modification.get('cv_modification', {}).get('bullets', [])
+        existing = updated['experience'][idx].get('bullets', [])
+        for b in new_bullets:
+            if b not in existing:
+                existing.append(b)
+        updated['experience'][idx]['bullets'] = existing
+    elif applied_to == 'skills':
+        updated['skills'] = updated.get('skills', [])
+        new_skills = modification.get('cv_modification', [])
+        for s in new_skills:
+            if isinstance(s, str) and s not in updated['skills']:
+                updated['skills'].append(s)
+            elif isinstance(s, dict) and s.get('name') not in [x.get('name') for x in updated['skills']]:
+                updated['skills'].append(s)
+    elif applied_to == 'certifications':
+        updated['certifications'] = updated.get('certifications', [])
+        new_certs = modification.get('cv_modification', [])
+        for c in new_certs:
+            if isinstance(c, str) and c not in updated['certifications']:
+                updated['certifications'].append(c)
+    elif applied_to == 'projects':
+        updated['projects'] = updated.get('projects', [])
+        new_projects = modification.get('cv_modification', [])
+        for p in new_projects:
+            if p not in updated['projects']:
+                updated['projects'].append(p)
+    elif applied_to == 'summary':
+        current = updated.get('summary', '')
+        new_text = modification.get('cv_modification', '')
+        updated['summary'] = f"{current} {new_text}".strip()
+
+    return updated
 
 
 @app.route('/gap/analyze')

@@ -3,238 +3,619 @@
 {% block title %}Fill in the Gaps - RezMyCV{% endblock %}
 
 {% block content %}
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+    background: white;
+    border-radius: 16px;
+    max-width: 620px;
+    width: 100%;
+    padding: 32px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #94a3b8;
+    line-height: 1;
+}
+.modal-close:hover { color: #1e293b; }
+.step-header {
+    margin-bottom: 20px;
+}
+.step-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3b82f6;
+    margin-bottom: 6px;
+}
+.step-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+.step-subtitle {
+    font-size: 14px;
+    color: #64748b;
+}
+.req-badge {
+    display: inline-block;
+    background: #f0fdf4;
+    border: 1px solid #16a34a;
+    color: #166534;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+}
+.req-badge.partial { background: #fffbeb; border-color: #d97706; color: #92400e; }
+.req-badge.missing { background: #fef2f2; border-color: #dc2626; color: #991b1b; }
+.ai-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 40px;
+}
+.ai-spinner .ring {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(59,130,246,0.2);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+.ai-spinner p { color: #64748b; font-size: 15px; margin: 0; }
+.interpreted-box {
+    background: #f0fdf4;
+    border: 1px solid #16a34a;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.interpreted-box p { color: #166534; font-size: 15px; margin: 0; }
+.dest-grid {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.dest-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.dest-card:hover { border-color: #3b82f6; background: #f8fafc; }
+.dest-card.selected { border-color: #3b82f6; background: #eff6ff; }
+.dest-card .dest-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.dest-card.selected .dest-icon { background: #dbeafe; }
+.dest-card .dest-info { flex: 1; }
+.dest-card .dest-title { font-weight: 600; font-size: 14px; color: #0f172a; }
+.dest-card .dest-sub { font-size: 12px; color: #64748b; }
+.confirm-preview {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.confirm-preview .label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.confirm-preview .text { font-size: 15px; color: #0f172a; }
+.confirm-preview .dest-tag {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 10px;
+}
+.edit-textarea {
+    width: 100%;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    box-sizing: border-box;
+}
+.edit-textarea:focus { outline: none; border-color: #3b82f6; }
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+.page-gaps-list { display: grid; gap: 20px; margin-bottom: 40px; }
+.gap-card { border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; }
+.gap-card.done { border-left: 4px solid #16a34a; }
+.gap-card.pending { border-left: 4px solid #d97706; }
+.gap-card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+.gap-req { font-size: 18px; font-weight: 600; }
+.gap-type { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 4px; }
+.gap-type.partial { background: #fffbeb; color: #92400e; }
+.gap-type.missing { background: #fef2f2; color: #991b1b; }
+.gap-evidence { font-size: 13px; color: #64748b; margin-top: 4px; }
+.gap-question { font-size: 14px; color: #475569; margin-top: 8px; font-style: italic; }
+.answer-preview {
+    background: #f0fdf4;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+}
+.answer-preview strong { color: #166534; }
+</style>
+
 <div class="page">
-    <div class="container" style="max-width: 800px;">
+    <div class="container" style="max-width: 860px;">
         <div class="page-header">
             <h1>Fill in the Gaps</h1>
-            <p>Answer these questions to strengthen your tailored CV.</p>
+            <p>Answer a few questions to strengthen your CV for this job.</p>
         </div>
-        
+
         {% if gaps %}
         {% set all_gaps = [] %}
         {% if gaps.partials %}
             {% for p in gaps.partials %}
-                {% set _ = all_gaps.append({'requirement': p.requirement, 'type': 'partial', 'gap': p}) %}
+                {% set l = all_gaps.append({'requirement': p.requirement, 'type': 'partial', 'gap': p}) %}
             {% endfor %}
         {% endif %}
         {% if gaps.missing %}
             {% for m in gaps.missing %}
-                {% set _ = all_gaps.append({'requirement': m.requirement, 'type': 'missing', 'gap': m}) %}
+                {% set l = all_gaps.append({'requirement': m.requirement, 'type': 'missing', 'gap': m}) %}
             {% endfor %}
         {% endif %}
-        
-        {% set total_gaps = all_gaps|length %}
-        {% set answered_count = namespace(value=0) %}
+
+        {% set total = all_gaps|length %}
+        {% set answered = namespace(count=0) %}
         {% for item in all_gaps %}
             {% for a in answers %}
                 {% if a.requirement == item.requirement %}
-                    {% set answered_count.value = answered_count.value + 1 %}
+                    {% set answered.count = answered.count + 1 %}
                 {% endif %}
             {% endfor %}
         {% endfor %}
-        
-        {# ====== PROGRESS INDICATOR ====== #}
-        <div style="margin-bottom: 32px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-weight: 500;">Progress — {{ answered_count.value }} of {{ total_gaps }} gaps answered</span>
-                <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #64748b;">
-                    {{ ((answered_count.value / total_gaps * 100) if total_gaps > 0 else 0)|int }}%
-                </span>
+
+        <div style="margin-bottom: 28px;">
+            <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
+                <span>{{ answered.count }}/{{ total }} gaps covered</span>
+                <span style="color: #64748b;">{{ ((answered.count / total * 100) if total > 0 else 0)|int }}%</span>
             </div>
-            <div style="background: #e2e8f0; height: 10px; border-radius: 5px;">
-                <div style="background: #16a34a; height: 100%; border-radius: 5px; width: {{ (answered_count.value / total_gaps * 100) if total_gaps > 0 else 0 }}%; transition: width 0.3s;"></div>
+            <div style="background: #e2e8f0; height: 8px; border-radius: 4px;">
+                <div style="background: #16a34a; height: 100%; border-radius: 4px; width: {{ (answered.count / total * 100) if total > 0 else 0 }}%; transition: width 0.4s;"></div>
             </div>
         </div>
-        
-        {# ====== SUMMARY OF ADDITIONS SO FAR ====== #}
-        {% if answers %}
-        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin-bottom: 32px; border-left: 4px solid #16a34a;">
-            <h4 style="font-size: 14px; font-weight: 600; color: #166534; margin-bottom: 12px;">✓ What's Being Added to Your CV</h4>
-            <ul style="margin: 0; padding-left: 20px; color: #166534; font-size: 14px;">
-                {% for a in answers %}
-                <li style="margin-bottom: 6px;"><strong>{{ a.requirement }}:</strong> {{ a.ai_phrased }}</li>
-                {% endfor %}
-            </ul>
+
+        <div class="page-gaps-list">
+        {% for item in all_gaps %}
+        {% set requirement = item.requirement %}
+{% set gap = item.gap %}
+{% set is_done = namespace(value=false) %}
+{% set current_answer = namespace(value=null) %}
+{% for a in answers %}
+    {% if a.requirement == requirement %}
+        {% set is_done.value = true %}
+        {% set current_answer.value = a %}
+    {% endif %}
+{% endfor %}
+
+<div class="gap-card {{ 'done' if is_done.value else 'pending' }}">
+    <div class="gap-card-header">
+        <div>
+            <span class="gap-type {{ item.type }}">{{ 'PARTIAL' if item.type == 'partial' else 'MISSING' }}</span>
+            <h3 class="gap-req" style="margin-top: 8px;">{{ requirement }}</h3>
+            {% if gap.question %}
+            <p class="gap-question">{{ gap.question }}</p>
+            {% endif %}
+            {% if gap.cv_evidence %}
+            <p class="gap-evidence">Your CV shows: {{ gap.cv_evidence }}</p>
+            {% endif %}
         </div>
+        {% if is_done.value %}
+        <span class="badge badge-success" style="flex-shrink: 0; margin-left: 12px;">✓ Done</span>
+        {% else %}
+        <button onclick="openGapWizard('{{ requirement|escape }}', '{{ item.type }}', '{{ gap.question|escape if gap.question else '' }}')"
+                class="btn {{ 'btn-primary' if item.type == 'partial' else 'btn-secondary' }}"
+                style="flex-shrink: 0; margin-left: 12px; padding: 10px 18px; font-size: 14px;">
+            {{ 'Tell Us More' if item.type == 'partial' else 'I Have a Story' }}
+        </button>
         {% endif %}
-        
-        {# ====== PER-GAP Q&A ====== #}
-        <div style="display: grid; gap: 28px;">
-            {% for item in all_gaps %}
-            {% set requirement = item.requirement %}
-            {% set gap = item.gap %}
-            
-            {% set answered = namespace(value=false) %}
-            {% set current_answer = namespace(value=null) %}
-            {% for a in answers %}
-                {% if a.requirement == requirement %}
-                    {% set answered.value = true %}
-                    {% set current_answer.value = a %}
-                {% endif %}
-            {% endfor %}
-            
-            <div class="card" style="border-left: 4px solid {{ '#059669' if answered.value else ('#d97706' if item.type == 'partial' else '#dc2626') }};">
-                <div style="margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <div>
-                            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748b; margin-bottom: 4px; display: block;">
-                                {{ 'PARTIAL MATCH' if item.type == 'partial' else 'MISSING' }}
-                            </span>
-                            <h3 style="font-size: 20px; font-weight: 600;">{{ requirement }}</h3>
-                            {% if gap.cv_evidence %}
-                            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Your CV currently shows: {{ gap.cv_evidence }}</p>
-                            {% endif %}
-                        </div>
-                        {% if answered.value %}
-                        <span class="badge badge-success">✓ Done</span>
-                        {% else %}
-                        <span class="badge badge-error">Pending</span>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                {% if not answered.value %}
-                <div style="background: #f8fafc; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <form onsubmit="submitAnswer(event, '{{ requirement|escape }}')">
-                        
-                        {# ====== Q1: Do you have this? ====== #}
-                        <div style="margin-bottom: 24px;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 15px;">
-                                Do you have experience with <strong>{{ requirement }}</strong>?
-                            </label>
-                            <div style="display: flex; gap: 12px;">
-                                <label style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e2e8f0'">
-                                    <input type="radio" name="has_skill" value="yes" required style="width: 20px; height: 20px;">
-                                    <span style="font-size: 15px;">Yes, I have this</span>
-                                </label>
-                                <label style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e2e8f0'">
-                                    <input type="radio" name="has_skill" value="partially" style="width: 20px; height: 20px;">
-                                    <span style="font-size: 15px;">Partially</span>
-                                </label>
-                                <label style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#0a0a0a'" onmouseout="this.style.borderColor='#e2e8f0'">
-                                    <input type="radio" name="has_skill" value="no" style="width: 20px; height: 20px;">
-                                    <span style="font-size: 15px;">No, I don't</span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        {# ====== Q2: Which job/context? ====== #}
-                        <div style="margin-bottom: 24px;">
-                            <label style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 15px;">
-                                Which job or project did you gain this experience in?
-                           　</label>
-                            <textarea name="job_context" rows="3" placeholder="e.g., Senior Engineer role at ABC Corp, or my freelance work" style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; font-family: inherit; resize: vertical;"></textarea>
-                        </div>
-                        
-                        {# ====== Q3: Add to CV? ====== #}
-                        <div style="margin-bottom: 24px;">
-                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                <input type="checkbox" name="update_profile" id="update_{{ requirement|replace(' ', '_') }}" value="true" checked style="width: 20px; height: 20px;">
-                                <label for="update_{{ requirement|replace(' ', '_') }}" style="cursor: pointer; font-size: 15px; font-weight: 500;">
-                                    Add this to my CV profile
-                                </label>
-                            </label>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-success" style="width: 100%; padding: 16px; font-size: 16px; border-radius: 8px;">
-                            Submit Answer
-                        </button>
-                    </form>
-                </div>
-                
-                {% else %}
-                {# ====== SHOW ANSWERED RESULT ====== #}
-                <div style="background: #f0fdf4; padding: 20px; border-radius: 8px;">
-                    <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Your answer:</p>
-                    <p style="font-size: 15px; margin-bottom: 16px;">{{ current_answer.value.user_answer }}</p>
-                    <p style="font-size: 13px; color: #059669; margin-bottom: 8px; font-weight: 600;">Will be added to your CV as:</p>
-                    <p style="font-size: 15px; color: #059669;">{{ current_answer.value.ai_phrased }}</p>
-                </div>
-                <div style="margin-top: 16px;">
-                    <form onsubmit="submitAnswer(event, '{{ requirement|escape }}')" style="display: flex; gap: 12px;">
-                        <button type="submit" class="btn btn-secondary" style="flex: 1; padding: 12px; font-size: 14px;">
-                            Update Answer
-                        </button>
-                        <input type="hidden" name="job_context" value="">
-                    </form>
-                </div>
-                {% endif %}
+    </div>
+    {% if is_done.value and current_answer.value %}
+    <div class="answer-preview">
+        <strong>AI rewrite:</strong> {{ current_answer.value.ai_phrased }}
+        {% if current_answer.value.destination %}
+            <div style="margin-top: 6px; font-size: 12px; color: #64748b;">
+                → Added to: {{ current_answer.value.destination.label or current_answer.value.applied_to or 'CV' }}
             </div>
-            {% endfor %}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+        {% endfor %}
         </div>
-        
-        {# ====== GENERATE TAILORED CV BUTTON ====== #}
-        <div style="margin-top: 40px; text-align: center;">
-            <a href="/cv/tailor" class="btn btn-success" style="font-size: 18px; padding: 18px 48px; border-radius: 10px;">
+
+        <div style="text-align: center; margin-top: 32px;">
+            <a href="/cv/tailor" class="btn btn-success" style="font-size: 18px; padding: 16px 40px; border-radius: 10px;">
                 Generate My Tailored CV →
             </a>
         </div>
-        
         {% else %}
-        <div class="card" style="text-align: center; padding: 60px 40px;">
-            <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 16px;">No gaps to fill</h3>
-            <p style="color: #64748b; margin-bottom: 32px;">Your CV looks great for this job!</p>
-            <a href="/cv/tailor" class="btn btn-primary">Generate Tailored CV</a>
+        <div style="text-align: center; padding: 60px 40px;">
+            <h3 style="font-size: 22px; margin-bottom: 12px;">No gaps to fill</h3>
+            <p style="color: #64748b; margin-bottom: 28px;">Your CV covers all the requirements. Let's generate the tailored version.</p>
+            <a href="/cv/tailor" class="btn btn-primary" style="font-size: 16px;">Generate Tailored CV →</a>
         </div>
         {% endif %}
     </div>
 </div>
 
+<!-- ===== GAP WIZARD MODAL ===== -->
+<div id="gap-modal" class="modal-overlay">
+<div class="modal-box">
+
+<!-- STEP 1: Question + Answer -->
+<div id="modal-step1">
+    <button onclick="closeGapModal()" class="modal-close">&times;</button>
+    <div class="step-header">
+        <div class="step-label">Step 1 of 3</div>
+        <div class="step-title">Tell me your story</div>
+        <div class="step-subtitle">I'll turn it into professional CV language</div>
+    </div>
+    <div id="modal-req-badge" class="req-badge"></div>
+    <p id="modal-question-text" style="color: #475569; font-size: 15px; margin-bottom: 16px;"></p>
+    <textarea id="gap-answer-input" rows="5" placeholder="Describe your experience in your own words..."
+              style="width: 100%; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; font-size: 15px; font-family: inherit; box-sizing: border-box; resize: vertical;"></textarea>
+    <div id="step1-error" style="color: #dc2626; font-size: 13px; margin-top: 8px;"></div>
+    <div class="modal-actions">
+        <button onclick="closeGapModal()" class="btn btn-secondary">Skip</button>
+        <button onclick="submitGapStep1()" id="step1-btn" class="btn btn-primary" style="min-width: 140px;">Submit</button>
+    </div>
+</div>
+
+<!-- STEP 2: AI interprets + Destination picker -->
+<div id="modal-step2" style="display: none;">
+    <button onclick="closeGapModal()" class="modal-close">&times;</button>
+    <div class="step-header">
+        <div class="step-label">Step 2 of 3</div>
+        <div class="step-title">Where should this go?</div>
+        <div class="step-subtitle">Pick the best place on your CV</div>
+    </div>
+    <div id="step2-ai-output" class="ai-spinner">
+        <div class="ring"></div>
+        <p>AI is interpreting your answer...</p>
+    </div>
+    <div id="step2-content" style="display: none;">
+        <div id="step2-interpreted" class="interpreted-box">
+            <p id="step2-interpreted-text"></p>
+        </div>
+        <div id="step2-dest-label" style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;">Which job should this go under?</div>
+        <div id="step2-dest-grid" class="dest-grid"></div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button onclick="closeGapModal()" class="btn btn-secondary">Cancel</button>
+            <button onclick="submitGapStep2()" id="step2-btn" class="btn btn-primary">Continue →</button>
+        </div>
+    </div>
+</div>
+
+<!-- STEP 3: Confirm -->
+<div id="modal-step3" style="display: none;">
+    <button onclick="closeGapModal()" class="modal-close">&times;</button>
+    <div class="step-header">
+        <div class="step-label">Step 3 of 3</div>
+        <div class="step-title">Confirm and Save</div>
+        <div class="step-subtitle">I'll update your CV profile with this</div>
+    </div>
+    <div id="step3-body">
+        <div class="confirm-preview">
+            <div class="label">Adding to your CV as</div>
+            <div id="step3-dest-tag" class="dest-tag"></div>
+            <div id="step3-interpreted" class="text" style="margin-top: 10px;"></div>
+        </div>
+        <div style="margin-bottom: 12px;">
+            <label style="font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">Edit before saving (optional)</label>
+            <textarea id="step3-edit-input" class="edit-textarea" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button onclick="submitGapStep3('skip')" class="btn btn-secondary">Skip</button>
+            <button onclick="submitGapStep3('edit')" id="step3-edit-btn" class="btn btn-secondary">Edit & Save</button>
+            <button onclick="submitGapStep3('confirm')" id="step3-confirm-btn" class="btn btn-success">✓ Yes, Add to CV</button>
+        </div>
+    </div>
+</div>
+
+</div>
+</div>
+
 <script>
-async function submitAnswer(event, requirement) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const formData = new FormData(form);
-    
-    let answer = '';
-    const hasSkill = formData.get('has_skill');
-    const jobContext = formData.get('job_context');
-    
-    if (hasSkill) {
-        const labels = { 'yes': 'Yes, I have this experience.', 'partially': 'Partially.', 'no': 'No, I don\'t have this experience.' };
-        answer = labels[hasSkill] || '';
-    }
-    if (jobContext) {
-        answer += ' ' + jobContext;
-    }
-    
-    const updateProfile = formData.get('update_profile') === 'true';
-    
-    if (!answer.trim()) {
-        alert('Please provide an answer.');
+// State
+let currentRequirement = '';
+let currentType = '';
+let currentQuestion = '';
+let currentAnswer = '';
+let currentInterpreted = '';
+let currentCategory = '';
+let currentDestinations = [];
+let selectedDestination = null;
+
+// Open wizard (maps to gap_answer.html's openGapModal)
+function openGapWizard(requirement, type, question) {
+    currentRequirement = requirement;
+    currentType = type;
+    currentQuestion = question || 'Tell me about your experience with this requirement.';
+
+    document.getElementById('modal-req-badge').textContent = requirement;
+    document.getElementById('modal-req-badge').className = 'req-badge ' + (type === 'partial' ? 'partial' : 'missing');
+    document.getElementById('modal-question-text').textContent = question || 'Tell me about your experience with this requirement.';
+    document.getElementById('gap-answer-input').value = '';
+    document.getElementById('step1-error').textContent = '';
+    document.getElementById('step2-ai-output').style.display = 'none';
+    document.getElementById('step2-content').style.display = 'none';
+    document.getElementById('modal-step1').style.display = 'block';
+    document.getElementById('modal-step2').style.display = 'none';
+    document.getElementById('modal-step3').style.display = 'none';
+    document.getElementById('gap-modal').classList.add('active');
+}
+
+function closeGapModal() {
+    document.getElementById('gap-modal').classList.remove('active');
+    currentRequirement = '';
+    currentAnswer = '';
+    currentInterpreted = '';
+    selectedDestination = null;
+}
+
+// Step 1: Submit initial answer → AI interprets
+async function submitGapStep1() {
+    const input = document.getElementById('gap-answer-input');
+    const answer = input.value.trim();
+    if (!answer) {
+        document.getElementById('step1-error').textContent = 'Please describe your experience first.';
         return;
     }
-    
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Processing...';
-    
+    currentAnswer = answer;
+
+    const btn = document.getElementById('step1-btn');
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
     try {
-        const response = await fetch('/gap/answer', {
+        const resp = await fetch('/gap/interpret', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ requirement: currentRequirement, answer: answer })
+        });
+        const data = await resp.json();
+        btn.disabled = false;
+        btn.textContent = 'Submit';
+
+        if (!data.success) {
+            document.getElementById('step1-error').textContent = data.error || 'Something went wrong.';
+            return;
+        }
+
+        currentInterpreted = data.interpreted || '';
+        currentCategory = data.category || 'other';
+
+        // Build destinations list
+        currentDestinations = [];
+        if (data.destinations && data.destinations.length > 0) {
+            currentDestinations = data.destinations;
+        }
+
+        // Start step 2
+        showStep2();
+    } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Submit';
+        document.getElementById('step1-error').textContent = 'Network error: ' + err.message;
+    }
+}
+
+// Step 2: Show interpreted answer + destination picker
+async function showStep2() {
+    document.getElementById('modal-step1').style.display = 'none';
+    document.getElementById('modal-step2').style.display = 'block';
+    document.getElementById('step2-ai-output').style.display = 'flex';
+    document.getElementById('step2-content').style.display = 'none';
+
+    document.getElementById('step2-interpreted-text').textContent = currentInterpreted;
+
+    // Build destination grid
+    const grid = document.getElementById('step2-dest-grid');
+    grid.innerHTML = '';
+    selectedDestination = null;
+
+    // Job options
+    const jobDests = currentDestinations.filter(d => d.type === 'job');
+    const catDests = currentDestinations.filter(d => d.type === 'category');
+
+    let html = '';
+    const iconMap = {
+        'job': '💼',
+        'category': '📋',
+        'skill': '⚡',
+        'language': '🌐',
+        'certification': '🏆',
+        'project': '🚀',
+    };
+    for (const dest of currentDestinations) {
+        const icon = iconMap[dest.type] || '📄';
+        if (dest.type === 'job') {
+            html += `<div class="dest-card" onclick="selectDestination(${currentDestinations.indexOf(dest)})">
+                <div class="dest-icon">${icon}</div>
+                <div class="dest-info">
+                    <div class="dest-title">${dest.title || 'Work Experience'}</div>
+                    <div class="dest-sub">${dest.company || ''} ${dest.years || ''}</div>
+                </div>
+            </div>`;
+        } else {
+            html += `<div class="dest-card" onclick="selectDestination(${currentDestinations.indexOf(dest)})">
+                <div class="dest-icon">${icon}</div>
+                <div class="dest-info">
+                    <div class="dest-title">${dest.label || dest.type}</div>
+                </div>
+            </div>`;
+        }
+    }
+    grid.innerHTML = html || '<p style="color: #64748b; font-size: 14px;">Add to my overall CV profile</p>';
+
+    document.getElementById('step2-ai-output').style.display = 'none';
+    document.getElementById('step2-content').style.display = 'block';
+}
+
+function selectDestination(idx) {
+    selectedDestination = currentDestinations[idx] || currentDestinations[0];
+    document.querySelectorAll('.dest-card').forEach((c, i) => {
+        c.classList.toggle('selected', i === idx);
+    });
+}
+
+// Step 2 submit → user picks destination → show step 3
+async function submitGapStep2() {
+    if (currentDestinations.length > 0 && !selectedDestination) {
+        selectedDestination = currentDestinations.find(d => d.type !== 'job') || currentDestinations[0];
+    }
+    if (!selectedDestination) {
+        selectedDestination = { type: 'category', label: 'Add to Summary' };
+    }
+
+    // Show step 3 confirmation
+    document.getElementById('modal-step2').style.display = 'none';
+    document.getElementById('modal-step3').style.display = 'block';
+
+    let label = selectedDestination.label || selectedDestination.type || '';
+    if (selectedDestination.type === 'job') {
+        label = `${selectedDestination.title || 'Work'} @ ${selectedDestination.company || ''}`;
+    }
+    document.getElementById('step3-dest-tag').textContent = label;
+    document.getElementById('step3-interpreted').textContent = currentInterpreted;
+    document.getElementById('step3-edit-input').value = currentInterpreted;
+}
+
+// Step 3: Confirm / Edit / Skip
+async function submitGapStep3(action) {
+    if (action === 'skip') {
+        closeGapModal();
+        // Mark as done with just the interpreted text (no CV update)
+        await fetch('/gap/confirm-answer', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                requirement: requirement,
-                answer: answer.trim(),
-                update_profile: updateProfile
+                requirement: currentRequirement,
+                answer: currentAnswer,
+                interpreted: currentInterpreted,
+                category: currentCategory,
+                destination: selectedDestination || {},
+                cv_modification: {}
             })
         });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.error || 'Failed to save answer');
+        location.reload();
+        return;
+    }
+
+    const btn = action === 'edit'
+        ? document.getElementById('step3-edit-btn')
+        : document.getElementById('step3-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    const finalText = action === 'edit'
+        ? document.getElementById('step3-edit-input').value.trim()
+        : currentInterpreted;
+
+    try {
+        const resp = await fetch('/gap/confirm-destination', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                requirement: currentRequirement,
+                answer: currentAnswer,
+                interpreted: finalText,
+                category: currentCategory,
+                destination: selectedDestination || {}
+            })
+        });
+        const data = await resp.json();
+
+        if (!data.success) {
+            btn.disabled = false;
+            btn.textContent = action === 'edit' ? 'Edit & Save' : '✓ Yes, Add to CV';
+            alert(data.error || 'Failed to save');
+            return;
         }
+
+        // Now commit the final confirmation
+        const resp2 = await fetch('/gap/confirm-answer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                requirement: currentRequirement,
+                answer: currentAnswer,
+                interpreted: finalText,
+                category: currentCategory,
+                destination: selectedDestination || {},
+                cv_modification: data.cv_modification || {}
+            })
+        });
+
+        btn.disabled = false;
+        btn.textContent = action === 'edit' ? 'Edit & Save' : '✓ Yes, Add to CV';
+        closeGapModal();
+        location.reload();
     } catch (err) {
+        btn.disabled = false;
+        btn.textContent = action === 'edit' ? 'Edit & Save' : '✓ Yes, Add to CV';
         alert('Network error: ' + err.message);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
     }
 }
+
+// Enter key submits step 1
+document.getElementById('gap-answer-input')?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.ctrlKey) {
+        submitGapStep1();
+    }
+});
 </script>
 {% endblock %}
