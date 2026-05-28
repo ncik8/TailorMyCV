@@ -828,8 +828,18 @@ def gap_analysis_page():
     if not job_data or not job_data.get('description'):
         return redirect(url_for('job_paste_page'))
 
+    # Load or generate gaps
     gaps = session.get('gaps')
-    interview_likelihood = gaps.get('interview_likelihood', 50) if gaps else 50
+    if not gaps:
+        requirements = extract_requirements(job_data.get('description', ''))
+        try:
+            gaps = analyze_gaps(cv_data, requirements)
+            session['gaps'] = gaps
+            session['gap_answers'] = []
+        except Exception as e:
+            return render_template('gap_analyze.html', gaps={}, questions=[], interview_likelihood=50, error=str(e))
+
+    interview_likelihood = gaps.get('interview_likelihood', 50)
     return render_template('gap_analyze.html', gaps=gaps, interview_likelihood=interview_likelihood)
 
 
