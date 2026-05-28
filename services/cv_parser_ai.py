@@ -113,23 +113,24 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
         result = response.json()
         raw_content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
         raw_reasoning = result.get("choices", [{}])[0].get("message", {}).get("reasoning_content", "")
-        content = raw_content if raw_content and len(raw_content) > 10 else raw_reasoning
 
-        # Clean up any markdown code blocks or reasoning
-        content = content.strip()
-        if content.startswith("```"):
-            content = content.strip("`")
-            if content.startswith("json"):
-                content = content[4:]
-            content = content.strip()
+        # Prefer content field, fall back to reasoning, then combine both
+        if raw_content and len(raw_content.strip()) > 10:
+            content = raw_content.strip()
+        elif raw_reasoning and len(raw_reasoning.strip()) > 10:
+            content = raw_reasoning.strip()
+        elif raw_content:
+            content = raw_content.strip()
+        else:
+            return {"error": "AI returned empty response."}
 
-        # Strip reasoning content that might be appended after JSON
+        # Always try to extract JSON from the response — look for {...} anywhere
         import re
         json_match = re.search(r'\{[\s\S]*\}', content)
         if json_match:
             content = json_match.group(0)
-        elif content.startswith("The user asks") or len(content) < 20:
-            return {"error": "AI returned reasoning but no parsable JSON. Check model output."}
+        else:
+            return {"error": f"AI returned non-JSON response: {content[:200]}"}
 
         cv_data = json.loads(content)
 
@@ -139,7 +140,9 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
         return cv_data
 
     except json.JSONDecodeError as e:
-        return {"error": f"AI returned invalid JSON: {str(e)}. Raw response: {content[:500]}"}
+        # content is the extracted JSON string — show a preview for debugging
+        preview = locals().get('content', 'unknown')[:300]
+        return {"error": f"AI returned invalid JSON: {str(e)}. Extracted content: {preview}"}
     except requests.exceptions.Timeout:
         return {"error": "AI parsing timed out. Please try again."}
     except Exception as e:
