@@ -637,6 +637,7 @@ def confirm_job_route():
 def save_job_description(job_record: dict) -> str:
     """Save job description + ATS keywords to Supabase, return job_id."""
     try:
+        supabase = get_supabase_client()
         user_id = job_record.get('user_id')
         if not user_id:
             return None
@@ -669,6 +670,7 @@ def save_job_description(job_record: dict) -> str:
 def load_job_description(user_id: str) -> dict:
     """Load job description + ATS keywords from Supabase."""
     try:
+        supabase = get_supabase_client()
         result = supabase.table('job_descriptions').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(1).execute()
         if result.data:
             jd = result.data[0]
