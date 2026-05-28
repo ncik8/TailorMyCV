@@ -39,7 +39,7 @@
         </div>
         {% endif %}
 
-        {% if session.get('cv_data') %}
+        {% if cv_data %}
         <div class="card" style="margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                 <h3 style="font-size: 18px; font-weight: 600;">Your Profile</h3>
@@ -48,72 +48,72 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                 <div>
                     <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Name</div>
-                    <div style="font-weight: 500;">{{ session.cv_data.name or '—' }}</div>
+                    <div style="font-weight: 500;">{{ cv_data.name or '—' }}}</div>
                 </div>
                 <div>
                     <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Title</div>
-                    <div style="font-weight: 500;">{{ session.cv_data.title or '—' }}</div>
+                    <div style="font-weight: 500;">{{ cv_data.title or '—' }}</div>
                 </div>
                 <div>
                     <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Email</div>
-                    <div style="font-weight: 500;">{{ session.cv_data.email or '—' }}</div>
+                    <div style="font-weight: 500;">{{ cv_data.email or '—' }}</div>
                 </div>
                 <div>
                     <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Phone</div>
-                    <div style="font-weight: 500;">{{ session.cv_data.phone or '—' }}</div>
+                    <div style="font-weight: 500;">{{ cv_data.phone or '—' }}</div>
                 </div>
                 <div>
                     <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 2px;">Location</div>
-                    <div style="font-weight: 500;">{{ session.cv_data.location or '—' }}</div>
+                    <div style="font-weight: 500;">{{ cv_data.location or '—' }}</div>
                 </div>
             </div>
-            {% if session.cv_data.summary %}
+            {% if cv_data.summary %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 4px;">Summary</div>
-                <div style="color: rgba(10,10,10,.7); font-size: 14px; line-height: 1.6;">{{ session.cv_data.summary[:200] }}{% if session.cv_data.summary|length > 200 %}...{% endif %}</div>
+                <div style="color: rgba(10,10,10,.7); font-size: 14px; line-height: 1.6;">{{ cv_data.summary[:200] }}{% if cv_data.summary|length > 200 %}...{% endif %}</div>
             </div>
             {% endif %}
-            {% if session.cv_data.experience and session.cv_data.experience|length > 0 %}
+            {% if cv_data.experience and cv_data.experience|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Experience</div>
-                {% for exp in session.cv_data.experience[:3] %}
+                {% for exp in cv_data.experience[:3] %}
                 <div style="margin-bottom: 8px; padding-left: 12px; border-left: 2px solid var(--border);">
                     <div style="font-weight: 500; font-size: 14px;">{{ exp.title or exp.job_title or '—' }}</div>
                     <div style="font-size: 13px; color: rgba(10,10,10,.6);">{{ exp.company or '—' }}{% if exp.dates or exp.start_date %} · {{ exp.dates or exp.start_date }}{% endif %}</div>
                 </div>
                 {% endfor %}
-                {% if session.cv_data.experience|length > 3 %}
-                <div style="font-size: 13px; color: rgba(10,10,10,.4);">+ {{ session.cv_data.experience|length - 3 }} more</div>
+                {% if cv_data.experience|length > 3 %}
+                <div style="font-size: 13px; color: rgba(10,10,10,.4);">+ {{ cv_data.experience|length - 3 }} more</div>
                 {% endif %}
             </div>
             {% endif %}
-            {% if session.cv_data.skills and session.cv_data.skills|length > 0 %}
+            {% if cv_data.skills and cv_data.skills|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Skills</div>
                 <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    {% for skill in session.cv_data.skills[:12] %}
+                    {% for skill in cv_data.skills[:12] %}
                     <span style="background: var(--bg-2, #f0f0eb); border: 1px solid var(--border, #e0e0db); border-radius: 4px; padding: 4px 10px; font-size: 12px;">{{ skill }}</span>
                     {% endfor %}
-                    {% if session.cv_data.skills|length > 12 %}
-                    <span style="font-size: 12px; color: rgba(10,10,10,.4);">+ {{ session.cv_data.skills|length - 12 }} more</span>
+                    {% if cv_data.skills|length > 12 %}
+                    <span style="font-size: 12px; color: rgba(10,10,10,.4);">+ {{ cv_data.skills|length - 12 }} more</span>
                     {% endif %}
                 </div>
             </div>
             {% endif %}
-            {% if session.cv_data.languages and session.cv_data.languages|length > 0 %}
+            {% if cv_data.languages and cv_data.languages|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Languages</div>
                 <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    {% for lang in session.cv_data.languages %}
+                    {% for lang in cv_data.languages %}
                     <span style="background: rgba(79,70,229,0.1); color: #4f46e5; padding: 4px 10px; border-radius: 20px; font-size: 13px;">{{ lang.language or lang }}{% if lang.level %} · {{ lang.level }}{% endif %}</span>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
-            {% if session.cv_data.additional_info and session.cv_data.additional_info|length > 0 %}
+            {% if cv_data.additional_info and cv_data.additional_info|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Additional Info</div>
-                {% for info in session.cv_data.additional_info %}
+                {% for info in cv_data.additional_info %}
                 <div style="font-size: 14px; margin-bottom: 4px;">
                     {% if info.label %}<span style="font-weight: 500;">{{ info.label }}</span>{% endif %}
                     {% if info.content %} · {{ info.content }}{% endif %}
@@ -121,10 +121,10 @@
                 {% endfor %}
             </div>
             {% endif %}
-            {% if session.cv_data.education and session.cv_data.education|length > 0 %}
+            {% if cv_data.education and cv_data.education|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Education</div>
-                {% for edu in session.cv_data.education[:2] %}
+                {% for edu in cv_data.education[:2] %}
                 <div style="font-size: 14px; margin-bottom: 4px;">
                     <span style="font-weight: 500;">{{ edu.degree or edu.field or '—' }}</span>
                     {% if edu.school %} · {{ edu.school }}{% endif %}

@@ -309,7 +309,7 @@ def dashboard():
     if not cv_data:
         cv_data = session.get('cv_data')
     upgrade_success = request.args.get('upgrade') == 'success'
-    return render_template('dashboard.html', upgrade_success=upgrade_success)
+    return render_template('dashboard.html', upgrade_success=upgrade_success, cv_data=cv_data)
 
 
 @app.route('/cv/upload')
