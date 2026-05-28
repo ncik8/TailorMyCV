@@ -778,7 +778,59 @@ def gap_answer_page():
     questions = generate_gap_questions(gaps)
     answers = session.get('gap_answers', [])
 
-    return render_template('gap_answer.html', gaps=gaps, questions=questions, answers=answers)
+    # Build all_gaps list for the chat UI
+    import json as _json
+    all_gaps = []
+    for p in (gaps.get('partials') or []):
+        req = p.get('requirement', '')
+        q = questions.get(req, [None] * 3)[0] if isinstance(questions, dict) else None
+        answer = next((a for a in answers if a.get('requirement') == req), None)
+        all_gaps.append({
+            'requirement': req,
+            'type': 'partial',
+            'gap': p,
+            'question': q or p.get('question', ''),
+            'answer': answer
+        })
+    for m in (gaps.get('missing') or []):
+        req = m.get('requirement', '')
+        q = questions.get(req, [None] * 3)[0] if isinstance(questions, dict) else None
+        answer = next((a for a in answers if a.get('requirement') == req), None)
+        all_gaps.append({
+            'requirement': req,
+            'type': 'missing',
+            'gap': m,
+            'question': q or m.get('question', ''),
+            'answer': answer
+        })
+
+    # Build start messages from existing answers
+    start_messages = []
+    for item in all_gaps:
+        if item.get('answer'):
+            start_messages.append({
+                'role': 'coach',
+                'text': f"Let's talk about: {item['requirement']}",
+                'requirement': item['requirement'],
+                'timestamp': ''
+            })
+            start_messages.append({
+                'role': 'user',
+                'text': item['answer'].get('user_answer', ''),
+                'timestamp': ''
+            })
+            start_messages.append({
+                'role': 'ai',
+                'text': f"Great story! Here's how I'll add it to your CV:\n\n\"{item['answer'].get('ai_phrased', '')}\"",
+                'confirmed': True,
+                'timestamp': ''
+            })
+
+    return render_template('gap_answer.html',
+        gaps=gaps, questions=questions, answers=answers,
+        all_gaps_json=_json.dumps(all_gaps),
+        start_messages_json=_json.dumps(start_messages),
+        cv_data_json=_json.dumps(cv_data))
 
 
 @app.route('/gap/interpret', methods=['POST'])
