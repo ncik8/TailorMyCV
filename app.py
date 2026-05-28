@@ -2,6 +2,7 @@ import os
 import json
 import tempfile
 import stripe as _stripe
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -595,23 +596,94 @@ def confirm_job_route():
     """API: User confirmed the job description text."""
     data = request.get_json()
     confirmed_text = data.get('text', '').strip()
-    
+
     if not confirmed_text:
         return jsonify({'error': 'No job description provided'}), 400
-    
+
     if len(confirmed_text) < 50:
         return jsonify({'error': 'Job description seems too short. Please provide more detail.'}), 400
-    
-    # Update job_data with confirmed text
-    job_data = session.get('job_data') or {}
-    job_data['description'] = confirmed_text
-    session['job_data'] = job_data
-    
-    # Re-extract requirements from confirmed text
+
+    # Store job description + ATS analysis in Supabase (not session cookie)
+    user_id = session.get('user_id')
     requirements = extract_requirements(confirmed_text)
+
+    # Extract ATS keywords: flatten all requirement categories into a keyword list
+    ats_keywords = []
+    for category in ['skills', 'certifications', 'tools', 'other']:
+        for item in requirements.get(category, []):
+            if isinstance(item, dict):
+                ats_keywords.append(item.get('keyword', '') or item.get('name', ''))
+            elif isinstance(item, str):
+                ats_keywords.append(item)
+    # Deduplicate
+    ats_keywords = list(dict.fromkeys(k for k in ats_keywords if k))
+
+    job_record = {
+        'user_id': user_id,
+        'description': confirmed_text,
+        'title': '',
+        'company': '',
+        'ats_keywords': json.dumps(ats_keywords)
+    }
+    job_id = save_job_description(job_record)
+
+    # Session only stores the ID reference — no cookie bloat
+    session['job_desc_id'] = job_id
     session['requirements'] = requirements
-    
-    return jsonify({'success': True, 'requirements': requirements})
+
+    return jsonify({'success': True, 'requirements': requirements, 'ats_keywords': ats_keywords})
+
+
+def save_job_description(job_record: dict) -> str:
+    """Save job description + ATS keywords to Supabase, return job_id."""
+    try:
+        user_id = job_record.get('user_id')
+        if not user_id:
+            return None
+
+        # Check if user already has a job description (replace it)
+        existing = supabase.table('job_descriptions').select('id').eq('user_id', user_id).execute()
+        job_data = {
+            'user_id': user_id,
+            'description': job_record.get('description', ''),
+            'title': job_record.get('title', ''),
+            'company': job_record.get('company', ''),
+            'ats_keywords': job_record.get('ats_keywords', '[]'),
+            'updated_at': datetime.now().isoformat()
+        }
+
+        if existing.data:
+            # Update existing
+            supabase.table('job_descriptions').update(job_data).eq('user_id', user_id).execute()
+            return existing.data[0]['id']
+        else:
+            # Insert new
+            job_data['created_at'] = datetime.now().isoformat()
+            result = supabase.table('job_descriptions').insert(job_data).execute()
+            return result.data[0]['id'] if result.data else None
+    except Exception as e:
+        app.logger.info(f"[JOB] save_job_description error: {e}")
+        return None
+
+
+def load_job_description(user_id: str) -> dict:
+    """Load job description + ATS keywords from Supabase."""
+    try:
+        result = supabase.table('job_descriptions').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(1).execute()
+        if result.data:
+            jd = result.data[0]
+            ats_keywords = jd.get('ats_keywords', '[]')
+            if isinstance(ats_keywords, str):
+                ats_keywords = json.loads(ats_keywords) if ats_keywords else []
+            return {
+                'description': jd.get('description', ''),
+                'title': jd.get('title', ''),
+                'company': jd.get('company', ''),
+                'ats_keywords': ats_keywords
+            }
+    except Exception as e:
+        app.logger.info(f"[JOB] load_job_description error: {e}")
+    return {}
 
 
 @app.route('/gap/analyze', methods=['POST'])
@@ -640,11 +712,17 @@ def gap_analyze_page():
     """Page: Show gaps + targeted questions."""
     init_session()
     cv_data = session.get('cv_data')
-    job_data = session.get('job_data')
+    user_id = session.get('user_id')
 
     if not cv_data:
         return redirect(url_for('cv_upload_page'))
-    if not job_data:
+
+    # Load job description from Supabase (not session cookie)
+    job_data = {}
+    if user_id:
+        job_data = load_job_description(user_id)
+
+    if not job_data or not job_data.get('description'):
         return redirect(url_for('job_paste_page'))
 
     requirements = session.get('requirements')
@@ -781,11 +859,10 @@ def tailor_cv_page():
         return redirect(url_for('cv_preview_page'))
 
     cv_data = session.get('cv_data')
-    job_data = session.get('job_data')
     gap_answers = session.get('gap_answers', [])
     user_id = session.get('user_id')
 
-    if not cv_data or not job_data:
+    if not cv_data:
         return redirect(url_for('cv_upload_page'))
 
     if user_id:
@@ -793,8 +870,15 @@ def tailor_cv_page():
         if not allowed:
             return redirect(url_for('upgrade_page'))
 
+    # Load job description + ATS keywords from Supabase
+    job_data = load_job_description(user_id) if user_id else {}
     job_description = job_data.get('description', '')
-    tailored = tailor_cv(cv_data, gap_answers, job_description)
+    ats_keywords = job_data.get('ats_keywords', [])
+
+    if not job_description:
+        return redirect(url_for('job_paste_page'))
+
+    tailored = tailor_cv(cv_data, gap_answers, job_description, ats_keywords)
     session['tailored_cv'] = tailored
 
     if user_id:
@@ -807,32 +891,35 @@ def tailor_cv_page():
 def tailor_cv_route():
     """API: Generate tailored CV."""
     cv_data = session.get('cv_data')
-    job_data = session.get('job_data')
     gap_answers = session.get('gap_answers', [])
     user_id = session.get('user_id')
-    
+
     if not cv_data:
         return jsonify({'error': 'No CV data'}), 400
-    
-    if not job_data:
+
+    # Load job description + ATS keywords from Supabase
+    job_data = load_job_description(user_id) if user_id else {}
+    job_description = job_data.get('description', '')
+    ats_keywords = job_data.get('ats_keywords', [])
+
+    if not job_description:
         return jsonify({'error': 'No job data'}), 400
-    
+
     # Check CV count gating if user is logged in
     if user_id:
         allowed, reason, profile = can_generate_cv(user_id)
         if not allowed:
             return jsonify({'error': 'limit_reached', 'redirect': url_for('upgrade_page')}), 403
-    
+
     try:
-        job_description = job_data.get('description', '')
-        tailored = tailor_cv(cv_data, gap_answers, job_description)
+        tailored = tailor_cv(cv_data, gap_answers, job_description, ats_keywords)
         session['tailored_cv'] = tailored
-        
+
         # Increment CV count if user is logged in
         if user_id:
             increment_cv_count(user_id)
             session['cv_count'] = profile.get('cv_count', 0) + 1
-        
+
         return jsonify({'success': True, 'tailored_cv': tailored})
     except Exception as e:
         return jsonify({'error': f'Failed to tailor CV: {str(e)}'}), 500

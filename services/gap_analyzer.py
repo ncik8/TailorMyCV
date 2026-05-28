@@ -38,6 +38,59 @@ Return ONLY a valid JSON object with this exact structure:
 No markdown, no explanation. Pure JSON only."""
 
 
+# ATS Keyword Scorer — checks how many job keywords appear in the CV
+def score_ats_keywords(cv_json: dict, requirements: dict) -> dict:
+    """
+    Check how many ATS keywords from the job appear in the CV.
+    Returns: {ats_score: 0-100, found: [...], missing: [...]}
+    """
+    import re
+    # Build flat list of ATS keywords from requirements
+    keywords = []
+    for category in ['skills', 'certifications', 'tools', 'other']:
+        for item in requirements.get(category, []):
+            if isinstance(item, str) and item:
+                keywords.append(item.lower())
+            elif isinstance(item, dict):
+                kw = item.get('keyword', '') or item.get('name', '') or item.get('certification', '')
+                if kw:
+                    keywords.append(kw.lower())
+
+    # Scan CV text (name, summary, skills, experience bullets, education)
+    cv_text_parts = [
+        cv_json.get('name', ''),
+        cv_json.get('title', ''),
+        cv_json.get('summary', ''),
+    ]
+    for exp in cv_json.get('experience', []):
+        cv_text_parts.append(exp.get('title', '') or '')
+        cv_text_parts.append(exp.get('company', '') or '')
+        cv_text_parts.append(exp.get('description', '') or '')
+        for bullet in exp.get('bullets', []):
+            cv_text_parts.append(bullet if isinstance(bullet, str) else bullet.get('text', ''))
+    for skill in cv_json.get('skills', []):
+        cv_text_parts.append(skill if isinstance(skill, str) else skill.get('name', ''))
+    for edu in cv_json.get('education', []):
+        cv_text_parts.append(edu.get('degree', '') or '')
+        cv_text_parts.append(edu.get('field', '') or '')
+        cv_text_parts.append(edu.get('school', '') or '')
+
+    cv_text = ' '.join(str(p) for p in cv_text_parts).lower()
+
+    found = []
+    missing = []
+    for kw in keywords:
+        # Match whole word (with word boundary)
+        pattern = r'\b' + re.escape(kw) + r'\b'
+        if re.search(pattern, cv_text):
+            found.append(kw)
+        else:
+            missing.append(kw)
+
+    score = int((len(found) / max(len(keywords), 1)) * 100) if keywords else 0
+    return {'ats_score': score, 'found': found, 'missing': missing}
+
+
 def extract_requirements(job_description: str) -> dict:
     """Extract requirements from job description using MiniMax."""
     response = chat(REQUIREMENTS_EXTRACTOR_PROMPT, job_description)
@@ -58,16 +111,16 @@ def extract_requirements(job_description: str) -> dict:
 
 
 def analyze_gaps(cv_json: dict, requirements: dict) -> dict:
-    """Analyze gaps between CV and job requirements."""
+    """Analyze gaps between CV and job requirements. Includes ATS keyword scoring."""
     cv_str = json.dumps(cv_json, indent=2)
     req_str = json.dumps(requirements)
-    
+
     prompt = GAP_ANALYZER_PROMPT.format(cv=cv_str, requirements=req_str)
     response = chat(prompt, prompt)
-    
+
     if isinstance(response, dict) and "error" in response:
         return response
-    
+
     try:
         text = response.strip()
         if text.startswith("```"):
@@ -75,7 +128,7 @@ def analyze_gaps(cv_json: dict, requirements: dict) -> dict:
             if text.startswith("json"):
                 text = text[4:]
         result = json.loads(text)
-        
+
         # Calculate interview likelihood score
         missing = result.get('missing', [])
         partials = result.get('partials', [])
@@ -83,14 +136,27 @@ def analyze_gaps(cv_json: dict, requirements: dict) -> dict:
         interview_likelihood = max(0, min(100, 80 - len(missing) * 15 - len(partials) * 7))
         requirement_count = len(matches) + len(partials) + len(missing)
         covered_count = len(matches)
-        
+
         result['interview_likelihood'] = interview_likelihood
         result['requirement_count'] = requirement_count
         result['covered_count'] = covered_count
-        
+
+        # ATS keyword scoring
+        ats_result = score_ats_keywords(cv_json, requirements)
+        result['ats_score'] = ats_result['ats_score']
+        result['ats_keywords_found'] = ats_result['found']
+        result['ats_keywords_missing'] = ats_result['missing']
+
+        # Boost interview likelihood by ATS score (max +10 points)
+        ats_boost = int((ats_result['ats_score'] - 50) / 10)  # -5 to +5 range
+        result['interview_likelihood'] = max(0, min(100, interview_likelihood + ats_boost))
+
         return result
     except json.JSONDecodeError:
         return {"error": "Failed to parse gaps", "raw": response}
+
+
+# ATS_KEYWORD_SCORER_PROMPT = ..."""  # (defined below as global)
 
 
 GAP_QNA_PROMPT = """You are an expert CV writer. Convert the user's informal answer into professional CV bullet point language.

@@ -88,10 +88,16 @@ Return ONLY a valid JSON object — no markdown, no explanation. Structure must 
 - experience.bullets: Use varied action verbs (Built, Led, Delivered, Transformed, Scaled). Quantify with numbers when available. Keep to 1-2 lines each.
 - summary: Write in first person, natural voice. Not generic.
 - If base CV has no education/certifications/languages for a section, omit that section from output (don't add fake data).
-- Keep language simple — no buzzwords, no padding."""
+- Keep language simple — no buzzwords, no padding.
+
+## ATS KEYWORD OPTIMIZATION
+The target job requires these specific keywords — use them naturally in your output where relevant:
+{ats_keywords_list}
+
+Prioritize these keywords in: summary opening, first experience bullets, skills section."""
 
 
-def tailor_cv(base_cv: dict, gap_answers: list, job_description: str) -> dict:
+def tailor_cv(base_cv: dict, gap_answers: list, job_description: str, ats_keywords: list = None) -> dict:
     """
     Tailor CV using base CV + gap answers + job description.
     
@@ -115,6 +121,9 @@ def tailor_cv(base_cv: dict, gap_answers: list, job_description: str) -> dict:
         })
     gap_answers_str = json.dumps(gap_formatted, indent=2)
     
+    # Format ats_keywords for the prompt
+    ats_keywords_list = ', '.join(ats_keywords) if ats_keywords else 'None provided'
+
     prompt = f"""{ATS_EXPERT_PROMPT}
 
 ## INPUT DATA
