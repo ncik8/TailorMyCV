@@ -700,50 +700,67 @@ function removeEdu(idx) {
 document.getElementById('profile-form').addEventListener('submit', function(e) {
     updateSkillsHidden();
 
-    // Remove existing indexed fields from any prior submit attempt
+    // Step 1: Collect flat field values from .exp-card and .edu-card BEFORE removing anything
+    const expValues = [];
+    document.querySelectorAll('.exp-card').forEach((card) => {
+        const vals = {};
+        ['exp_title', 'exp_company', 'exp_start', 'exp_end'].forEach(name => {
+            const el = card.querySelector(`[name="${name}"]`);
+            vals[name] = el ? el.value.trim() : '';
+        });
+        const bullets = [];
+        card.querySelectorAll('[name="exp_bullet"]').forEach(el => {
+            if (el.value.trim()) bullets.push(el.value.trim());
+        });
+        vals.bullets = bullets;
+        expValues.push(vals);
+    });
+
+    const eduValues = [];
+    document.querySelectorAll('.edu-card').forEach((card) => {
+        const vals = {};
+        ['edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
+            const el = card.querySelector(`[name="${name}"]`);
+            vals[name] = el ? el.value.trim() : '';
+        });
+        eduValues.push(vals);
+    });
+
+    // Step 2: Remove all flat and indexed fields
     ['exp_title_', 'exp_company_', 'exp_start_', 'exp_end_', 'edu_degree_', 'edu_field_', 'edu_school_', 'edu_year_'].forEach(prefix => {
         document.querySelectorAll(`[name^="${prefix}"]`).forEach(el => el.remove());
     });
-
-    // Remove flat (non-indexed) fields — submit JS rebuilds them as indexed before send
     ['exp_title', 'exp_company', 'exp_start', 'exp_end', 'edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
         document.querySelectorAll(`[name="${name}"]`).forEach(el => el.remove());
     });
 
-    // Rebuild exp_* indexed fields per .exp-card, in DOM order
-    document.querySelectorAll('.exp-card').forEach((card, cardIdx) => {
+    // Step 3: Rebuild indexed fields using saved values
+    expValues.forEach((vals, cardIdx) => {
         ['exp_title', 'exp_company', 'exp_start', 'exp_end'].forEach(name => {
-            const el = card.querySelector(`[name="${name}"]`);
-            if (el && el.value.trim()) {
+            if (vals[name]) {
                 const hidden = document.createElement('input');
                 hidden.type = 'hidden';
                 hidden.name = `${name}_${cardIdx}`;
-                hidden.value = el.value.trim();
+                hidden.value = vals[name];
                 document.getElementById('profile-form').appendChild(hidden);
             }
         });
-        // Bullets for this card: exp_bullet_{cardIdx}_{bulletIdx}
-        const bulletEls = card.querySelectorAll('[name="exp_bullet"]');
-        bulletEls.forEach((el, bulletIdx) => {
-            if (el.value.trim()) {
-                const hidden = document.createElement('input');
-                hidden.type = 'hidden';
-                hidden.name = `exp_bullet_${cardIdx}_${bulletIdx}`;
-                hidden.value = el.value.trim();
-                document.getElementById('profile-form').appendChild(hidden);
-            }
+        vals.bullets.forEach((bullet, bulletIdx) => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = `exp_bullet_${cardIdx}_${bulletIdx}`;
+            hidden.value = bullet;
+            document.getElementById('profile-form').appendChild(hidden);
         });
     });
 
-    // Rebuild edu_* indexed fields per .edu-card, in DOM order
-    document.querySelectorAll('.edu-card').forEach((card, cardIdx) => {
+    eduValues.forEach((vals, cardIdx) => {
         ['edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
-            const el = card.querySelector(`[name="${name}"]`);
-            if (el && el.value.trim()) {
+            if (vals[name]) {
                 const hidden = document.createElement('input');
                 hidden.type = 'hidden';
                 hidden.name = `${name}_${cardIdx}`;
-                hidden.value = el.value.trim();
+                hidden.value = vals[name];
                 document.getElementById('profile-form').appendChild(hidden);
             }
         });
