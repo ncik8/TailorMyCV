@@ -603,7 +603,7 @@ def confirm_job_route():
         return jsonify({'error': 'Job description seems too short. Please provide more detail.'}), 400
     
     # Update job_data with confirmed text
-    job_data = session.get('job_data', {})
+    job_data = session.get('job_data') or {}
     job_data['description'] = confirmed_text
     session['job_data'] = job_data
     
