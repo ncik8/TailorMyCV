@@ -28,9 +28,9 @@ app.config['DEBUG'] = False
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
 CORS(app)
 
-# Session storage — cookie-based (no server-side storage needed for MVP)
-# For multi-instance prod, switch to Supabase session or Redis
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+# Remove session cookie size limit (data is small enough for HTTPS cookies)
+app.config['SESSION_COOKIE_SIZE'] = None
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc'}
 
