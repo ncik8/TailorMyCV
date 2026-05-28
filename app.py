@@ -657,6 +657,9 @@ def save_job_description(job_record: dict) -> str:
             'title': job_record.get('title', ''),
             'company': job_record.get('company', ''),
             'ats_keywords': job_record.get('ats_keywords', '[]'),
+            'gaps': json.dumps(job_record.get('gaps')) if job_record.get('gaps') else None,
+            'requirements': json.dumps(job_record.get('requirements')) if job_record.get('requirements') else None,
+            'gap_answers': json.dumps(job_record.get('gap_answers', [])),
             'updated_at': datetime.now().isoformat()
         }
 
@@ -675,7 +678,7 @@ def save_job_description(job_record: dict) -> str:
 
 
 def load_job_description(user_id: str) -> dict:
-    """Load job description + ATS keywords from Supabase."""
+    """Load job description + ATS keywords + gap session data from Supabase."""
     try:
         supabase = get_supabase_client()
         result = supabase.table('job_descriptions').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(1).execute()
@@ -684,11 +687,27 @@ def load_job_description(user_id: str) -> dict:
             ats_keywords = jd.get('ats_keywords', '[]')
             if isinstance(ats_keywords, str):
                 ats_keywords = json.loads(ats_keywords) if ats_keywords else []
+
+            # Load gaps if present
+            gaps_raw = jd.get('gaps')
+            gaps = gaps_raw if isinstance(gaps_raw, dict) else (json.loads(gaps_raw) if gaps_raw else None)
+
+            # Load requirements if present
+            req_raw = jd.get('requirements')
+            requirements = req_raw if isinstance(req_raw, dict) else (json.loads(req_raw) if req_raw else None)
+
+            # Load gap answers if present
+            gap_answers_raw = jd.get('gap_answers')
+            gap_answers = gap_answers_raw if isinstance(gap_answers_raw, list) else (json.loads(gap_answers_raw) if gap_answers_raw else [])
+
             return {
                 'description': jd.get('description', ''),
                 'title': jd.get('title', ''),
                 'company': jd.get('company', ''),
-                'ats_keywords': ats_keywords
+                'ats_keywords': ats_keywords,
+                'gaps': gaps,
+                'requirements': requirements,
+                'gap_answers': gap_answers,
             }
     except Exception as e:
         app.logger.info(f"[JOB] load_job_description error: {e}")
@@ -765,42 +784,57 @@ def gap_answer_page():
 
     gaps = session.get('gaps')
     if not gaps:
-        job_data = {}
-        if user_id:
-            job_data = load_job_description(user_id)
-        if job_data and job_data.get('description'):
-            requirements = extract_requirements(job_data.get('description', ''))
+        # Try Supabase first (persistent gap data)
+        if job_data and job_data.get('gaps'):
+            gaps = job_data['gaps']
+        else:
+            # On-the-fly fallback — save back to Supabase so future loads are fast
+            requirements = job_data.get('requirements')
+            if not requirements:
+                requirements = extract_requirements(job_data.get('description', ''))
             gaps = analyze_gaps(cv_data, requirements)
             session['gaps'] = gaps
-        else:
-            return redirect(url_for('job_paste_page'))
+            # Persist to Supabase for next load
+            try:
+                save_job_description({
+                    'user_id': user_id,
+                    'description': job_data.get('description', ''),
+                    'gaps': gaps,
+                    'requirements': requirements,
+                    'gap_answers': [],
+                })
+            except Exception:
+                pass
 
     questions = generate_gap_questions(gaps)
-    answers = session.get('gap_answers', [])
+    # Gap answers — prefer Supabase (survives cookie limits), fall back to session
+    answers = job_data.get('gap_answers') if job_data else None
+    if answers is None:
+        answers = session.get('gap_answers', [])
 
-    # Build all_gaps list for the chat UI
+    # Build all_gaps list for the chat UI — NO MiniMax calls here, use gap data directly
     import json as _json
     all_gaps = []
     for p in (gaps.get('partials') or []):
         req = p.get('requirement', '')
-        q = questions.get(req, [None] * 3)[0] if isinstance(questions, dict) else None
+        q = questions.get(req, [None] * 3)[0] if isinstance(questions, dict) and req in questions else None
         answer = next((a for a in answers if a.get('requirement') == req), None)
         all_gaps.append({
             'requirement': req,
             'type': 'partial',
             'gap': p,
-            'question': q or p.get('question', ''),
+            'question': q or p.get('question', '') or f"Tell me about your experience with {req}. What did you actually do?",
             'answer': answer
         })
     for m in (gaps.get('missing') or []):
         req = m.get('requirement', '')
-        q = questions.get(req, [None] * 3)[0] if isinstance(questions, dict) else None
+        q = questions.get(req, [None] * 3)[0] if isinstance(questions, dict) and req in questions else None
         answer = next((a for a in answers if a.get('requirement') == req), None)
         all_gaps.append({
             'requirement': req,
             'type': 'missing',
             'gap': m,
-            'question': q or m.get('question', ''),
+            'question': q or m.get('question', '') or f"Tell me about your experience with {req}. Even a brief example counts!",
             'answer': answer
         })
 
@@ -955,6 +989,16 @@ def gap_confirm_answer_route():
             answers.append(gap_answer)
         session['gap_answers'] = answers
 
+        # Persist gap answers to Supabase (survives session cookie loss)
+        try:
+            job_desc_record = {
+                'user_id': user_id,
+                'gap_answers': answers,
+            }
+            save_job_description(job_desc_record)
+        except Exception as e:
+            app.logger.info(f"[GAP] Failed to persist gap answers: {e}")
+
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1028,16 +1072,28 @@ def gap_analysis_page():
     if not job_data or not job_data.get('description'):
         return redirect(url_for('job_paste_page'))
 
-    # Load or generate gaps
-    gaps = session.get('gaps')
+    # Load or generate gaps — prefer Supabase, fall back to on-the-fly
+    gaps = job_data.get('gaps')
     if not gaps:
-        requirements = extract_requirements(job_data.get('description', ''))
+        requirements = job_data.get('requirements')
+        if not requirements:
+            requirements = extract_requirements(job_data.get('description', ''))
         try:
             gaps = analyze_gaps(cv_data, requirements)
-            session['gaps'] = gaps
-            session['gap_answers'] = []
         except Exception as e:
             return render_template('gap_analyze.html', gaps={}, questions=[], interview_likelihood=50, error=str(e))
+
+    # Persist gaps to Supabase for session-free access
+    try:
+        job_record = {
+            'user_id': user_id,
+            'description': job_data.get('description', ''),
+            'gaps': gaps,
+            'requirements': job_data.get('requirements'),
+        }
+        save_job_description(job_record)
+    except Exception as e:
+        app.logger.info(f"[GAP] Failed to save gaps to Supabase: {e}")
 
     interview_likelihood = gaps.get('interview_likelihood', 50)
     return render_template('gap_analyze.html', gaps=gaps, interview_likelihood=interview_likelihood)
