@@ -98,9 +98,20 @@
                     {% if session.cv_data.skills|length > 12 %}
                     <span style="font-size: 12px; color: rgba(10,10,10,.4);">+ {{ session.cv_data.skills|length - 12 }} more</span>
                     {% endif %}
+            </div>
+            {% endif %}
+
+            {% if session.cv_data.languages and session.cv_data.languages|length > 0 %}
+            <div style="margin-top: 16px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Languages</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    {% for lang in session.cv_data.languages %}
+                    <span style="background: rgba(79,70,229,0.1); color: #4f46e5; padding: 4px 10px; border-radius: 20px; font-size: 13px;">{{ lang.language or lang }}{% if lang.level %} · {{ lang.level }}{% endif %}</span>
+                    {% endfor %}
                 </div>
             </div>
             {% endif %}
+
             {% if session.cv_data.education and session.cv_data.education|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Education</div>

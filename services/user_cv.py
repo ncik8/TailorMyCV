@@ -135,8 +135,20 @@ def load_cv(user_id: str) -> dict | None:
         cv["certifications"] = _decode(d.get("certifications"))
         cv["languages"] = _decode(d.get("languages"))
 
+        # Normalise education: AI parser returns institution/field_of_study/start_date/end_date
+        # but the app uses school/field/year — map AI fields to app fields
+        for edu in cv["education"]:
+            if "institution" in edu and "school" not in edu:
+                edu["school"] = edu.pop("institution")
+            if "field_of_study" in edu and "field" not in edu:
+                edu["field"] = edu.pop("field_of_study")
+            # Use start_date as year if year is missing
+            if not edu.get("year") and edu.get("start_date"):
+                edu["year"] = edu["start_date"]
+
         print(f"[CV] load_cv: user_id={user_id}, name={cv['name']}, "
-              f"exp_count={len(cv['experience'])}, edu_count={len(cv['education'])}")
+              f"exp_count={len(cv['experience'])}, edu_count={len(cv['education'])}, "
+              f"lang_count={len(cv['languages'])}")
         return cv
 
     except Exception as e:
@@ -182,9 +194,9 @@ def upload_raw_file(user_id: str, file_data: bytes, filename: str, content_type:
         return url
     except Exception as e:
         print(f"[upload_raw_file] upload error: {type(e).__name__}: {e}")
-        # Try to create bucket if it doesn't exist
+        # Try to create bucket if it doesn't exist — supabase-py v2: create_bucket(name_str, options_dict)
         try:
-            client.storage.create_bucket(bucket, {"public": True})
+            client.storage.create_bucket(bucket, options={"public": True})
             client.storage.from_(bucket).upload(path, file_data, {"content-type": content_type})
             url = client.storage.from_(bucket).get_public_url(path)
             print(f"[upload_raw_file] SUCCESS after bucket create: {url}")
