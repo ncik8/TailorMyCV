@@ -476,6 +476,19 @@ def save_profile_route():
     if skills_raw:
         profile['skills'] = [s.strip() for s in skills_raw.split(',') if s.strip()]
 
+    # Parse languages (JSON from hidden field)
+    langs_raw = request.form.get('languages', '').strip()
+    if langs_raw:
+        try:
+            profile['languages'] = json.loads(langs_raw)
+        except Exception:
+            profile['languages'] = [s.strip() for s in langs_raw.split(',') if s.strip()]
+
+    # Parse certifications (||| separated in hidden field)
+    certs_raw = request.form.get('certifications', '').strip()
+    if certs_raw:
+        profile['certifications'] = [c.strip() for c in certs_raw.split('|||') if c.strip()]
+
     # Parse experience entries — submit JS creates indexed fields (exp_title_0, exp_title_1, etc.)
     # so we collect all keys from form that match those patterns
     exp_titles = [v for k, v in request.form.items() if k.startswith('exp_title_')]

@@ -406,6 +406,71 @@
     color: var(--text);
 }
 
+/* Languages & Certifications — pill layout */
+.lang-pill,
+.cert-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #dcfce7;
+    color: #166534;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+.lang-pill .remove-lang,
+.cert-pill .remove-cert {
+    background: none;
+    border: none;
+    color: #166534;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.lang-pill .remove-lang:hover,
+.cert-pill .remove-cert:hover {
+    opacity: 1;
+}
+
+.add-lang-row,
+.add-cert-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    align-items: center;
+}
+
+.add-lang-row input,
+.add-lang-row select,
+.add-cert-row input {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.add-lang-row select {
+    min-width: 140px;
+}
+
+.add-lang-row button,
+.add-cert-row button {
+    padding: 8px 16px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
 /* Form Actions */
 .form-actions {
     display: flex;
@@ -601,6 +666,51 @@
             <button type="button" class="add-edu-btn" onclick="addEducation()">+ Add Education</button>
         </div>
 
+        <!-- Languages -->
+        <div class="form-section">
+            <h2>Languages</h2>
+            <div id="lang-list" class="skills-container">
+                {% for lang in profile.languages %}
+                <span class="lang-pill">
+                    {{ lang.language or lang }}
+                    {% if lang.level %}— {{ lang.level }}{% endif %}
+                    <button type="button" class="remove-lang" onclick="removeLang({{ loop.index0 }})">×</button>
+                </span>
+                {% endfor %}
+            </div>
+            <input type="hidden" id="langs-hidden" name="languages" value="">
+            <div class="add-lang-row">
+                <input type="text" id="new-lang-input" placeholder="e.g. English">
+                <select id="new-lang-level">
+                    <option value="">Select level</option>
+                    <option value="Native">Native</option>
+                    <option value="Fluent">Fluent</option>
+                    <option value="Advanced">Advanced</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Basic">Basic</option>
+                </select>
+                <button type="button" onclick="addLang()">Add</button>
+            </div>
+        </div>
+
+        <!-- Certifications -->
+        <div class="form-section">
+            <h2>Certifications</h2>
+            <div id="cert-list" class="skills-container">
+                {% for cert in profile.certifications %}
+                <span class="cert-pill">
+                    {{ cert }}
+                    <button type="button" class="remove-cert" onclick="removeCert('{{ cert }}')">×</button>
+                </span>
+                {% endfor %}
+            </div>
+            <input type="hidden" id="certs-hidden" name="certifications" value="">
+            <div class="add-cert-row">
+                <input type="text" id="new-cert-input" placeholder="e.g. AWS Solutions Architect">
+                <button type="button" onclick="addCert()">Add</button>
+            </div>
+        </div>
+
         <!-- Additional Info -->
         <div class="form-section">
             <h2>Additional Information</h2>
@@ -781,6 +891,75 @@ function removeEdu(idx) {
     if (card) card.remove();
 }
 
+// Languages management
+let languages = [{% for l in profile.languages %}{% if l is mapping %}{language: '{{ l.language or l }}', level: '{{ l.level or '' }}'}{% else %}'{{ l }}'{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}];
+
+function updateLangsHidden() {
+    document.getElementById('langs-hidden').value = JSON.stringify(languages);
+}
+
+function addLang() {
+    const input = document.getElementById('new-lang-input');
+    const select = document.getElementById('new-lang-level');
+    const lang = input.value.trim();
+    const level = select.value;
+    if (!lang) return;
+    const entry = level ? { language: lang, level } : lang;
+    if (!languages.some(l => (l.language || l) === lang)) {
+        languages.push(entry);
+        renderLangs();
+        input.value = '';
+        select.value = '';
+    }
+}
+
+function removeLang(idx) {
+    languages.splice(idx, 1);
+    renderLangs();
+}
+
+function renderLangs() {
+    const container = document.getElementById('lang-list');
+    container.innerHTML = languages.map((l, i) => {
+        const langStr = l.language || l;
+        const levelStr = l.level ? ` — ${l.level}` : '';
+        const langEsc = langStr.replace(/'/g, "\\'");
+        return `<span class="lang-pill">${langStr}${levelStr}<button type="button" class="remove-lang" onclick="removeLang(${i})">×</button></span>`;
+    }).join('');
+    updateLangsHidden();
+}
+
+// Certifications management
+let certifications = [{% for c in profile.certifications %}'{{ c }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+
+function updateCertsHidden() {
+    document.getElementById('certs-hidden').value = certifications.join('|||');
+}
+
+function addCert() {
+    const input = document.getElementById('new-cert-input');
+    const val = input.value.trim();
+    if (val && !certifications.includes(val)) {
+        certifications.push(val);
+        renderCerts();
+        input.value = '';
+    }
+}
+
+function removeCert(cert) {
+    certifications = certifications.filter(c => c !== cert);
+    renderCerts();
+}
+
+function renderCerts() {
+    const container = document.getElementById('cert-list');
+    container.innerHTML = certifications.map(c => {
+        const cEsc = c.replace(/'/g, "\\'");
+        return `<span class="cert-pill">${c}<button type="button" class="remove-cert" onclick="removeCert('${cEsc}')">×</button></span>`;
+    }).join('');
+    updateCertsHidden();
+}
+
 // Additional Info management
 let addinfoCounter = {{ profile.additional_info | length }};
 
@@ -814,6 +993,8 @@ function removeAdditionalInfo(idx) {
 // Form submission — rebuild indexed hidden fields from flat names in DOM order
 document.getElementById('profile-form').addEventListener('submit', function(e) {
     updateSkillsHidden();
+    updateLangsHidden();
+    updateCertsHidden();
 
     // Step 1: Collect flat field values from .exp-card and .edu-card BEFORE removing anything
     const expValues = [];
