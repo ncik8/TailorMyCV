@@ -4,8 +4,11 @@ Extracts structured CV data from raw text (PDF/DOCX output).
 """
 import os
 import json
+import logging
 import requests
 from typing import Optional, Dict
+
+logger = logging.getLogger(__name__)
 
 # ============ CV SCHEMA (what the AI should extract) ============
 
@@ -111,6 +114,7 @@ def parse_with_ai(raw_text: str, api_key: str, base_url: str = "https://api.mini
             return {"error": f"API error: {response.status_code} - {response.text[:200]}"}
 
         result = response.json()
+        logger.info(f"[CV] MiniMax raw response: {json.dumps(result, ensure_ascii=False)[:1000]}")
         raw_content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
         raw_reasoning = result.get("choices", [{}])[0].get("message", {}).get("reasoning_content", "")
 
