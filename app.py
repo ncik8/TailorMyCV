@@ -843,21 +843,26 @@ def gap_answer_page():
     return render_template('gap_answer.html', gaps=gaps, questions=questions, answers=answers)
 
 
-@app.route('/gap/analysis')
+@app.route('/gap/analyze')
 def gap_analysis_page():
     """Gap analysis display page."""
     init_session()
     cv_data = session.get('cv_data')
-    job_data = session.get('job_data')
-    
-    # Redirect if CV or job data is missing (user skipped steps)
+    user_id = session.get('user_id')
+
     if not cv_data:
         return redirect(url_for('cv_upload_page'))
-    if not job_data:
+
+    job_data = {}
+    if user_id:
+        job_data = load_job_description(user_id)
+
+    if not job_data or not job_data.get('description'):
         return redirect(url_for('job_paste_page'))
-    
+
     gaps = session.get('gaps')
-    return render_template('gap_analysis.html', gaps=gaps)
+    interview_likelihood = gaps.get('interview_likelihood', 50) if gaps else 50
+    return render_template('gap_analyze.html', gaps=gaps, interview_likelihood=interview_likelihood)
 
 
 @app.route('/gap/qna')
