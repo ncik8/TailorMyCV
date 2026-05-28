@@ -738,25 +738,6 @@ def delete_job_description(user_id: str) -> bool:
         return False
 
 
-@app.route('/job/clear', methods=['POST'])
-def clear_job_route():
-    """API: Delete job description from Supabase and clear session."""
-    user_id = session.get('user_id')
-    if user_id:
-        delete_job_description(user_id)
-    session.pop('job_desc_id', None)
-    session.pop('job_data', None)
-    session.pop('requirements', None)
-    session.pop('gaps', None)
-    session.pop('gap_answers', None)
-    return jsonify({'success': True})
-
-
-@app.route('/gap/analyze')
-def gap_analyze_page():
-    """Page: Show gaps + targeted questions."""
-    init_session()
-    cv_data = session.get('cv_data')
     user_id = session.get('user_id')
 
     if not cv_data:
