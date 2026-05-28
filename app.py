@@ -687,13 +687,31 @@ def load_job_description(user_id: str) -> dict:
         app.logger.info(f"[JOB] load_job_description error: {e}")
     return {}
 
+def delete_job_description(user_id: str) -> bool:
+    """Delete user's job description from Supabase."""
+    try:
+        supabase = get_supabase_client()
+        supabase.table('job_descriptions').delete().eq('user_id', user_id).execute()
+        return True
+    except Exception as e:
+        app.logger.info(f"[JOB] delete_job_description error: {e}")
+        return False
 
-@app.route('/gap/analyze', methods=['POST'])
-def analyze_gaps_route():
-    """API: Analyze gaps between CV and job requirements."""
-    cv_data = session.get('cv_data')
-    requirements = session.get('requirements')
-    
+
+@app.route('/job/clear', methods=['POST'])
+def clear_job_route():
+    """API: Delete job description from Supabase and clear session."""
+    user_id = session.get('user_id')
+    if user_id:
+        delete_job_description(user_id)
+    session.pop('job_desc_id', None)
+    session.pop('job_data', None)
+    session.pop('requirements', None)
+    session.pop('gaps', None)
+    session.pop('gap_answers', None)
+    return jsonify({'success': True})
+
+
     if not cv_data:
         return jsonify({'error': 'No CV data. Please upload your CV first.'}), 400
     
@@ -707,6 +725,31 @@ def analyze_gaps_route():
         return jsonify({'success': True, 'gaps': gaps})
     except Exception as e:
         return jsonify({'error': f'Failed to analyze gaps: {str(e)}'}), 500
+
+
+def delete_job_description(user_id: str) -> bool:
+    """Delete user's job description from Supabase."""
+    try:
+        supabase = get_supabase_client()
+        supabase.table('job_descriptions').delete().eq('user_id', user_id).execute()
+        return True
+    except Exception as e:
+        app.logger.info(f"[JOB] delete_job_description error: {e}")
+        return False
+
+
+@app.route('/job/clear', methods=['POST'])
+def clear_job_route():
+    """API: Delete job description from Supabase and clear session."""
+    user_id = session.get('user_id')
+    if user_id:
+        delete_job_description(user_id)
+    session.pop('job_desc_id', None)
+    session.pop('job_data', None)
+    session.pop('requirements', None)
+    session.pop('gaps', None)
+    session.pop('gap_answers', None)
+    return jsonify({'success': True})
 
 
 @app.route('/gap/analyze')

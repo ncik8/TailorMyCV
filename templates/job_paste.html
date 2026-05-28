@@ -44,7 +44,7 @@
             </div>
             
             <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button onclick="confirmJob()" class="btn btn-primary" style="flex: 1; font-size: 16px; padding: 14px;">
+                <button onclick="confirmJob()" id="confirm-btn" class="btn btn-primary" style="flex: 1; font-size: 16px; padding: 14px;">
                     ✓ Looks Good — Continue
                 </button>
                 <button onclick="editJob()" class="btn btn-secondary" style="flex: 1; font-size: 16px; padding: 14px;">
@@ -102,30 +102,52 @@ async function submitJob() {
 // Step 2a: Confirm (looks good)
 async function confirmJob() {
     const confirmedText = document.getElementById('job-review-text').value.trim();
-    
+
     if (!confirmedText || confirmedText.length < 50) {
         showConfirmError('The job description seems too short. Please check it before continuing.');
         return;
     }
-    
+
     hideConfirmError();
-    
+
+    // Show loading state on button
+    const btn = document.getElementById('confirm-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px;"></span>Analyzing with AI...';
+    btn.style.opacity = '0.7';
+
     try {
         const response = await fetch('/job/confirm', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ text: confirmedText })
         });
-        
+
         const data = await response.json();
         
         if (data.success) {
             window.location.href = '/gap/analyze';
         } else {
             showConfirmError(data.error || 'Failed to save job description.');
+            resetConfirmBtn();
         }
     } catch (err) {
         showConfirmError('Network error: ' + err.message);
+        // Reset button
+        const btn = document.getElementById('confirm-btn');
+        btn.disabled = false;
+        btn.innerHTML = '✓ Looks Good — Continue';
+        btn.style.opacity = '1';
+    }
+}
+
+// Reset button on error response
+function resetConfirmBtn() {
+    const btn = document.getElementById('confirm-btn');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '✓ Looks Good — Continue';
+        btn.style.opacity = '1';
     }
 }
 
