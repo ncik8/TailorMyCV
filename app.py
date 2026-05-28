@@ -308,6 +308,8 @@ def dashboard():
     # Also check session for CV just uploaded this session
     if not cv_data:
         cv_data = session.get('cv_data')
+    if not cv_data and user_id:
+        cv_data = load_cv(user_id)
     upgrade_success = request.args.get('upgrade') == 'success'
     return render_template('dashboard.html', upgrade_success=upgrade_success, cv_data=cv_data)
 
@@ -400,7 +402,10 @@ def delete_cv_route():
 def edit_profile_page():
     """Edit profile page — shows parsed CV data for review/editing."""
     init_session()
+    user_id = session.get('user_id')
     cv_data = session.get('cv_data')
+    if not cv_data and user_id:
+        cv_data = load_cv(user_id)
     session_cv = bool(cv_data)
     supabase_cv = False
 
@@ -740,46 +745,32 @@ def delete_job_description(user_id: str) -> bool:
         return False
 
 
+@app.route('/gap/answer')
+def gap_answer_page():
+    """Page: Record answers to gap questions and update profile."""
+    init_session()
     user_id = session.get('user_id')
 
+    cv_data = None
+    if user_id:
+        cv_data = load_cv(user_id)
     if not cv_data:
         return redirect(url_for('cv_upload_page'))
 
-    # Load job description from Supabase (not session cookie)
     job_data = {}
     if user_id:
         job_data = load_job_description(user_id)
-
     if not job_data or not job_data.get('description'):
         return redirect(url_for('job_paste_page'))
 
-    requirements = session.get('requirements')
-    if not requirements:
-        # Re-extract from stored job description (don't re-call AI on redirect)
-        desc = job_data.get('description', '')
-        if desc:
-            requirements = extract_requirements(desc)
-            session['requirements'] = requirements
-        if not requirements:
-            return redirect(url_for('job_paste_page'))
-
     gaps = session.get('gaps')
     if not gaps:
-        # Run gap analysis now (POST to self)
-        cv_copy = dict(cv_data)
-        try:
-            gaps = analyze_gaps(cv_copy, requirements)
-            session['gaps'] = gaps
-            session['gap_answers'] = []
-        except Exception as e:
-            return render_template('gap_analyze.html', gaps={}, questions={}, interview_likelihood=50, error=str(e))
+        return redirect(url_for('gap_analysis_page'))
 
-    interview_likelihood = gaps.get('interview_likelihood', 50)
-
-    # Generate targeted questions for each gap
     questions = generate_gap_questions(gaps)
+    answers = session.get('gap_answers', [])
 
-    return render_template('gap_analyze.html', gaps=gaps, questions=questions, interview_likelihood=interview_likelihood)
+    return render_template('gap_answer.html', gaps=gaps, questions=questions, answers=answers)
 
 
 @app.route('/gap/answer', methods=['POST'])
@@ -789,69 +780,44 @@ def gap_answer_route():
     requirement = data.get('requirement')
     answer = data.get('answer')
     update_profile = data.get('update_profile', False)
-    
+
     if not requirement or not answer:
         return jsonify({'error': 'Missing requirement or answer'}), 400
-    
+
     try:
-        # Convert answer to professional CV language
         ai_phrased = convert_answer_to_cv_language(requirement, answer)
-        
-        # Store the answer
+
         gap_answer = {
             'requirement': requirement,
             'user_answer': answer,
             'ai_phrased': ai_phrased,
             'update_profile': update_profile
         }
-        
-        # Append to session answers
+
         answers = session.get('gap_answers', [])
-        updated = False
+        # Replace existing answer for same requirement or append
         for i, a in enumerate(answers):
-            if a['requirement'] == requirement:
+            if a.get('requirement') == requirement:
                 answers[i] = gap_answer
-                updated = True
                 break
-        if not updated:
+        else:
             answers.append(gap_answer)
-        
         session['gap_answers'] = answers
-        
+
         return jsonify({'success': True, 'ai_phrased': ai_phrased})
     except Exception as e:
-        return jsonify({'error': f'Failed to process answer: {str(e)}'}), 500
-
-
-@app.route('/gap/answer')
-def gap_answer_page():
-    """Page: Record answers to gap questions and update profile."""
-    init_session()
-    cv_data = session.get('cv_data')
-    job_data = session.get('job_data')
-    
-    if not cv_data:
-        return redirect(url_for('cv_upload_page'))
-    if not job_data:
-        return redirect(url_for('job_paste_page'))
-    
-    gaps = session.get('gaps')
-    if not gaps:
-        return redirect(url_for('analyze_gaps_route'))
-    
-    questions = generate_gap_questions(gaps)
-    answers = session.get('gap_answers', [])
-    
-    return render_template('gap_answer.html', gaps=gaps, questions=questions, answers=answers)
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/gap/analyze')
 def gap_analysis_page():
     """Gap analysis display page."""
     init_session()
-    cv_data = session.get('cv_data')
     user_id = session.get('user_id')
 
+    cv_data = None
+    if user_id:
+        cv_data = load_cv(user_id)
     if not cv_data:
         return redirect(url_for('cv_upload_page'))
 
@@ -871,7 +837,10 @@ def gap_analysis_page():
 def gap_qna_page():
     """Gap Q&A page with modal interaction."""
     init_session()
+    user_id = session.get('user_id')
     cv_data = session.get('cv_data')
+    if not cv_data and user_id:
+        cv_data = load_cv(user_id)
     job_data = session.get('job_data')
     
     if not cv_data:
@@ -891,9 +860,11 @@ def tailor_cv_page():
     if tailored_cv:
         return redirect(url_for('cv_preview_page'))
 
-    cv_data = session.get('cv_data')
-    gap_answers = session.get('gap_answers', [])
     user_id = session.get('user_id')
+    cv_data = session.get('cv_data')
+    if not cv_data and user_id:
+        cv_data = load_cv(user_id)
+    gap_answers = session.get('gap_answers', [])
 
     if not cv_data:
         return redirect(url_for('cv_upload_page'))
@@ -923,9 +894,11 @@ def tailor_cv_page():
 @app.route('/cv/tailor', methods=['POST'])
 def tailor_cv_route():
     """API: Generate tailored CV."""
-    cv_data = session.get('cv_data')
-    gap_answers = session.get('gap_answers', [])
     user_id = session.get('user_id')
+    cv_data = session.get('cv_data')
+    if not cv_data and user_id:
+        cv_data = load_cv(user_id)
+    gap_answers = session.get('gap_answers', [])
 
     if not cv_data:
         return jsonify({'error': 'No CV data'}), 400
@@ -1042,7 +1015,10 @@ def download_cv_pdf():
 @app.route('/cover-letter', methods=['POST'])
 def cover_letter_route():
     """API: Generate cover letter."""
+    user_id = session.get('user_id')
     cv_data = session.get('cv_data')
+    if not cv_data and user_id:
+        cv_data = load_cv(user_id)
     job_data = session.get('job_data', {})
     gap_answers = session.get('gap_answers', [])
     
