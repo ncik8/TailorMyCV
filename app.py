@@ -641,21 +641,38 @@ def gap_analyze_page():
     init_session()
     cv_data = session.get('cv_data')
     job_data = session.get('job_data')
-    
+
     if not cv_data:
         return redirect(url_for('cv_upload_page'))
     if not job_data:
         return redirect(url_for('job_paste_page'))
-    
+
+    requirements = session.get('requirements')
+    if not requirements:
+        # Re-extract from stored job description (don't re-call AI on redirect)
+        desc = job_data.get('description', '')
+        if desc:
+            requirements = extract_requirements(desc)
+            session['requirements'] = requirements
+        if not requirements:
+            return redirect(url_for('job_paste_page'))
+
     gaps = session.get('gaps')
     if not gaps:
-        return redirect(url_for('analyze_gaps_route'))
-    
+        # Run gap analysis now (POST to self)
+        cv_copy = dict(cv_data)
+        try:
+            gaps = analyze_gaps(cv_copy, requirements)
+            session['gaps'] = gaps
+            session['gap_answers'] = []
+        except Exception as e:
+            return render_template('gap_analyze.html', gaps={}, questions={}, interview_likelihood=50, error=str(e))
+
     interview_likelihood = gaps.get('interview_likelihood', 50)
-    
+
     # Generate targeted questions for each gap
     questions = generate_gap_questions(gaps)
-    
+
     return render_template('gap_analyze.html', gaps=gaps, questions=questions, interview_likelihood=interview_likelihood)
 
 

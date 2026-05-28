@@ -17,7 +17,6 @@
             <p>Upload your CV and paste a job description to get started.</p>
         </div>
 
-        <!-- Account status bar -->
         {% if session.get('user_id') %}
         <div class="card" style="margin-bottom: 24px; background: #f8f8f5;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
@@ -98,9 +97,9 @@
                     {% if session.cv_data.skills|length > 12 %}
                     <span style="font-size: 12px; color: rgba(10,10,10,.4);">+ {{ session.cv_data.skills|length - 12 }} more</span>
                     {% endif %}
+                </div>
             </div>
             {% endif %}
-
             {% if session.cv_data.languages and session.cv_data.languages|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Languages</div>
@@ -111,7 +110,6 @@
                 </div>
             </div>
             {% endif %}
-
             {% if session.cv_data.additional_info and session.cv_data.additional_info|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Additional Info</div>
@@ -123,7 +121,6 @@
                 {% endfor %}
             </div>
             {% endif %}
-
             {% if session.cv_data.education and session.cv_data.education|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Education</div>
@@ -137,10 +134,10 @@
             </div>
             {% endif %}
             <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
-                {% if not session.get('job_data') %}
+                {% if not session.get('job_data') or not session.get('job_data').get('description') %}
                 <a href="/job/paste" class="btn btn-primary">Paste Job Description</a>
                 {% else %}
-                <a href="/gap/analysis" class="btn btn-primary">View Gap Analysis</a>
+                <a href="/gap/analyze" class="btn btn-primary">View Gap Analysis</a>
                 {% endif %}
                 <a href="/cv/edit-profile" class="btn btn-secondary">Edit Profile</a>
                 <form id="delete-form" action="/cv/delete" method="POST" style="display:inline;"></form>
@@ -161,7 +158,7 @@
         </div>
         {% endif %}
 
-        {% if session.get('job_data') %}
+        {% if session.get('job_data') and session.get('job_data').get('description') %}
         <div class="card" style="margin-bottom: 24px;">
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">✓ Job Description Loaded</h3>
             <p style="color: #64748b; margin-bottom: 8px;">
@@ -169,7 +166,7 @@
                 {% if session.job_data.company %}at {{ session.job_data.company }}{% endif %}
             </p>
             <div style="display: flex; gap: 12px;">
-                <a href="/gap/analysis" class="btn btn-primary">View Gap Analysis</a>
+                <a href="/gap/analyze" class="btn btn-primary">View Gap Analysis</a>
                 <a href="/job/paste" class="btn btn-secondary">Change Job</a>
             </div>
         </div>
