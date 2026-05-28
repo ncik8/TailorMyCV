@@ -57,6 +57,7 @@ def save_cv(user_id: str, cv_data: dict) -> dict | None:
         "projects": _json_col(cv_data.get("projects", [])),
         "certifications": _json_col(cv_data.get("certifications", [])),
         "languages": _json_col(cv_data.get("languages", [])),
+        "additional_info": _json_col(cv_data.get("additional_info", [])),
         "raw_text": _json_col(cv_data.get("raw_text")),
         "cv_filename": _json_col(cv_data.get("cv_filename")),
         "updated_at": "now()",
@@ -91,7 +92,7 @@ def load_cv(user_id: str) -> dict | None:
             .select(
                 "name,email,phone,location,linkedin,title,summary,"
                 "experience,education,skills,projects,certifications,languages,"
-                "raw_text,cv_filename"
+                "additional_info,raw_text,cv_filename"
             )
             .eq("user_id", user_id)
             .maybe_single()
@@ -134,6 +135,7 @@ def load_cv(user_id: str) -> dict | None:
         cv["projects"] = _decode(d.get("projects"))
         cv["certifications"] = _decode(d.get("certifications"))
         cv["languages"] = _decode(d.get("languages"))
+        cv["additional_info"] = _decode(d.get("additional_info"))
 
         # Normalise education: AI parser returns institution/field_of_study/start_date/end_date
         # but the app uses school/field/year — map AI fields to app fields

@@ -112,6 +112,18 @@
             </div>
             {% endif %}
 
+            {% if session.cv_data.additional_info and session.cv_data.additional_info|length > 0 %}
+            <div style="margin-top: 16px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Additional Info</div>
+                {% for info in session.cv_data.additional_info %}
+                <div style="font-size: 14px; margin-bottom: 4px;">
+                    {% if info.label %}<span style="font-weight: 500;">{{ info.label }}</span>{% endif %}
+                    {% if info.content %} · {{ info.content }}{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             {% if session.cv_data.education and session.cv_data.education|length > 0 %}
             <div style="margin-top: 16px;">
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 8px;">Education</div>

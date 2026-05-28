@@ -515,6 +515,20 @@ def save_profile_route():
             }
             profile['education'].append(edu)
 
+    # Parse additional_info entries — submit JS creates indexed fields
+    # (addinfo_label_0, addinfo_content_0, etc.)
+    addinfo_labels = [v for k, v in request.form.items() if k.startswith('addinfo_label_')]
+    addinfo_contents = [v for k, v in request.form.items() if k.startswith('addinfo_content_')]
+
+    profile['additional_info'] = []
+    for i, label in enumerate(addinfo_labels):
+        if label.strip():
+            entry = {
+                'label': label.strip(),
+                'content': addinfo_contents[i].strip() if i < len(addinfo_contents) else '',
+            }
+            profile['additional_info'].append(entry)
+
     session['profile'] = profile
     session['cv_data'] = profile
 

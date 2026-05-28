@@ -345,6 +345,67 @@
     color: var(--text);
 }
 
+/* Additional Info Cards */
+.addinfo-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.additional-info-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    position: relative;
+}
+
+.additional-info-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.additional-info-card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-2);
+}
+
+.additional-info-card-header .remove-btn {
+    background: none;
+    border: none;
+    color: #991b1b;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.additional-info-card-header .remove-btn:hover {
+    background: #fee2e2;
+}
+
+.add-addinfo-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-2);
+    cursor: pointer;
+    padding: 14px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.add-addinfo-btn:hover {
+    border-color: var(--text);
+    color: var(--text);
+}
+
 /* Form Actions */
 .form-actions {
     display: flex;
@@ -540,6 +601,30 @@
             <button type="button" class="add-edu-btn" onclick="addEducation()">+ Add Education</button>
         </div>
 
+        <!-- Additional Info -->
+        <div class="form-section">
+            <h2>Additional Information</h2>
+            <div id="addinfo-list" class="addinfo-cards">
+                {% for info in profile.additional_info %}
+                <div class="additional-info-card" data-index="{{ loop.index0 }}">
+                    <div class="additional-info-card-header">
+                        <h3>Info {{ loop.index }}</h3>
+                        <button type="button" class="remove-btn" onclick="removeAdditionalInfo({{ loop.index0 }})">×</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Label</label>
+                        <input type="text" name="addinfo_label" value="{{ info.label or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Content</label>
+                        <textarea name="addinfo_content" rows="3">{{ info.content or '' }}</textarea>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="add-addinfo-btn" onclick="addAdditionalInfo()">+ Add Info</button>
+        </div>
+
         <div class="form-actions">
             <form id="delete-form" action="/cv/delete" method="POST" style="display:inline;"></form>
             <button type="submit" form="delete-form" class="btn" style="background:#ef4444;color:#fff;border:1px solid #ef4444;" onclick="return confirm('Delete your CV? You can upload a new one anytime.')">Delete CV</button>
@@ -696,6 +781,36 @@ function removeEdu(idx) {
     if (card) card.remove();
 }
 
+// Additional Info management
+let addinfoCounter = {{ profile.additional_info | length }};
+
+function addAdditionalInfo() {
+    const list = document.getElementById('addinfo-list');
+    const idx = addinfoCounter++;
+    const html = `
+    <div class="additional-info-card" data-index="${idx}">
+        <div class="additional-info-card-header">
+            <h3>Info ${list.children.length + 1}</h3>
+            <button type="button" class="remove-btn" onclick="removeAdditionalInfo(${idx})">×</button>
+        </div>
+        <div class="form-group">
+            <label>Label</label>
+            <input type="text" name="addinfo_label">
+        </div>
+        <div class="form-group">
+            <label>Content</label>
+            <textarea name="addinfo_content" rows="3"></textarea>
+        </div>
+    </div>
+    `;
+    list.insertAdjacentHTML('beforeend', html);
+}
+
+function removeAdditionalInfo(idx) {
+    const card = document.querySelector(`.additional-info-card[data-index="${idx}"]`);
+    if (card) card.remove();
+}
+
 // Form submission — rebuild indexed hidden fields from flat names in DOM order
 document.getElementById('profile-form').addEventListener('submit', function(e) {
     updateSkillsHidden();
@@ -726,11 +841,21 @@ document.getElementById('profile-form').addEventListener('submit', function(e) {
         eduValues.push(vals);
     });
 
+    const addinfoValues = [];
+    document.querySelectorAll('.additional-info-card').forEach((card) => {
+        const vals = {};
+        ['addinfo_label', 'addinfo_content'].forEach(name => {
+            const el = card.querySelector(`[name="${name}"]`);
+            vals[name] = el ? el.value.trim() : '';
+        });
+        addinfoValues.push(vals);
+    });
+
     // Step 2: Remove all flat and indexed fields
-    ['exp_title_', 'exp_company_', 'exp_start_', 'exp_end_', 'edu_degree_', 'edu_field_', 'edu_school_', 'edu_year_'].forEach(prefix => {
+    ['exp_title_', 'exp_company_', 'exp_start_', 'exp_end_', 'edu_degree_', 'edu_field_', 'edu_school_', 'edu_year_', 'addinfo_label_', 'addinfo_content_'].forEach(prefix => {
         document.querySelectorAll(`[name^="${prefix}"]`).forEach(el => el.remove());
     });
-    ['exp_title', 'exp_company', 'exp_start', 'exp_end', 'edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
+    ['exp_title', 'exp_company', 'exp_start', 'exp_end', 'edu_degree', 'edu_field', 'edu_school', 'edu_year', 'addinfo_label', 'addinfo_content'].forEach(name => {
         document.querySelectorAll(`[name="${name}"]`).forEach(el => el.remove());
     });
 
@@ -756,6 +881,18 @@ document.getElementById('profile-form').addEventListener('submit', function(e) {
 
     eduValues.forEach((vals, cardIdx) => {
         ['edu_degree', 'edu_field', 'edu_school', 'edu_year'].forEach(name => {
+            if (vals[name]) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = `${name}_${cardIdx}`;
+                hidden.value = vals[name];
+                document.getElementById('profile-form').appendChild(hidden);
+            }
+        });
+    });
+
+    addinfoValues.forEach((vals, cardIdx) => {
+        ['addinfo_label', 'addinfo_content'].forEach(name => {
             if (vals[name]) {
                 const hidden = document.createElement('input');
                 hidden.type = 'hidden';
