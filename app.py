@@ -1106,11 +1106,13 @@ def gap_analysis_page():
     if not job_data or not job_data.get('description'):
         return redirect(url_for('job_paste_page'))
 
+    # Load requirements first (needed for both fresh gaps and ATS scoring)
+    requirements = job_data.get('requirements', {})
+
     # Load or generate gaps — prefer Supabase, fall back to on-the-fly
     app.logger.info(f"[ANALYZE] job_data.keys={list(job_data.keys()) if job_data else 'empty'}, gaps={'yes' if job_data.get('gaps') else 'NONE'}")
     gaps = job_data.get('gaps')
     if not gaps:
-        requirements = job_data.get('requirements')
         if not requirements:
             requirements = extract_requirements(job_data.get('description', ''))
         try:
@@ -1119,7 +1121,6 @@ def gap_analysis_page():
             return render_template('gap_analyze.html', gaps={}, questions=[], interview_likelihood=50, error=str(e))
 
     # Ensure ats_score is always calculated fresh (not from stale cache)
-    requirements = job_data.get('requirements', {})
     ats_result = score_ats_keywords(cv_data, requirements)
     gaps['ats_score'] = ats_result['ats_score']
     gaps['ats_keywords_found'] = ats_result['found']
