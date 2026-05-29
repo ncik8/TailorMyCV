@@ -1,3 +1,5 @@
+# RezMyCV — https://rezmycv.com
+# Version: 2026-05-29-f
 import os
 import json
 import tempfile
