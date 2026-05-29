@@ -409,8 +409,19 @@
 // ============================================
 // State
 // ============================================
-const allGaps = JSON.parse('{{ all_gaps_json | tojson }}');
-const startMessages = JSON.parse('{{ start_messages_json | tojson }}');
+let allGaps = [];
+let startMessages = [];
+try {
+    const rawGaps = '{{ all_gaps_json | tojson }}';
+    allGaps = JSON.parse(rawGaps);
+} catch(e) {
+    console.error('all_gaps_json parse error:', e, 'raw:', '{{ all_gaps_json | tojson }}');
+}
+try {
+    startMessages = JSON.parse('{{ start_messages_json | tojson }}');
+} catch(e) {
+    console.error('start_messages_json parse error:', e);
+}
 let currentIdx = 0;
 let stage = 'intro'; // intro | asking | interpreting | picking-dest | confirming | done
 let currentAnswer = '';
