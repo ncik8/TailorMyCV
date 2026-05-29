@@ -635,7 +635,11 @@ def confirm_job_route():
         gaps = analyze_gaps(cv_data, requirements)
         app.logger.info(f"[JOB] Gap analysis done: partials={len(gaps.get('partials', []))}, missing={len(gaps.get('missing', []))}, ats_score={gaps.get('ats_score', 0)}")
 
-    # Delete existing job descriptions for this user so we get a clean slate
+    # Delete existing job descriptions for this user to get a clean slate.
+    # NOTE: on-the-fly fallback in gap_answer_page overwrites gaps/requirements
+    # in Supabase without a targeted update — it uses save_job_description()
+    # which preserves ats_keywords but can cause race conditions if both
+    # confirm_job_route and gap_answer_page write simultaneously.
     try:
         supabase = get_supabase_client()
         supabase.table('job_descriptions').delete().eq('user_id', user_id).execute()
@@ -674,7 +678,8 @@ def save_job_description(job_record: dict) -> str:
             'description': job_record.get('description', ''),
             'title': job_record.get('title', ''),
             'company': job_record.get('company', ''),
-            'ats_keywords': job_record.get('ats_keywords', '[]'),  # text field — store as JSON string
+            # ats_keywords: already a Python list or JSON string — store as JSON string
+            'ats_keywords': job_record.get('ats_keywords') if isinstance(job_record.get('ats_keywords'), str) else json.dumps(job_record.get('ats_keywords', [])),
             'gaps': json.dumps(job_record.get('gaps')) if job_record.get('gaps') else None,
             'requirements': json.dumps(job_record.get('requirements')) if job_record.get('requirements') else None,
             'gap_answers': json.dumps(job_record.get('gap_answers', [])) if job_record.get('gap_answers') is not None else None,
@@ -797,20 +802,14 @@ def gap_answer_page():
             if not requirements:
                 requirements = extract_requirements(job_data.get('description', ''))
             gaps = analyze_gaps(cv_data, requirements)
-            # Persist to Supabase so future loads get it from there
+            # Persist to Supabase so future loads get it from there.
+            # Use targeted UPDATE to avoid wiping ats_keywords/description.
             try:
-                existing = load_job_description(user_id)
-                if existing:
-                    save_job_description({
-                        'user_id': user_id,
-                        'description': job_data.get('description', ''),
-                        'title': existing.get('title', ''),
-                        'company': existing.get('company', ''),
-                        'gaps': gaps,
-                        'requirements': requirements,
-                        'ats_keywords': json.dumps(existing.get('ats_keywords', [])),
-                        'gap_answers': existing.get('gap_answers', []),
-                    })
+                supabase = get_supabase_client()
+                supabase.table('job_descriptions').update({
+                    'gaps': json.dumps(gaps),
+                    'requirements': json.dumps(requirements),
+                }).eq('user_id', user_id).execute()
             except Exception:
                 pass
 
