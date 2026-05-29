@@ -418,9 +418,17 @@ try {
     console.error('all_gaps_json parse error:', e, 'raw:', '{{ all_gaps_json | tojson }}');
 }
 try {
-    startMessages = JSON.parse('{{ start_messages_json | tojson }}');
+    const rawStart = '{{ start_messages_json | tojson }}'.replace(/^\uFEFF/, '');
+    startMessages = JSON.parse(rawStart);
 } catch(e) {
     console.error('start_messages_json parse error:', e);
+    startMessages = [];
+}
+try {
+    const rawCv = '{{ cv_data_json | tojson }}'.replace(/^\uFEFF/, '');
+    cvData = JSON.parse(rawCv);
+} catch(e) {
+    console.error('cv_data_json parse error:', e);
 }
 let currentIdx = 0;
 let stage = 'intro'; // intro | asking | interpreting | picking-dest | confirming | done
@@ -953,7 +961,6 @@ document.getElementById('gap-input')?.addEventListener('input', function() {
 // Init
 // ============================================
 (function init() {
-    const cvData = JSON.parse('{{ cv_data_json | tojson }}');
     cvName = cvData?.name?.split(' ')[0] || 'there';
     renderSidebar();
     rebuildChat();
