@@ -33,8 +33,8 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
 CORS(app)
 
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-# Remove session cookie size limit (data is small enough for HTTPS cookies)
 app.config['SESSION_COOKIE_SIZE'] = None
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Fix cross-site session loss
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc'}
 
@@ -83,21 +83,16 @@ def allowed_file(filename):
 
 
 def init_session():
-    """Initialize session data if not present."""
+    """Initialize session data if not present. Keep session COOKIE SMALL — no CV/job/gap data."""
+    if 'user_id' not in session:
+        session['user_id'] = None
+    # Never store large CV/job/gap data in session — always read from Supabase
     if 'cv_data' not in session:
-        session['cv_data'] = None
-    if 'job_data' not in session:
-        session['job_data'] = None
-    if 'requirements' not in session:
-        session['requirements'] = None
-    if 'gaps' not in session:
-        session['gaps'] = None
-    if 'gap_answers' not in session:
-        session['gap_answers'] = []
+        session['cv_data'] = None  # read from Supabase on demand instead
     if 'tailored_cv' not in session:
-        session['tailored_cv'] = None
+        session['tailored_cv'] = None  # regenerated per job on /cv/tailor
     if 'cv_template' not in session:
-        session['cv_template'] = 'classic'  # default template
+        session['cv_template'] = 'classic'
     if 'profile' not in session:
         session['profile'] = None
 
@@ -992,7 +987,7 @@ def gap_confirm_answer_route():
             'destination': destination,
             'applied_to': applied_to
         }
-
+        # Update session (small — just IDs/flags, no CV data)
         answers = session.get('gap_answers', [])
         for i, a in enumerate(answers):
             if a.get('requirement') == requirement:
@@ -1000,7 +995,7 @@ def gap_confirm_answer_route():
                 break
         else:
             answers.append(gap_answer)
-        session['gap_answers'] = answers
+        session['gap_answers'] = answers  # small — cleared if session resets, Supabase is source of truth
 
         # Persist gap answers to Supabase (survives session cookie loss)
         try:
@@ -1158,6 +1153,7 @@ def tailor_cv_page():
     job_data = load_job_description(user_id) if user_id else {}
     job_description = job_data.get('description', '')
     ats_keywords = job_data.get('ats_keywords', [])
+    gap_answers = job_data.get('gap_answers', []) if job_data else []  # always from Supabase
 
     if not job_description:
         return redirect(url_for('job_paste_page'))
@@ -1178,7 +1174,11 @@ def tailor_cv_route():
     cv_data = session.get('cv_data')
     if not cv_data and user_id:
         cv_data = load_cv(user_id)
-    gap_answers = session.get('gap_answers', [])
+    # Always load gap_answers from Supabase (not session — keeps cookie small)
+    gap_answers = []
+    if user_id:
+        job_data = load_job_description(user_id)
+        gap_answers = job_data.get('gap_answers', []) if job_data else []
 
     if not cv_data:
         return jsonify({'error': 'No CV data'}), 400
@@ -1299,8 +1299,9 @@ def cover_letter_route():
     cv_data = session.get('cv_data')
     if not cv_data and user_id:
         cv_data = load_cv(user_id)
-    job_data = session.get('job_data', {})
-    gap_answers = session.get('gap_answers', [])
+    # Always load job + gap data from Supabase (not session — keeps cookie small)
+    job_data = load_job_description(user_id) if user_id else {}
+    gap_answers = job_data.get('gap_answers', []) if job_data else []
     
     if not cv_data:
         return jsonify({'error': 'No CV data'}), 400
