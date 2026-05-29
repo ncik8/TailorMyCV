@@ -674,10 +674,10 @@ def save_job_description(job_record: dict) -> str:
             'description': job_record.get('description', ''),
             'title': job_record.get('title', ''),
             'company': job_record.get('company', ''),
-            'ats_keywords': job_record.get('ats_keywords', '[]'),
+            'ats_keywords': job_record.get('ats_keywords', '[]'),  # text field — store as JSON string
             'gaps': json.dumps(job_record.get('gaps')) if job_record.get('gaps') else None,
             'requirements': json.dumps(job_record.get('requirements')) if job_record.get('requirements') else None,
-            'gap_answers': json.dumps(job_record.get('gap_answers', [])),
+            'gap_answers': json.dumps(job_record.get('gap_answers', [])) if job_record.get('gap_answers') is not None else None,
             'updated_at': datetime.now().isoformat()
         }
 
@@ -999,13 +999,15 @@ def gap_confirm_answer_route():
             answers.append(gap_answer)
         session['gap_answers'] = answers  # small — cleared if session resets, Supabase is source of truth
 
-        # Persist gap answers to Supabase (survives session cookie loss)
+        # Persist gap answers to Supabase — ONLY update gap_answers field, don't wipe other fields
         try:
-            job_desc_record = {
-                'user_id': user_id,
-                'gap_answers': answers,
-            }
-            save_job_description(job_desc_record)
+            supabase = get_supabase_client()
+            existing = load_job_description(user_id)
+            if existing:
+                # Targeted update: only touch gap_answers, preserve all other fields
+                supabase.table('job_descriptions').update({
+                    'gap_answers': json.dumps(answers)
+                }).eq('user_id', user_id).execute()
         except Exception as e:
             app.logger.info(f"[GAP] Failed to persist gap answers: {e}")
 
