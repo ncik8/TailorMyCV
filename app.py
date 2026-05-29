@@ -15,7 +15,7 @@ import base64
 # Services
 from services.cv_parser import parse_cv
 from services.job_scraper import scrape_job_url, parse_job_text
-from services.gap_analyzer import extract_requirements, analyze_gaps, convert_answer_to_cv_language, generate_gap_questions, interpret_gap_answer, apply_gap_answer_to_profile
+from services.gap_analyzer import extract_requirements, analyze_gaps, convert_answer_to_cv_language, generate_gap_questions, interpret_gap_answer, apply_gap_answer_to_profile, score_ats_keywords
 from services.tailor import tailor_cv, generate_cv_pdf
 from services.cover_letter import generate_cover_letter
 from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS
@@ -1118,13 +1118,20 @@ def gap_analysis_page():
         except Exception as e:
             return render_template('gap_analyze.html', gaps={}, questions=[], interview_likelihood=50, error=str(e))
 
+    # Ensure ats_score is always calculated fresh (not from stale cache)
+    requirements = job_data.get('requirements', {})
+    ats_result = score_ats_keywords(cv_data, requirements)
+    gaps['ats_score'] = ats_result['ats_score']
+    gaps['ats_keywords_found'] = ats_result['found']
+    gaps['ats_keywords_missing'] = ats_result['missing']
+
     # Persist gaps to Supabase for session-free access
     try:
         job_record = {
             'user_id': user_id,
             'description': job_data.get('description', ''),
             'gaps': gaps,
-            'requirements': job_data.get('requirements'),
+            'requirements': requirements,
         }
         save_job_description(job_record)
     except Exception as e:
