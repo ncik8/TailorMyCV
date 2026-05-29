@@ -785,11 +785,13 @@ def gap_answer_page():
     if not job_data or not job_data.get('description'):
         return redirect(url_for('job_paste_page'))
 
+    app.logger.info(f"[GAP] session.gaps={'yes' if session.get('gaps') else 'NONE'}, job_data.gaps={'yes' if (job_data and job_data.get('gaps')) else 'NONE'}, job_data.keys={list(job_data.keys()) if job_data else 'empty'}")
     gaps = session.get('gaps')
     if not gaps:
         # Try Supabase first (persistent gap data)
         if job_data and job_data.get('gaps'):
             gaps = job_data['gaps']
+            session['gaps'] = gaps  # cache in session for next load
         else:
             # On-the-fly fallback — save back to Supabase so future loads are fast
             requirements = job_data.get('requirements')
@@ -808,6 +810,8 @@ def gap_answer_page():
                 })
             except Exception:
                 pass
+
+    app.logger.info(f"[GAP] final gaps object: partials={len(gaps.get('partials',[]))}, missing={len(gaps.get('missing',[]))}, matches={len(gaps.get('matches',[]))}")
 
     questions = generate_gap_questions(gaps)
     # Gap answers — prefer Supabase (survives cookie limits), fall back to session
@@ -1076,6 +1080,7 @@ def gap_analysis_page():
         return redirect(url_for('job_paste_page'))
 
     # Load or generate gaps — prefer Supabase, fall back to on-the-fly
+    app.logger.info(f"[ANALYZE] job_data.keys={list(job_data.keys()) if job_data else 'empty'}, gaps={'yes' if job_data.get('gaps') else 'NONE'}")
     gaps = job_data.get('gaps')
     if not gaps:
         requirements = job_data.get('requirements')
