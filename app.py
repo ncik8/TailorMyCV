@@ -1424,14 +1424,10 @@ if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
 
 
-@app.route('/debug/supabase')
-def debug_supabase():
-    """Debug route: show what's in the user_cvs table."""
-    if not session.get('user_id'):
-        return {'error': 'not logged in'}
-    user_id = session.get('user_id')
-    saved = load_cv(user_id)
-    return {'user_id': user_id, 'saved_cv': saved}
+@app.route('/debug')
+def debug_test():
+    """Test endpoint to verify Railway is running latest code."""
+    return {'status': 'ok', 'message': 'debug route working', 'time': str(__import__('datetime').datetime.now())}
 
 @app.route('/debug/analyze')
 def debug_analyze():
