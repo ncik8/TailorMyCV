@@ -629,6 +629,17 @@ def confirm_job_route():
     # Deduplicate
     ats_keywords = list(dict.fromkeys(k for k in ats_keywords if k))
 
+    # Load CV data to run full gap analysis (one AI call to get gaps + ATS score)
+    cv_data = None
+    if user_id:
+        cv_data = load_cv(user_id)
+
+    gaps = {}
+    if cv_data:
+        # Run full gap analysis with ATS scoring in one call
+        gaps = analyze_gaps(cv_data, requirements)
+        app.logger.info(f"[JOB] Gap analysis done: partials={len(gaps.get('partials', []))}, missing={len(gaps.get('missing', []))}, ats_score={gaps.get('ats_score', 0)}")
+
     # Delete existing job descriptions for this user so we get a clean slate
     try:
         supabase = get_supabase_client()
@@ -641,15 +652,18 @@ def confirm_job_route():
         'description': confirmed_text,
         'title': '',
         'company': '',
-        'ats_keywords': json.dumps(ats_keywords)
+        'ats_keywords': json.dumps(ats_keywords),
+        'requirements': requirements,
+        'gaps': gaps,
     }
     job_id = save_job_description(job_record)
 
     # Session only stores the ID reference — no cookie bloat
     session['job_desc_id'] = job_id
     session['requirements'] = requirements
+    session['gaps'] = gaps  # cache for gap_answer_page
 
-    return jsonify({'success': True, 'requirements': requirements, 'ats_keywords': ats_keywords})
+    return jsonify({'success': True, 'requirements': requirements, 'ats_keywords': ats_keywords, 'gaps': gaps})
 
 
 def save_job_description(job_record: dict) -> str:
