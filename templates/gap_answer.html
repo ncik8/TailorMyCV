@@ -412,7 +412,7 @@
 let allGaps = [];
 let startMessages = [];
 try {
-    const rawGaps = '{{ all_gaps_json | tojson }}';
+    const rawGaps = '{{ all_gaps_json | tojson }}'.replace(/^\uFEFF/, '');
     allGaps = JSON.parse(rawGaps);
 } catch(e) {
     console.error('all_gaps_json parse error:', e, 'raw:', '{{ all_gaps_json | tojson }}');
