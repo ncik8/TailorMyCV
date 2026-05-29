@@ -162,8 +162,11 @@
         <div class="card" style="margin-bottom: 24px; background: #fffbeb; border-color: #d97706;">
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Gap Q&A Complete — {{ (job_data.gaps.partials|length if job_data.gaps.partials else 0) + (job_data.gaps.missing|length if job_data.gaps.missing else 0) }} answers recorded</h3>
             <p style="color: #64748b; margin-bottom: 12px;">Your profile has been updated with answers from the gap interview. Ready to generate your tailored CV!</p>
-            <div style="display: flex; gap: 12px;">
+            <div style="display: flex; gap: 12px; align-items: center;">
                 <a href="/cv/tailor" class="btn btn-primary">Generate Tailored CV →</a>
+                <form action="/job/clear" method="POST" style="display: inline;" onsubmit="return confirm('Delete this job and start fresh?');">
+                    <button type="submit" class="btn btn-danger">Delete Job</button>
+                </form>
             </div>
         </div>
         {% elif job_data and job_data.description %}
