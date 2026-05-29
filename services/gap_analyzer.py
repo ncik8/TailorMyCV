@@ -47,14 +47,17 @@ def score_ats_keywords(cv_json: dict, requirements: dict) -> dict:
     import re
     # Build flat list of ATS keywords from requirements
     keywords = []
-    for category in ['skills', 'certifications', 'tools', 'other']:
+    # Check all 6 categories, including experience_years and leadership dicts
+    for category in ['skills', 'certifications', 'tools', 'other', 'experience_years', 'leadership']:
         for item in requirements.get(category, []):
             if isinstance(item, str) and item:
                 keywords.append(item.lower())
             elif isinstance(item, dict):
-                kw = item.get('keyword', '') or item.get('name', '') or item.get('certification', '')
-                if kw:
-                    keywords.append(kw.lower())
+                # experience_years and leadership have numeric/categorical values
+                # that should also be checked as keywords
+                for v in item.values():
+                    if isinstance(v, str) and v.strip():
+                        keywords.append(v.lower())
 
     # Scan CV text (name, summary, skills, experience bullets, education)
     cv_text_parts = [

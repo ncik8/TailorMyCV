@@ -1043,16 +1043,27 @@ def merge_cv_sections(cv_data: dict, modification: dict) -> dict:
     elif applied_to == 'skills':
         updated['skills'] = updated.get('skills', [])
         new_skills = modification.get('cv_modification', [])
+        # Build separate lists for string skills and dict skill names for dedup
+        existing_str_skills = [s if isinstance(s, str) else '' for s in updated['skills']]
+        existing_dict_names = [x.get('name', '') if isinstance(x, dict) else '' for x in updated['skills']]
         for s in new_skills:
-            if isinstance(s, str) and s not in updated['skills']:
-                updated['skills'].append(s)
-            elif isinstance(s, dict) and s.get('name') not in [x.get('name') for x in updated['skills']]:
-                updated['skills'].append(s)
+            if isinstance(s, str):
+                if s not in existing_str_skills and s not in existing_dict_names:
+                    updated['skills'].append(s)
+                    existing_str_skills.append(s)
+            elif isinstance(s, dict):
+                name = s.get('name', '')
+                if name and name not in existing_str_skills and name not in existing_dict_names:
+                    updated['skills'].append(s)
+                    existing_dict_names.append(name)
     elif applied_to == 'certifications':
         updated['certifications'] = updated.get('certifications', [])
         new_certs = modification.get('cv_modification', [])
+        existing_certs = updated['certifications']
         for c in new_certs:
-            if isinstance(c, str) and c not in updated['certifications']:
+            if isinstance(c, str) and c not in existing_certs:
+                updated['certifications'].append(c)
+            elif isinstance(c, dict) and c.get('name') not in [x.get('name') if isinstance(x, dict) else x for x in existing_certs]:
                 updated['certifications'].append(c)
     elif applied_to == 'projects':
         updated['projects'] = updated.get('projects', [])
@@ -1064,6 +1075,14 @@ def merge_cv_sections(cv_data: dict, modification: dict) -> dict:
         current = updated.get('summary', '')
         new_text = modification.get('cv_modification', '')
         updated['summary'] = f"{current} {new_text}".strip()
+    else:
+        # Catch-all: if applied_to is something unexpected (education, languages, etc.)
+        # store the modification so it's never silently lost
+        extra = updated.get('_extra_modifications', [])
+        mod_content = modification.get('cv_modification', modification)
+        if mod_content not in extra:
+            extra.append(mod_content)
+        updated['_extra_modifications'] = extra
 
     return updated
 
