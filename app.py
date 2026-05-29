@@ -1432,3 +1432,34 @@ def debug_supabase():
     user_id = session.get('user_id')
     saved = load_cv(user_id)
     return {'user_id': user_id, 'saved_cv': saved}
+
+@app.route('/debug/analyze')
+def debug_analyze():
+    """Debug route: show raw gap analysis computation."""
+    if not session.get('user_id'):
+        return {'error': 'not logged in'}
+    user_id = session.get('user_id')
+
+    cv_data = load_cv(user_id)
+    job_data = load_job_description(user_id)
+
+    requirements = job_data.get('requirements', {})
+    gaps = job_data.get('gaps')
+
+    # Run fresh ATS calculation
+    ats_result = score_ats_keywords(cv_data, requirements) if cv_data else {'ats_score': 0, 'found': [], 'missing': []}
+
+    return {
+        'cv_data_keys': list(cv_data.keys()) if cv_data else None,
+        'cv_experience_count': len(cv_data.get('experience', [])) if cv_data else 0,
+        'cv_skills': cv_data.get('skills', []) if cv_data else [],
+        'job_data_keys': list(job_data.keys()) if job_data else None,
+        'requirements_type': type(requirements).__name__,
+        'requirements_keys': list(requirements.keys()) if isinstance(requirements, dict) else str(requirements)[:100],
+        'requirements': requirements,
+        'gaps_type': type(gaps).__name__,
+        'gaps_keys': list(gaps.keys()) if isinstance(gaps, dict) else str(gaps)[:200] if gaps else None,
+        'ats_score': ats_result['ats_score'],
+        'ats_found': ats_result['found'],
+        'ats_missing': ats_result['missing'],
+    }
