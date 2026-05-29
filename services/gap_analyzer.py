@@ -60,6 +60,9 @@ def score_ats_keywords(cv_json: dict, requirements: dict) -> dict:
                         keywords.append(k.lower())
                     if isinstance(v, str) and v.strip():
                         keywords.append(v.lower())
+            elif isinstance(item, (int, float)):
+                # Numeric values (like years) — skip as ATS keywords
+                pass
 
     # Scan CV text (name, summary, skills, experience bullets, education)
     cv_text_parts = [

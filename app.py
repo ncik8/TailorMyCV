@@ -1446,8 +1446,18 @@ def debug_analyze():
     requirements = job_data.get('requirements', {})
     gaps = job_data.get('gaps')
 
+    # Debug: log what we received
+    import sys
+    print(f"[DEBUG] user_id={user_id}", file=sys.stderr)
+    print(f"[DEBUG] cv_data type={type(cv_data).__name__}, keys={list(cv_data.keys()) if cv_data else None}", file=sys.stderr)
+    print(f"[DEBUG] job_data type={type(job_data).__name__}, keys={list(job_data.keys()) if job_data else None}", file=sys.stderr)
+    print(f"[DEBUG] requirements type={type(requirements).__name__}, keys={list(requirements.keys()) if isinstance(requirements, dict) else str(requirements)[:100]}", file=sys.stderr)
+    print(f"[DEBUG] requirements={requirements}", file=sys.stderr)
+
     # Run fresh ATS calculation
     ats_result = score_ats_keywords(cv_data, requirements) if cv_data else {'ats_score': 0, 'found': [], 'missing': []}
+
+    print(f"[DEBUG] ats_result={ats_result}", file=sys.stderr)
 
     return {
         'cv_data_keys': list(cv_data.keys()) if cv_data else None,
