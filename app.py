@@ -582,21 +582,16 @@ def scrape_job_route():
     if not data.get('text'):
         return jsonify({'error': 'No text provided'}), 400
     
-    # Parse pasted job description
+    # Parse pasted job description — job_data stored in Supabase only, not session cookie
     job_data = parse_job_text(data['text'])
-    session['job_data'] = job_data
-    
     # Extract requirements
     if job_data.get('description'):
         requirements = extract_requirements(job_data['description'])
-        session['requirements'] = requirements
-    else:
-        session['requirements'] = {'skills': [], 'experience_years': {}, 'certifications': [], 'leadership': {}, 'tools': [], 'other': []}
-    
+
     return jsonify({
         'success': True,
         'job': job_data,
-        'requirements': session['requirements'],
+        'requirements': requirements if job_data.get('description') else {'skills': [], 'experience_years': {}, 'certifications': [], 'leadership': {}, 'tools': [], 'other': []},
         'text': job_data.get('description', ''),
         'source': 'pasted'
     })
@@ -660,8 +655,6 @@ def confirm_job_route():
 
     # Session only stores the ID reference — no cookie bloat
     session['job_desc_id'] = job_id
-    session['requirements'] = requirements
-    session['gaps'] = gaps  # cache for gap_answer_page
 
     return jsonify({'success': True, 'requirements': requirements, 'ats_keywords': ats_keywords, 'gaps': gaps})
 
@@ -795,26 +788,29 @@ def gap_answer_page():
     app.logger.info(f"[GAP] session.gaps={'yes' if session.get('gaps') else 'NONE'}, job_data.gaps={'yes' if (job_data and job_data.get('gaps')) else 'NONE'}, job_data.keys={list(job_data.keys()) if job_data else 'empty'}")
     gaps = session.get('gaps')
     if not gaps:
-        # Try Supabase first (persistent gap data)
+        # Load from Supabase only — never cache gaps in session
         if job_data and job_data.get('gaps'):
             gaps = job_data['gaps']
-            session['gaps'] = gaps  # cache in session for next load
         else:
-            # On-the-fly fallback — save back to Supabase so future loads are fast
+            # On-the-fly fallback — save back to Supabase for next load
             requirements = job_data.get('requirements')
             if not requirements:
                 requirements = extract_requirements(job_data.get('description', ''))
             gaps = analyze_gaps(cv_data, requirements)
-            session['gaps'] = gaps
-            # Persist to Supabase for next load
+            # Persist to Supabase so future loads get it from there
             try:
-                save_job_description({
-                    'user_id': user_id,
-                    'description': job_data.get('description', ''),
-                    'gaps': gaps,
-                    'requirements': requirements,
-                    'gap_answers': [],
-                })
+                existing = load_job_description(user_id)
+                if existing:
+                    save_job_description({
+                        'user_id': user_id,
+                        'description': job_data.get('description', ''),
+                        'title': existing.get('title', ''),
+                        'company': existing.get('company', ''),
+                        'gaps': gaps,
+                        'requirements': requirements,
+                        'ats_keywords': existing.get('ats_keywords', []),
+                        'gap_answers': existing.get('gap_answers', []),
+                    })
             except Exception:
                 pass
 
@@ -1142,24 +1138,23 @@ def tailor_cv_page():
         return redirect(url_for('cv_preview_page'))
 
     user_id = session.get('user_id')
-    cv_data = session.get('cv_data')
-    if not cv_data and user_id:
-        cv_data = load_cv(user_id)
-    gap_answers = session.get('gap_answers', [])
+    if not user_id:
+        return redirect(url_for('login_page'))
 
+    # Load CV from Supabase only — never trust session for CV data
+    cv_data = load_cv(user_id)
     if not cv_data:
         return redirect(url_for('cv_upload_page'))
 
-    if user_id:
-        allowed, reason, profile = can_generate_cv(user_id)
-        if not allowed:
-            return redirect(url_for('upgrade_page'))
+    allowed, reason, profile = can_generate_cv(user_id)
+    if not allowed:
+        return redirect(url_for('upgrade_page'))
 
-    # Load job description + ATS keywords from Supabase
+    # Load job description + ATS keywords from Supabase only
     job_data = load_job_description(user_id) if user_id else {}
     job_description = job_data.get('description', '')
     ats_keywords = job_data.get('ats_keywords', [])
-    gap_answers = job_data.get('gap_answers', []) if job_data else []  # always from Supabase
+    gap_answers = job_data.get('gap_answers', []) if job_data else []
 
     if not job_description:
         return redirect(url_for('job_paste_page'))
