@@ -304,17 +304,23 @@ def index():
 def dashboard():
     """User dashboard after login."""
     init_session()
-    # Load CV from Supabase directly for template (don't store in session cookie)
+    user_id = session.get('user_id')
+
+    # Load CV from Supabase directly (don't rely on session cookie)
     cv_data = None
-    if session.get('user_id'):
-        cv_data = load_cv(session['user_id'])
+    if user_id:
+        cv_data = load_cv(user_id)
     # Also check session for CV just uploaded this session
     if not cv_data:
         cv_data = session.get('cv_data')
-    if not cv_data and user_id:
-        cv_data = load_cv(user_id)
+
+    # Load job data from Supabase (not session — session gets lost on cookie reset)
+    job_data = {}
+    if user_id:
+        job_data = load_job_description(user_id)
+
     upgrade_success = request.args.get('upgrade') == 'success'
-    return render_template('dashboard.html', upgrade_success=upgrade_success, cv_data=cv_data)
+    return render_template('dashboard.html', upgrade_success=upgrade_success, cv_data=cv_data, job_data=job_data)
 
 
 @app.route('/cv/upload')

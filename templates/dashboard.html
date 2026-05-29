@@ -134,7 +134,7 @@
             </div>
             {% endif %}
             <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
-                {% if not session.get('job_data') or not session.get('job_data').get('description') %}
+                {% if not job_data or not job_data.description %}
                 <a href="/job/paste" class="btn btn-primary">Paste Job Description</a>
                 {% else %}
                 <a href="/gap/analyze" class="btn btn-primary">View Gap Analysis</a>
@@ -158,12 +158,21 @@
         </div>
         {% endif %}
 
-        {% if session.get('job_data') and session.get('job_data').get('description') %}
+        {% if job_data and job_data.gaps and (job_data.gaps.partials or job_data.gaps.missing) %}
+        <div class="card" style="margin-bottom: 24px; background: #fffbeb; border-color: #d97706;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Gap Q&A Complete — {{ (job_data.gaps.partials|length if job_data.gaps.partials else 0) + (job_data.gaps.missing|length if job_data.gaps.missing else 0) }} answers recorded</h3>
+            <p style="color: #64748b; margin-bottom: 12px;">Your profile has been updated with answers from the gap interview. Ready to generate your tailored CV!</p>
+            <div style="display: flex; gap: 12px;">
+                <a href="/gap/answer" class="btn btn-primary">Review Gap Answers</a>
+                <a href="/cv/tailor" class="btn btn-secondary">Generate Tailored CV →</a>
+            </div>
+        </div>
+        {% elif job_data and job_data.description %}
         <div class="card" style="margin-bottom: 24px;">
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">✓ Job Description Loaded</h3>
             <p style="color: #64748b; margin-bottom: 8px;">
-                <strong>{{ session.job_data.title or 'Unknown Title' }}</strong>
-                {% if session.job_data.company %}at {{ session.job_data.company }}{% endif %}
+                <strong>{{ job_data.title or 'Unknown Title' }}</strong>
+                {% if job_data.company %}at {{ job_data.company }}{% endif %}
             </p>
             <div style="display: flex; gap: 12px;">
                 <a href="/gap/analyze" class="btn btn-primary">View Gap Analysis</a>
