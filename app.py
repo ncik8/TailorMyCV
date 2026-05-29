@@ -980,6 +980,7 @@ def gap_confirm_answer_route():
 
         # Save updated CV to Supabase
         save_result = save_cv(user_id, updated_cv)
+        app.logger.info(f"[GAP] save_cv returned: {save_result}, applied_to={applied_to}, cv_modification_keys={list(cv_modification.keys())}")
         if not save_result:
             return jsonify({'error': 'Failed to save updated CV'}), 500
 
@@ -1122,6 +1123,9 @@ def gap_analysis_page():
 
     # Ensure ats_score is always calculated fresh (not from stale cache)
     ats_result = score_ats_keywords(cv_data, requirements)
+    app.logger.info(f"[ANALYZE] ats_result: score={ats_result['ats_score']}, found={ats_result['found'][:10]}, total_keywords={len(ats_result['found'])+len(ats_result['missing'])}")
+    app.logger.info(f"[ANALYZE] requirements keys: {list(requirements.keys()) if requirements else 'NONE'}")
+    app.logger.info(f"[ANALYZE] cv_data keys: {list(cv_data.keys()) if cv_data else 'NONE'}, exp_count={len(cv_data.get('experience',[])) if cv_data else 0}")
     gaps['ats_score'] = ats_result['ats_score']
     gaps['ats_keywords_found'] = ats_result['found']
     gaps['ats_keywords_missing'] = ats_result['missing']
