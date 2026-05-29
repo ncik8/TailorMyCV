@@ -53,9 +53,11 @@ def score_ats_keywords(cv_json: dict, requirements: dict) -> dict:
             if isinstance(item, str) and item:
                 keywords.append(item.lower())
             elif isinstance(item, dict):
-                # experience_years and leadership have numeric/categorical values
-                # that should also be checked as keywords
-                for v in item.values():
+                # experience_years and leadership have keys like "enterprise_AI_initiatives"
+                # that are the actual requirement names, and string values like "Manager"
+                for k, v in item.items():
+                    if k.strip():
+                        keywords.append(k.lower())
                     if isinstance(v, str) and v.strip():
                         keywords.append(v.lower())
 
