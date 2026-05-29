@@ -1,5 +1,5 @@
 # RezMyCV — https://rezmycv.com
-# Version: 2026-05-29-f
+# Version: 2026-05-29-f-fix3 (gap answer fixes: BOM robust, input listeners, init crash guard)
 import os
 import json
 import tempfile

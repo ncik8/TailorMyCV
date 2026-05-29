@@ -407,26 +407,27 @@
 
 <script>
 // ============================================
-// State
+// State  (v2 - BOM fix: global/case-insensitive)
 // ============================================
 let allGaps = [];
 let startMessages = [];
 let cvData = null;
+let cvName = 'there';
 try {
-    const rawGaps = '{{ all_gaps_json | tojson }}'.trim().replace(/^\uFEFF/, '');
+    const rawGaps = '{{ all_gaps_json | tojson }}'.replace(/\ufeff/gi, '');
     allGaps = JSON.parse(rawGaps);
 } catch(e) {
     console.error('all_gaps_json parse error:', e, 'raw:', '{{ all_gaps_json | tojson }}');
 }
 try {
-    const rawStart = '{{ start_messages_json | tojson }}'.trim().replace(/^\uFEFF/, '');
+    const rawStart = '{{ start_messages_json | tojson }}'.replace(/\ufeff/gi, '');
     startMessages = JSON.parse(rawStart);
 } catch(e) {
     console.error('start_messages_json parse error:', e);
     startMessages = [];
 }
 try {
-    const rawCv = '{{ cv_data_json | tojson }}'.trim().replace(/^\uFEFF/, '');
+    const rawCv = '{{ cv_data_json | tojson }}'.replace(/\ufeff/gi, '');
     cvData = JSON.parse(rawCv);
 } catch(e) {
     console.error('cv_data_json parse error:', e);
@@ -959,13 +960,35 @@ document.getElementById('gap-input')?.addEventListener('input', function() {
 });
 
 // ============================================
-// Init
+// Init (v2 - try-catch wrapped so event listeners always attach)
 // ============================================
 (function init() {
-    cvName = cvData?.name?.split(' ')[0] || 'there';
-    renderSidebar();
-    rebuildChat();
-    setTimeout(() => scrollBottom(), 100);
+    try {
+        cvName = (cvData && cvData.name) ? cvData.name.split(' ')[0] : 'there';
+    } catch(e) {
+        cvName = 'there';
+    }
+    try {
+        renderSidebar();
+        rebuildChat();
+        setTimeout(() => scrollBottom(), 100);
+    } catch(e) {
+        console.error('rebuildChat error:', e);
+    }
 })();
+// Fallback: ensure keyboard/input listeners are attached regardless of above errors
+document.getElementById('gap-input')?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.ctrlKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+    if (e.key === 'Escape') {
+        this.blur();
+    }
+});
+document.getElementById('gap-input')?.addEventListener('input', function() {
+    this.style.height = '';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
 </script>
 {% endblock %}
