@@ -1116,14 +1116,14 @@ def gap_qna_page():
     cv_data = session.get('cv_data')
     if not cv_data and user_id:
         cv_data = load_cv(user_id)
-    job_data = session.get('job_data')
-    
+    job_data = load_job_description(user_id) if user_id else {}
+
     if not cv_data:
         return redirect(url_for('cv_upload_page'))
     if not job_data:
         return redirect(url_for('job_paste_page'))
-    
-    gaps = session.get('gaps')
+
+    gaps = job_data.get('gaps', []) if job_data else []
     return render_template('gap_qna.html', gaps=gaps)
 
 
@@ -1252,7 +1252,8 @@ def select_template_route():
 def download_cv_pdf():
     """Download CV as PDF using selected template style."""
     tailored_cv = session.get('tailored_cv')
-    job_data = session.get('job_data', {})
+    user_id = session.get('user_id')
+    job_data = load_job_description(user_id) if user_id else {}
     selected_template = session.get('cv_template', 'classic')
     
     if not tailored_cv:
