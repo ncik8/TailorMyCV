@@ -413,9 +413,11 @@ let allGaps = [];
 let startMessages = [];
 let cvData = null;
 let cvName = 'there';
+console.log('all_gaps_json length:', '{{ all_gaps_json | safe }}'.length, 'first 200 chars:', '{{ all_gaps_json | safe }}'.substring(0, 200));
 try {
     const rawGaps = '{{ all_gaps_json | safe }}'.replace(/\ufeff/gi, '');
     allGaps = JSON.parse(rawGaps);
+    console.log('allGaps loaded:', allGaps.length, 'items');
 } catch(e) {
     console.error('all_gaps_json parse error:', e, 'raw:', '{{ all_gaps_json | safe }}');
 }
