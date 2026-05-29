@@ -746,22 +746,7 @@ def clear_job_route():
     session.pop('requirements', None)
     session.pop('gaps', None)
     session.pop('gap_answers', None)
-    return jsonify({'success': True})
-
-
-    if not cv_data:
-        return jsonify({'error': 'No CV data. Please upload your CV first.'}), 400
-    
-    if not requirements:
-        return jsonify({'error': 'No job requirements. Please paste a job URL or description first.'}), 400
-    
-    try:
-        gaps = analyze_gaps(cv_data, requirements)
-        session['gaps'] = gaps
-        session['gap_answers'] = []
-        return jsonify({'success': True, 'gaps': gaps})
-    except Exception as e:
-        return jsonify({'error': f'Failed to analyze gaps: {str(e)}'}), 500
+    return redirect(url_for('dashboard'))
 
 
 def delete_job_description(user_id: str) -> bool:
