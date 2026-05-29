@@ -618,22 +618,15 @@ def confirm_job_route():
     requirements = extract_requirements(confirmed_text)
     app.logger.info(f"[JOB] extract_requirements returned keys: {list(requirements.keys()) if isinstance(requirements, dict) else 'ERROR: ' + str(requirements)[:200]}")
 
-    # Extract ATS keywords: flatten all requirement categories into a keyword list
+    # Build ats_keywords directly from requirements['skills'] — requirements.skills
+    # is a list of actual skill strings (e.g. ["AI strategy", "AI delivery", ...])
+    # This is more reliable than the extraction loop which returned [].
     ats_keywords = []
     if isinstance(requirements, dict) and 'error' not in requirements:
-        for category in ['skills', 'certifications', 'tools', 'other']:
-            items = requirements.get(category, [])
-            app.logger.info(f"[JOB] category={category}, items={items}")
-            for item in items:
-                if isinstance(item, dict):
-                    ats_keywords.append(item.get('keyword', '') or item.get('name', ''))
-                elif isinstance(item, str):
-                    ats_keywords.append(item)
-    else:
-        app.logger.warning(f"[JOB] requirements has error or wrong type: {requirements}")
-    # Deduplicate
-    ats_keywords = list(dict.fromkeys(k for k in ats_keywords if k))
-    app.logger.info(f"[JOB] final ats_keywords count={len(ats_keywords)}, keywords={ats_keywords}")
+        skills = requirements.get('skills', [])
+        ats_keywords = [s.lower() for s in skills if isinstance(s, str) and s.strip()]
+        # Log for debugging
+        app.logger.info(f"[JOB] ats_keywords from requirements.skills: count={len(ats_keywords)}, keywords={ats_keywords}")
 
     # Load CV data to run full gap analysis (one AI call to get gaps + ATS score)
     cv_data = None
