@@ -808,7 +808,7 @@ def gap_answer_page():
                         'company': existing.get('company', ''),
                         'gaps': gaps,
                         'requirements': requirements,
-                        'ats_keywords': existing.get('ats_keywords', []),
+                        'ats_keywords': json.dumps(existing.get('ats_keywords', [])),
                         'gap_answers': existing.get('gap_answers', []),
                     })
             except Exception:
