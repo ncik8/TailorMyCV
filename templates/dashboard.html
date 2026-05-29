@@ -163,8 +163,7 @@
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Gap Q&A Complete — {{ (job_data.gaps.partials|length if job_data.gaps.partials else 0) + (job_data.gaps.missing|length if job_data.gaps.missing else 0) }} answers recorded</h3>
             <p style="color: #64748b; margin-bottom: 12px;">Your profile has been updated with answers from the gap interview. Ready to generate your tailored CV!</p>
             <div style="display: flex; gap: 12px;">
-                <a href="/gap/answer" class="btn btn-primary">Review Gap Answers</a>
-                <a href="/cv/tailor" class="btn btn-secondary">Generate Tailored CV →</a>
+                <a href="/cv/tailor" class="btn btn-primary">Generate Tailored CV →</a>
             </div>
         </div>
         {% elif job_data and job_data.description %}
@@ -177,6 +176,9 @@
             <div style="display: flex; gap: 12px;">
                 <a href="/gap/analyze" class="btn btn-primary">View Gap Analysis</a>
                 <a href="/job/paste" class="btn btn-secondary">Change Job</a>
+                <form action="/job/clear" method="POST" style="display: inline;" onsubmit="return confirm('Delete this job and start fresh?');">
+                    <button type="submit" class="btn btn-danger">Delete Job</button>
+                </form>
             </div>
         </div>
         {% endif %}

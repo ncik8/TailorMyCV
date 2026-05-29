@@ -629,6 +629,13 @@ def confirm_job_route():
     # Deduplicate
     ats_keywords = list(dict.fromkeys(k for k in ats_keywords if k))
 
+    # Delete existing job descriptions for this user so we get a clean slate
+    try:
+        supabase = get_supabase_client()
+        supabase.table('job_descriptions').delete().eq('user_id', user_id).execute()
+    except Exception as e:
+        app.logger.info(f"[JOB] confirm_job_route cleanup error: {e}")
+
     job_record = {
         'user_id': user_id,
         'description': confirmed_text,
