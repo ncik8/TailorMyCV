@@ -75,6 +75,10 @@ def _prepare_cv_context(tailored_cv: dict) -> dict:
                 normalized.append(skill)
         ctx["skills"] = normalized
     
+    # Add ATS score if not present (used in preview page banner)
+    if "ats_score" not in ctx:
+        ctx["ats_score"] = session.get("ats_score", 78)
+    
     return ctx
 
 
@@ -612,17 +616,24 @@ def confirm_job_route():
     # Store job description + ATS analysis in Supabase (not session cookie)
     user_id = session.get('user_id')
     requirements = extract_requirements(confirmed_text)
+    app.logger.info(f"[JOB] extract_requirements returned keys: {list(requirements.keys()) if isinstance(requirements, dict) else 'ERROR: ' + str(requirements)[:200]}")
 
     # Extract ATS keywords: flatten all requirement categories into a keyword list
     ats_keywords = []
-    for category in ['skills', 'certifications', 'tools', 'other']:
-        for item in requirements.get(category, []):
-            if isinstance(item, dict):
-                ats_keywords.append(item.get('keyword', '') or item.get('name', ''))
-            elif isinstance(item, str):
-                ats_keywords.append(item)
+    if isinstance(requirements, dict) and 'error' not in requirements:
+        for category in ['skills', 'certifications', 'tools', 'other']:
+            items = requirements.get(category, [])
+            app.logger.info(f"[JOB] category={category}, items={items}")
+            for item in items:
+                if isinstance(item, dict):
+                    ats_keywords.append(item.get('keyword', '') or item.get('name', ''))
+                elif isinstance(item, str):
+                    ats_keywords.append(item)
+    else:
+        app.logger.warning(f"[JOB] requirements has error or wrong type: {requirements}")
     # Deduplicate
     ats_keywords = list(dict.fromkeys(k for k in ats_keywords if k))
+    app.logger.info(f"[JOB] final ats_keywords count={len(ats_keywords)}, keywords={ats_keywords}")
 
     # Load CV data to run full gap analysis (one AI call to get gaps + ATS score)
     cv_data = None
@@ -1280,6 +1291,38 @@ def download_cv_pdf():
     try:
         from xhtml2pdf import pisa
         import io
+        import re
+        import os
+
+        # Inline CSS for PDF generation (xhtml2pdf can't fetch external files)
+        css_path_map = {
+            'cv/style_1_modern/modern.html': '/static/cv/style_1_modern/style.css',
+            'cv/style_2_classic/classic.html': '/static/cv/style_2_classic/style.css',
+            'cv/style_3_minimal/minimal.html': '/static/cv/style_3_minimal/style.css',
+            'cv/style_4_creative/creative.html': '/static/cv/style_4_creative/style.css',
+            'cv/style_5_academic/academic.html': '/static/cv/style_5_academic/style.css',
+            'cv/style_6_bold/bold.html': '/static/cv/style_6_bold/style.css',
+        }
+        css_file_path = css_path_map.get(template_file)
+        if css_file_path:
+            full_css_path = os.path.join(BASE_DIR, css_file_path.lstrip('/'))
+            if os.path.exists(full_css_path):
+                with open(full_css_path, 'r') as f:
+                    css_content = f.read()
+                # Replace link tag with style tag
+                html_content = re.sub(
+                    r'<link[^>]*rel=["\']stylesheet["\'][^>]*>',
+                    f'<style>{css_content}</style>',
+                    html_content,
+                    count=1
+                )
+                # Also handle the case where href comes first
+                html_content = re.sub(
+                    r'<link[^>]*href=["\'][^"\']*style\.css["\'][^>]*>',
+                    f'<style>{css_content}</style>',
+                    html_content,
+                    count=1
+                )
 
         pdf_buffer = io.BytesIO()
         pisa.CreatePDF(

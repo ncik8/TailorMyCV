@@ -95,7 +95,11 @@ def extract_requirements(job_description: str) -> dict:
     """Extract requirements from job description using MiniMax."""
     response = chat(REQUIREMENTS_EXTRACTOR_PROMPT, job_description)
     
+    # DEBUG: log raw response
+    print(f"[DEBUG extract_requirements] raw response type: {type(response)}, value: {repr(response)[:500]}")
+    
     if isinstance(response, dict) and "error" in response:
+        print(f"[DEBUG extract_requirements] API error returned: {response}")
         return response
     
     try:
@@ -105,11 +109,12 @@ def extract_requirements(job_description: str) -> dict:
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
-        return json.loads(text)
-    except json.JSONDecodeError:
-        return {"error": "Failed to parse requirements", "raw": response}
-
-
+        result = json.loads(text)
+        print(f"[DEBUG extract_requirements] parsed requirements keys: {list(result.keys()) if isinstance(result, dict) else 'not a dict'}")
+        return result
+    except json.JSONDecodeError as e:
+        print(f"[DEBUG extract_requirements] JSON decode error: {e}, raw text: {repr(text)[:300]}")
+        return {"error": f"Failed to parse requirements: {e}", "raw": response}
 def analyze_gaps(cv_json: dict, requirements: dict) -> dict:
     """Analyze gaps between CV and job requirements. Includes ATS keyword scoring."""
     cv_str = json.dumps(cv_json, indent=2)
