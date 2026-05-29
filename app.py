@@ -1,5 +1,6 @@
 # RezMyCV — https://rezmycv.com
-# Version: 2026-05-29-f-fix3 (gap answer fixes: BOM robust, input listeners, init crash guard)
+# Version: 2026-05-29-fix-final
+# Fix: |safe instead of |tojson to prevent double-encoding BOM
 import os
 import json
 import tempfile
