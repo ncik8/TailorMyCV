@@ -411,21 +411,22 @@
 // ============================================
 let allGaps = [];
 let startMessages = [];
+let cvData = null;
 try {
-    const rawGaps = '{{ all_gaps_json | tojson }}'.replace(/^\uFEFF/, '');
+    const rawGaps = '{{ all_gaps_json | tojson }}'.trim().replace(/^\uFEFF/, '');
     allGaps = JSON.parse(rawGaps);
 } catch(e) {
     console.error('all_gaps_json parse error:', e, 'raw:', '{{ all_gaps_json | tojson }}');
 }
 try {
-    const rawStart = '{{ start_messages_json | tojson }}'.replace(/^\uFEFF/, '');
+    const rawStart = '{{ start_messages_json | tojson }}'.trim().replace(/^\uFEFF/, '');
     startMessages = JSON.parse(rawStart);
 } catch(e) {
     console.error('start_messages_json parse error:', e);
     startMessages = [];
 }
 try {
-    const rawCv = '{{ cv_data_json | tojson }}'.replace(/^\uFEFF/, '');
+    const rawCv = '{{ cv_data_json | tojson }}'.trim().replace(/^\uFEFF/, '');
     cvData = JSON.parse(rawCv);
 } catch(e) {
     console.error('cv_data_json parse error:', e);
