@@ -604,7 +604,7 @@
                     </div>
                     {% endfor %}
                 </div>
-                <button type="button" class="add-bullet-btn" onclick="addBullet()">+ Add Achievement</button>
+                <button type="button" class="add-bullet-btn" onclick="addBullet({{ loop.index0 }})">+ Add Achievement</button>
             </div>
                 </div>
                 {% endfor %}
@@ -797,32 +797,32 @@ function addExperience() {
             <h3>Position ${list.children.length + 1}</h3>
             <button type="button" class="remove-btn" onclick="removeExp(${idx})">×</button>
         </div>
-        <div class="form-row">
+<div class="form-row">
             <div class="form-group">
                 <label>Job Title</label>
-                <input type="text" name="exp_title">
+                <input type="text" name="exp_title" value="">
             </div>
             <div class="form-group">
                 <label>Company</label>
-                <input type="text" name="exp_company">
+                <input type="text" name="exp_company" value="">
             </div>
         </div>
         <div class="form-row">
             <div class="form-group">
                 <label>Start Date</label>
-                <input type="text" name="exp_start">
+                <input type="text" name="exp_start" value="">
             </div>
             <div class="form-group">
                 <label>End Date</label>
-                <input type="text" name="exp_end">
+                <input type="text" name="exp_end" value="">
             </div>
         </div>
         <div class="form-group">
             <label>Key Achievements / Responsibilities</label>
-            <div class="exp-bullets" id="exp-bullets-${idx}"></div>
-            <button type="button" class="add-bullet-btn" onclick="addBullet(${idx})">+ Add Achievement</button>
+            <div class="exp-bullets"></div>
+            <button type="button" class="add-bullet-btn" onclick="addBulletToClosest(this)">+ Add Achievement</button>
         </div>
-    </div>
+                </div>
     `;
     list.insertAdjacentHTML('beforeend', html);
 }
@@ -836,6 +836,21 @@ function addBullet(expIdx) {
     const container = document.getElementById(`exp-bullets-${expIdx}`);
     if (!container) return;
     const bulletIdx = container.children.length;
+    const html = `
+    <div class="bullet-item">
+        <input type="text" name="exp_bullet">
+        <button type="button" class="remove-bullet" onclick="removeBullet(this)">×</button>
+    </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+function addBulletToClosest(btn) {
+    // Walk up to the .exp-card, then find .exp-bullets inside it
+    const card = btn.closest('.exp-card');
+    if (!card) return;
+    const container = card.querySelector('.exp-bullets');
+    if (!container) return;
     const html = `
     <div class="bullet-item">
         <input type="text" name="exp_bullet">
