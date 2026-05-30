@@ -287,22 +287,44 @@ CV current state (partial):
 
 Apply the interpreted text to the appropriate place in the CV structure.
 
-For job bullets: Add to the specified job's bullets list.
-For skills: Add to the skills array.
-For certifications: Add to the certs array.
-For projects: Add to the projects array.
-For summary: Append to the summary field.
+IMPORTANT: Return ONLY the modified portion — NOT the full CV.
 
-Return ONLY a valid JSON object representing the UPDATED CV section (the part that was modified):
+For job bullets (applied_to="job_0", "job_1", etc.):
 {{
-  "applied_to": "job_0" | "skills" | "certifications" | "projects" | "summary",
-  "applied_text": "The exact text that was added or updated",
-  "cv_modification": {{ ...full updated section... }}
+  "applied_to": "job_0",
+  "applied_text": "Added bullet text",
+  "cv_modification": {{"bullets": ["new bullet 1", "new bullet 2"]}}
 }}
 
-All other CV sections must be included in cv_modification unchanged.
+For skills:
+{{
+  "applied_to": "skills",
+  "applied_text": "Python, Docker",
+  "cv_modification": ["Python", "Docker"]
+}}
 
-Return pure JSON only, no markdown."""
+For certifications:
+{{
+  "applied_to": "certifications",
+  "applied_text": "AWS Solutions Architect",
+  "cv_modification": ["AWS Solutions Architect"]
+}}
+
+For projects:
+{{
+  "applied_to": "projects",
+  "applied_text": "E-commerce Platform Redesign",
+  "cv_modification": ["E-commerce Platform Redesign"]
+}}
+
+For summary:
+{{
+  "applied_to": "summary",
+  "applied_text": "Added summary text",
+  "cv_modification": "New summary text to append"
+}}
+
+Return pure JSON only, no markdown, no explanation."""
 
 
 def apply_gap_answer_to_profile(cv_json: dict, requirement: str, user_answer: str,
