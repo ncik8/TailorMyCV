@@ -1190,13 +1190,12 @@ def gap_qna_page():
 def tailor_cv_page():
     """Page: Generate tailored CV and redirect to preview."""
     init_session()
-    tailored_cv = session.get('tailored_cv')
-    if tailored_cv:
-        return redirect(url_for('cv_preview_page'))
-
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login_page'))
+
+    # Always regenerate — clear any stale tailored_cv from session
+    session.pop('tailored_cv', None)
 
     # Load CV from Supabase only — never trust session for CV data
     cv_data = load_cv(user_id)
