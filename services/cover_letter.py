@@ -4,7 +4,7 @@ from services.minimax import chat
 COVER_LETTER_PROMPT = """You are an expert cover letter writer. Write a professional cover letter for this job application.
 
 Structure:
-- Opening: Why you're excited about this specific role
+- Opening: Start with "To Whom It May Concern" on its own line, then "In reference to the position of {title} at {company}" on the next line, then a blank line before the body
 - Body: 1-2 paragraphs highlighting your most relevant experience
 - Closing: Call to action, thank them
 
@@ -14,6 +14,9 @@ Rules:
 - Length: ~300-400 words
 - Never fabricate dates, titles, or achievements
 - Personalize for the specific company/role
+- ALWAYS start with exactly:
+  To Whom It May Concern
+  In reference to the position of [JOB TITLE] at [COMPANY NAME]
 
 Input:
 - CV: {cv}
@@ -22,7 +25,7 @@ Input:
 - Company: {company}
 - Job title: {title}
 
-Return ONLY the cover letter text. No headers like "Cover Letter:" - just start with the salutation (e.g., "Dear Hiring Manager,")."""
+Return ONLY the cover letter text. No headers like "Cover Letter:" - just start with "To Whom It May Concern"."""
 
 TONE_INSTRUCTIONS = {
     "professional": "Formal but warm. Confident without being arrogant.",
