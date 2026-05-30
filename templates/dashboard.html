@@ -158,6 +158,7 @@
         </div>
         {% endif %}
 
+        {% if job_data and job_data.gaps %}
         {% set answered = job_data.gap_answers|length if job_data.gap_answers else 0 %}
         {% set total_gaps = ((job_data.gaps.partials|length if job_data.gaps.partials else 0) + (job_data.gaps.missing|length if job_data.gaps.missing else 0)) %}
         {% if answered > 0 and total_gaps > 0 %}
@@ -171,7 +172,10 @@
                 </form>
             </div>
         </div>
-        {% elif job_data and job_data.description %}
+        {% endif %}
+        {% endif %}
+
+        {% if job_data and job_data.description and not (job_data.gaps and (job_data.gaps.partials or job_data.gaps.missing)) %}
         <div class="card" style="margin-bottom: 24px;">
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">✓ Job Description Loaded</h3>
             <p style="color: #64748b; margin-bottom: 8px;">
@@ -180,6 +184,20 @@
             </p>
             <div style="display: flex; gap: 12px;">
                 <a href="/gap/analyze" class="btn btn-primary">View Gap Analysis</a>
+                <a href="/job/paste" class="btn btn-secondary">Change Job</a>
+                <form action="/job/clear" method="POST" style="display: inline;" onsubmit="return confirm('Delete this job and start fresh?');">
+                    <button type="submit" class="btn btn-danger">Delete Job</button>
+                </form>
+            </div>
+        </div>
+        {% elif job_data and job_data.description %}
+        <div class="card" style="margin-bottom: 24px;">
+            <p style="color: #64748b; margin-bottom: 8px;">
+                <strong>{{ job_data.title or 'Unknown Title' }}</strong>
+                {% if job_data.company %}at {{ job_data.company }}{% endif %}
+            </p>
+            <div style="display: flex; gap: 12px;">
+                <a href="/gap/analyze" class="btn btn-primary">View/Edit Gap Analysis</a>
                 <a href="/job/paste" class="btn btn-secondary">Change Job</a>
                 <form action="/job/clear" method="POST" style="display: inline;" onsubmit="return confirm('Delete this job and start fresh?');">
                     <button type="submit" class="btn btn-danger">Delete Job</button>
