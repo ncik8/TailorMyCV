@@ -1107,6 +1107,9 @@ def merge_cv_sections(cv_data: dict, modification: dict) -> dict:
     """
     updated = dict(cv_data)
 
+    # Preserve gap_answers — don't let them be wiped
+    gap_answers = cv_data.get('gap_answers', [])
+
     applied_to = modification.get('applied_to', '')
 
     if applied_to.startswith('job_'):
@@ -1164,6 +1167,9 @@ def merge_cv_sections(cv_data: dict, modification: dict) -> dict:
         if mod_content not in extra:
             extra.append(mod_content)
         updated['_extra_modifications'] = extra
+
+    # Restore preserved gap_answers
+    updated['gap_answers'] = gap_answers
 
     return updated
 
