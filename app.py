@@ -114,8 +114,10 @@ def auth_signup():
     email = request.form.get('email', '').strip()
     password = request.form.get('password', '')
     confirm = request.form.get('confirm_password', '')
-    
-    if not email or not password:
+    agree_terms = request.form.get('agree_terms')
+
+    if not agree_terms:
+        return render_template('auth/signup.html', error='You must agree to the Terms & Conditions and Privacy Policy.')
         return render_template('auth/signup.html', error='Email and password are required.')
     if password != confirm:
         return render_template('auth/signup.html', error='Passwords do not match.')
@@ -177,6 +179,18 @@ def upgrade_page():
     init_session()
     user_tier = session.get('tier', 'free')
     return render_template('upgrade.html', tier=user_tier)
+
+
+@app.route('/terms')
+def terms_page():
+    """Terms & Conditions page."""
+    return render_template('terms.html')
+
+
+@app.route('/privacy')
+def privacy_page():
+    """Privacy Policy page."""
+    return render_template('privacy.html')
 
 
 @app.route('/profile')

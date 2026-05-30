@@ -60,6 +60,24 @@
         .btn-primary:hover { opacity: 0.85; }
         .footer-text { text-align: center; margin-top: 24px; font-size: 14px; color: rgba(10,10,10,.65); }
         .footer-text a { color: #0a0a0a; font-weight: 500; text-decoration: none; }
+        .consent-row { margin-bottom: 24px; }
+        .consent-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13px;
+            color: rgba(10,10,10,.75);
+            cursor: pointer;
+            line-height: 1.5;
+        }
+        .consent-label input[type="checkbox"] {
+            margin-top: 2px;
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .consent-label a { color: #0a0a0a; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -83,6 +101,12 @@
             <div class="form-group">
                 <label for="confirm_password">Confirm Password</label>
                 <input type="password" id="confirm_password" name="confirm_password" placeholder="Repeat password" required>
+            </div>
+            <div class="consent-row">
+                <label class="consent-label">
+                    <input type="checkbox" name="agree_terms" required> 
+                    I agree to the <a href="/terms" target="_blank">Terms & Conditions</a> and <a href="/privacy" target="_blank">Privacy Policy</a>
+                </label>
             </div>
             <button type="submit" class="btn-primary">Create Account — Free</button>
         </form>
