@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}Edit CV — ResMyCV{% endblock %}
+
+{% block extra_css %}
+<style>
+/* A4 Preview Area */
+.editor-wrapper {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    margin-top: 32px;
+}
+
+.cv-a4-preview {
+    width: 595px;  /* A4 at 72dpi */
+    min-height: 842px;
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    padding: 40px 36px;
+    flex-shrink: 0;
+}
+
+/* Editable field styles */
+[contenteditable] {
+    outline: none;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+[contenteditable]:hover {
+    background: #f0f9ff;
+}
+[contenteditable]:focus {
+    background: #e0f2fe;
+    box-shadow: 0 0 0 2px #3b82f6;
+}
+
+/* CV Content Styles */
+.cv-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0a0a0a;
+    margin-bottom: 4px;
+}
+.cv-title {
+    font-size: 13px;
+    color: rgba(10,10,10,0.6);
+    margin-bottom: 12px;
+}
+.cv-contact {
+    font-size: 11px;
+    color: rgba(10,10,10,0.5);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.cv-section {
+    margin-bottom: 18px;
+}
+.cv-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(10,10,10,0.4);
+    border-bottom: 1px solid rgba(10,10,10,0.15);
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+}
+.cv-summary {
+    font-size: 11px;
+    line-height: 1.6;
+    color: rgba(10,10,10,0.75);
+}
+.cv-exp-item {
+    margin-bottom: 14px;
+}
+.cv-exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+}
+.cv-exp-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0a0a0a;
+}
+.cv-exp-dates {
+    font-size: 10px;
+    color: rgba(10,10,10,0.45);
+}
+.cv-exp-company {
+    font-size: 11px;
+    color: rgba(10,10,10,0.55);
+    margin-bottom: 5px;
+}
+.cv-bullets {
+    padding-left: 14px;
+}
+.cv-bullets li {
+    font-size: 10.5px;
+    line-height: 1.55;
+    color: rgba(10,10,10,0.72);
+    margin-bottom: 3px;
+}
+.cv-skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.cv-skill-tag {
+    font-size: 10px;
+    background: rgba(10,10,10,0.06);
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: rgba(10,10,10,0.7);
+}
+.cv-edu-item {
+    margin-bottom: 8px;
+}
+.cv-edu-degree {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0a0a0a;
+}
+.cv-edu-school {
+    font-size: 11px;
+    color: rgba(10,10,10,0.55);
+}
+.cv-edu-year {
+    font-size: 10px;
+    color: rgba(10,10,10,0.4);
+}
+
+/* Editor Panel */
+.editor-panel {
+    flex: 1;
+    min-width: 0;
+}
+.editor-panel h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+}
+.panel-section {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.panel-section label {
+    display: block;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+    color: var(--text-3);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+.panel-section textarea,
+.panel-section input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    resize: vertical;
+    margin-bottom: 8px;
+}
+.panel-section textarea:focus,
+.panel-section input:focus {
+    outline: none;
+    border-color: var(--text-2);
+}
+.panel-actions {
+    display: flex;
+    gap: 10px;
+}
+.btn-print {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.btn-print:hover { opacity: 0.75; }
+.btn-save {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.btn-save:hover { border-color: var(--text-2); }
+
+/* Print styles */
+@media print {
+    @page {
+        margin: 0;
+    }
+    body {
+        background: white !important;
+        background-image: none !important;
+    }
+    .navbar, .editor-panel, .page-header, .panel-actions, .btn-print, .btn-save, .footer {
+        display: none !important;
+    }
+    .editor-wrapper {
+        display: block;
+    }
+    .cv-a4-preview {
+        box-shadow: none;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    [contenteditable] {
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container">
+        <div class="page-header">
+            <div class="section-label" style="text-align: center;">Step 4 of 4</div>
+            <h1>Edit Your CV</h1>
+            <p>Click any text to edit it. When you're done, print or download your CV.</p>
+        </div>
+
+        <div class="editor-wrapper">
+            <!-- A4 CV Preview -->
+            <div class="cv-a4-preview" id="cvPreview">
+
+                <!-- Name & Contact -->
+                <div class="cv-name" contenteditable="true" data-field="personal.name">{{ personal.name }}</div>
+                <div class="cv-title" contenteditable="true" data-field="personal.title">{{ personal.title }}</div>
+                <div class="cv-contact">
+                    <span contenteditable="true" data-field="personal.email">{{ personal.email }}</span>
+                    <span contenteditable="true" data-field="personal.phone">{{ personal.phone }}</span>
+                    <span contenteditable="true" data-field="personal.location">{{ personal.location }}</span>
+                </div>
+
+                <!-- Summary -->
+                {% if personal.summary %}
+                <div class="cv-section">
+                    <div class="cv-section-title">Summary</div>
+                    <div class="cv-summary" contenteditable="true" data-field="personal.summary">{{ personal.summary }}</div>
+                </div>
+                {% endif %}
+
+                <!-- Experience -->
+                {% if experience %}
+                <div class="cv-section">
+                    <div class="cv-section-title">Experience</div>
+                    {% for exp in experience %}
+                    <div class="cv-exp-item" data-exp-index="{{ loop.index0 }}">
+                        <div class="cv-exp-header">
+                            <div class="cv-exp-title" contenteditable="true" data-field="experience.{{ loop.index0 }}.title">{{ exp.title }}</div>
+                            <div class="cv-exp-dates" contenteditable="true" data-field="experience.{{ loop.index0 }}.dates">{{ exp.dates }}</div>
+                        </div>
+                        <div class="cv-exp-company" contenteditable="true" data-field="experience.{{ loop.index0 }}.company">{{ exp.company }}</div>
+                        <ul class="cv-bullets">
+                            {% for bullet in exp.highlights %}
+                            <li contenteditable="true" data-field="experience.{{ loop.index0 }}.highlights.{{ loop.index0 }}">{{ bullet }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Skills -->
+                {% if skills %}
+                <div class="cv-section">
+                    <div class="cv-section-title">Skills</div>
+                    <div class="cv-skills-grid">
+                        {% for skill in skills %}
+                        <span class="cv-skill-tag" contenteditable="true" data-field="skills.{{ loop.index0 }}.name">{{ skill.name if skill.name else skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Education -->
+                {% if education %}
+                <div class="cv-section">
+                    <div class="cv-section-title">Education</div>
+                    {% for edu in education %}
+                    <div class="cv-edu-item">
+                        <div class="cv-edu-degree" contenteditable="true" data-field="education.{{ loop.index0 }}.degree">{{ edu.degree }}</div>
+                        <div class="cv-edu-school" contenteditable="true" data-field="education.{{ loop.index0 }}.school">{{ edu.school }}</div>
+                        {% if edu.year %}
+                        <div class="cv-edu-year" contenteditable="true" data-field="education.{{ loop.index0 }}.year">{{ edu.year }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            </div>
+            <!-- /A4 Preview -->
+
+            <!-- Editor Panel -->
+            <div class="editor-panel">
+                <h3>Actions</h3>
+                <div class="panel-actions">
+                    <button class="btn-print" onclick="window.print()">Print / Download PDF</button>
+                    <button class="btn-save" onclick="saveEdits()">Save Changes</button>
+                </div>
+
+                <div class="panel-section" style="margin-top: 24px;">
+                    <label>Quick Edit — Name</label>
+                    <input type="text" id="quickName" value="{{ personal.name }}" oninput="syncField('personal.name', this.value)">
+                </div>
+
+                <div class="panel-section">
+                    <label>Summary</label>
+                    <textarea rows="4" id="quickSummary">{{ personal.summary }}</textarea>
+                </div>
+
+                <p style="font-size: 11px; color: var(--text-3); margin-top: 16px; line-height: 1.6;">
+                    Tip: Click any text on the left to edit it directly. Use <strong>Ctrl+P</strong> (or <strong>Cmd+P</strong> on Mac) to print or save as PDF.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function saveEdits() {
+    // Collect all contenteditable fields and submit
+    const fields = {};
+    document.querySelectorAll('[contenteditable]').forEach(el => {
+        const field = el.dataset.field;
+        if (field) fields[field] = el.innerText.trim();
+    });
+
+    fetch('/cv/save-editor', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({fields: fields})
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            // Brief flash to confirm
+            document.querySelector('.btn-save').innerText = '✓ Saved';
+            setTimeout(() => {
+                document.querySelector('.btn-save').innerText = 'Save Changes';
+            }, 1500);
+        }
+    });
+}
+
+function syncField(field, value) {
+    const el = document.querySelector(`[data-field="${field}"]`);
+    if (el) el.innerText = value;
+}
+
+// Auto-save on blur (when user clicks away from a field)
+document.querySelectorAll('[contenteditable]').forEach(el => {
+    el.addEventListener('blur', () => {
+        const field = el.dataset.field;
+        const value = el.innerText.trim();
+        // Silent auto-save
+        fetch('/cv/save-editor', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({fields: {[field]: value}})
+        });
+    });
+});
+</script>
+{% endblock %}

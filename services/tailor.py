@@ -94,7 +94,8 @@ Return ONLY a valid JSON object — no markdown, no explanation. Structure must 
 The target job requires these specific keywords — use them naturally in your output where relevant:
 {ats_keywords_list}
 
-Prioritize these keywords in: summary opening, first experience bullets, skills section."""
+## CRITICAL: SUMMARY MUST INCLUDE ALL ATS KEYWORDS
+Your "summary" field (2-3 sentences in first person) MUST organically weave in every single ATS keyword from the list above. The summary is the FIRST thing recruiters and ATS systems see — it must prove the candidate matches the job requirements at a glance. Do not just list keywords; use them naturally in sentences that describe the candidate's profile and achievements. Every skill/tool/technology from ats_keywords_list should appear in the summary."""
 
 
 def tailor_cv(base_cv: dict, gap_answers: list, job_description: str, ats_keywords: list = None) -> dict:

@@ -1250,27 +1250,86 @@ def tailor_cv_route():
 
 @app.route('/cv/preview')
 def cv_preview_page():
-    """Preview tailored CV."""
+    """Light-editable CV preview — uses cv_editor.html for inline editing."""
     init_session()
     tailored_cv = session.get('tailored_cv')
-    if not tailored_cv:
+
+    # Dev mode: if no tailored_cv but request has ?mock=1, use sample data
+    if not tailored_cv and request.args.get('mock') == '1':
+        tailored_cv = {
+            "personal": {
+                "name": "Alex Chen", "title": "Senior Product Manager",
+                "email": "alex@techcorp.com", "phone": "+852 9123 4567",
+                "location": "Hong Kong",
+                "summary": "Experienced product leader with 10+ years building AI-powered products across Asia-Pacific. Proven track record of scaling products from zero to millions of users."
+            },
+            "experience": [
+                {"title": "Senior Product Manager", "company": "TechCorp Ltd", "dates": "2020 – Present",
+                 "highlights": ["Led a team of 12 product managers across 3 countries", "Increased revenue by 40% through AI-powered features", "Launched products used by 2M+ users"]},
+                {"title": "Product Manager", "company": "StartupXYZ", "dates": "2017 – 2020",
+                 "highlights": ["Scaled user base from 10K to 500K", "Managed $2M annual product budget"]}
+            ],
+            "skills": [{"name": "AI Strategy"}, {"name": "Product Roadmap"}, {"name": "Agile"}, {"name": "Stakeholder Management"}, {"name": "Data Analytics"}],
+            "education": [{"degree": "MBA", "school": "HKUST", "year": "2017"}, {"degree": "BEng Computer Science", "school": "CUHK", "year": "2014"}]
+        }
+    elif not tailored_cv:
         return redirect(url_for('cv_upload_page'))
-    selected_template = session.get('cv_template', 'classic')
-    # Map template name to folder
-    template_map = {
-        'modern': 'cv/style_1_modern/modern.html',
-        'classic': 'cv/style_2_classic/classic.html',
-        'minimal': 'cv/style_3_minimal/minimal.html',
-        'creative': 'cv/style_4_creative/creative.html',
-        'academic': 'cv/style_5_academic/academic.html',
-        'bold': 'cv/style_6_bold/bold.html',
-    }
-    template_file = template_map.get(selected_template, 'cv/style_2_classic/classic.html')
-    
-    # Prepare context for template — map tailored_cv to template fields
-    template_context = _prepare_cv_context(tailored_cv)
-    
-    return render_template(template_file, **template_context)
+
+    template_ctx = _prepare_cv_context(tailored_cv)
+    return render_template('cv_editor.html', **template_ctx)
+
+
+@app.route('/cv/editor')
+def cv_editor_page():
+    """Light-editable CV preview on the grid-background page."""
+    init_session()
+    tailored_cv = session.get('tailored_cv')
+
+    # Dev mode: if no tailored_cv but request has ?mock=1, use sample data
+    if not tailored_cv and request.args.get('mock') == '1':
+        tailored_cv = {
+            "personal": {
+                "name": "Alex Chen", "title": "Senior Product Manager",
+                "email": "alex@techcorp.com", "phone": "+852 9123 4567",
+                "location": "Hong Kong",
+                "summary": "Experienced product leader with 10+ years building AI-powered products across Asia-Pacific. Proven track record of scaling products from zero to millions of users."
+            },
+            "experience": [
+                {"title": "Senior Product Manager", "company": "TechCorp Ltd", "dates": "2020 – Present",
+                 "highlights": ["Led a team of 12 product managers across 3 countries", "Increased revenue by 40% through AI-powered features", "Launched products used by 2M+ users"]},
+                {"title": "Product Manager", "company": "StartupXYZ", "dates": "2017 – 2020",
+                 "highlights": ["Scaled user base from 10K to 500K", "Managed $2M annual product budget"]}
+            ],
+            "skills": [{"name": "AI Strategy"}, {"name": "Product Roadmap"}, {"name": "Agile"}, {"name": "Stakeholder Management"}, {"name": "Data Analytics"}],
+            "education": [{"degree": "MBA", "school": "HKUST", "year": "2017"}, {"degree": "BEng Computer Science", "school": "CUHK", "year": "2014"}]
+        }
+    elif not tailored_cv:
+        return redirect(url_for('cv_upload_page'))
+
+    template_ctx = _prepare_cv_context(tailored_cv)
+    return render_template('cv_editor.html', **template_ctx)
+
+
+@app.route('/cv/save-editor', methods=['POST'])
+def save_cv_editor():
+    """Save edited CV fields from the editor page."""
+    data = request.get_json()
+    fields = data.get('fields', {})
+    tailored_cv = session.get('tailored_cv', {})
+    # Apply edits to tailored_cv using dot-notation keys
+    for key, value in fields.items():
+        parts = key.split('.')
+        d = tailored_cv
+        for p in parts[:-1]:
+            d = d.setdefault(p, {})
+        d[parts[-1]] = value
+    # Also update personal sub-object if name/title/summary were edited
+    if 'personal' in tailored_cv:
+        for k in ['name', 'title', 'summary', 'email', 'phone', 'location']:
+            if fields.get(f'personal.{k}'):
+                tailored_cv['personal'][k] = fields[f'personal.{k}']
+    session['tailored_cv'] = tailored_cv
+    return jsonify({'success': True})
 
 
 @app.route('/cv/select-template', methods=['POST'])
