@@ -120,7 +120,7 @@ def can_generate_cv(user_id: str) -> tuple:
     profile = get_or_create_profile(user_id)
     tier = profile.get("tier", "free")
     cv_count = profile.get("cv_count", 0)
-    
+
     if tier in ("pro", "pro_plus"):
         return True, "", profile
     if cv_count >= 10:

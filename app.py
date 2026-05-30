@@ -361,6 +361,7 @@ def dashboard():
 
     # Load profile from DB for fresh cv_count
     profile = get_or_create_profile(user_id) if user_id else {}
+    app.logger.info(f"[DASHBOARD] profile from DB: user_id={user_id}, cv_count={profile.get('cv_count')}, tier={profile.get('tier')}")
 
     upgrade_success = request.args.get('upgrade') == 'success'
     return render_template('dashboard.html', upgrade_success=upgrade_success, cv_data=cv_data, job_data=job_data, profile=profile)
@@ -1264,6 +1265,7 @@ def tailor_cv_page():
     session['tailored_cv'] = tailored
 
     if user_id:
+        app.logger.info(f"[TAILOR_CV_PAGE] calling increment_cv_count for user_id={user_id}")
         increment_cv_count(user_id)
 
     return redirect(url_for('cv_preview_page'))
