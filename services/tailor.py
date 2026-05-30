@@ -215,6 +215,25 @@ def _normalize_tailored_cv(tailored: dict, base_cv: dict) -> dict:
     
     personal = tailored["personal"]
     
+    # Copy summary from top-level (AI writes it there per schema) to personal
+    if personal.get("summary") is None and tailored.get("summary"):
+        personal["summary"] = tailored["summary"]
+    
+    # Fallback: if still no summary, generate a basic one from profile + requirements
+    if not personal.get("summary"):
+        name = personal.get("name", "")
+        title = personal.get("title", "")
+        experience_list = base_cv.get("experience", [])
+        years_exp = ""
+        if experience_list:
+            # count years from most recent
+            pass
+        skills = []
+        for s in base_cv.get("skills", []):
+            skills.append(s.get("name") if isinstance(s, dict) else str(s))
+        skills_str = ", ".join(skills[:8]) if skills else ""
+        personal["summary"] = f"{name} is a {title} with experience in {skills_str or 'various technologies'}. Known for delivering impactful results and cross-functional collaboration." if name else ""
+    
     # Copy contact info from base if missing
     if not personal.get("name") and base_cv.get("name"):
         personal["name"] = base_cv["name"]
