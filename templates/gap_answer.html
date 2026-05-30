@@ -413,24 +413,23 @@ let allGaps = [];
 let startMessages = [];
 let cvData = null;
 let cvName = 'there';
-console.log('all_gaps_json length:', '{{ all_gaps_json | safe }}'.length, 'first 200 chars:', '{{ all_gaps_json | safe }}'.substring(0, 200));
 try {
-    const rawGaps = '{{ all_gaps_json | safe }}'.replace(/\ufeff/gi, '');
-    allGaps = JSON.parse(rawGaps);
+    const rawGaps = {{ all_gaps_json | tojson }};
+    allGaps = (typeof rawGaps === 'string') ? JSON.parse(rawGaps.replace(/\ufeff/gi, '')) : rawGaps;
     console.log('allGaps loaded:', allGaps.length, 'items');
 } catch(e) {
-    console.error('all_gaps_json parse error:', e, 'raw:', '{{ all_gaps_json | safe }}');
+    console.error('all_gaps_json parse error:', e);
 }
 try {
-    const rawStart = '{{ start_messages_json | safe }}'.replace(/\ufeff/gi, '');
-    startMessages = JSON.parse(rawStart);
+    const rawStart = {{ start_messages_json | tojson }};
+    startMessages = (typeof rawStart === 'string') ? JSON.parse(rawStart.replace(/\ufeff/gi, '')) : (rawStart || []);
 } catch(e) {
     console.error('start_messages_json parse error:', e);
     startMessages = [];
 }
 try {
-    const rawCv = '{{ cv_data_json | safe }}'.replace(/\ufeff/gi, '');
-    cvData = JSON.parse(rawCv);
+    const rawCv = {{ cv_data_json | tojson }};
+    cvData = (typeof rawCv === 'string') ? JSON.parse(rawCv.replace(/\ufeff/gi, '')) : rawCv;
 } catch(e) {
     console.error('cv_data_json parse error:', e);
 }
