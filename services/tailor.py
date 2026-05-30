@@ -98,7 +98,7 @@ The target job requires these specific keywords — use them naturally in your o
 Your "summary" field (2-3 sentences in first person) MUST organically weave in every single ATS keyword from the list above. The summary is the FIRST thing recruiters and ATS systems see — it must prove the candidate matches the job requirements at a glance. Do not just list keywords; use them naturally in sentences that describe the candidate's profile and achievements. Every skill/tool/technology from ats_keywords_list should appear in the summary."""
 
 
-def tailor_cv(base_cv: dict, gap_answers: list, job_description: str, ats_keywords: list = None) -> dict:
+def tailor_cv(base_cv: dict, gap_answers: list, job_description: str, ats_keywords: list = None, requirements: dict = None) -> dict:
     """
     Tailor CV using base CV + gap answers + job description.
     
@@ -106,6 +106,8 @@ def tailor_cv(base_cv: dict, gap_answers: list, job_description: str, ats_keywor
         base_cv: Parsed CV data from cv_parser
         gap_answers: List of gap Q&A answers with 'requirement', 'user_answer', 'ai_phrased'
         job_description: Full job description text
+        ats_keywords: List of ATS keywords from job requirements (optional, for summary generation)
+        requirements: Dict with 'skills', 'certifications', 'tools', etc. from extract_requirements()
     
     Returns:
         Tailored CV dictionary with ATS-optimised structure
@@ -124,7 +126,32 @@ def tailor_cv(base_cv: dict, gap_answers: list, job_description: str, ats_keywor
     
     # Format ats_keywords for the prompt
     ats_keywords_list = ', '.join(ats_keywords) if ats_keywords else 'None provided'
-
+    
+    # Build requirements summary for the summary generation section
+    if requirements and isinstance(requirements, dict):
+        parts = []
+        for key in ['skills', 'certifications', 'tools']:
+            items = requirements.get(key, [])
+            if isinstance(items, list) and items:
+                parts.append(f"{key}: " + ", ".join(str(i) for i in items))
+        exp_years = requirements.get('experience_years', {})
+        if isinstance(exp_years, dict) and exp_years:
+            for k, v in exp_years.items():
+                parts.append(f"Experience: {v}+ years in {k}")
+        leadership = requirements.get('leadership', {})
+        if isinstance(leadership, dict) and leadership:
+            for k, v in leadership.items():
+                parts.append(f"{k}: {v}")
+        requirements_summary = '\n'.join(parts)
+    else:
+        requirements_summary = ats_keywords_list
+    
+    # Extract job title from job description (first line or sentence)
+    job_title = ""
+    if job_description:
+        first_line = job_description.strip().split('\n')[0]
+        job_title = first_line.strip()[:100]
+    
     prompt = f"""{ATS_EXPERT_PROMPT}
 
 ## INPUT DATA
@@ -132,11 +159,14 @@ def tailor_cv(base_cv: dict, gap_answers: list, job_description: str, ats_keywor
 ### Base CV (parsed from user's uploaded file):
 {base_cv_str}
 
-### Gap Answers (user's responses to job requirement gaps):
+### Gap Answers (user's responses to job requirement gaps — use these to enrich experience bullets):
 {gap_answers_str}
 
 ### Target Job Description:
 {job_description}
+
+### Job Requirements (ATS keywords the AI must weave into the summary):
+{requirements_summary}
 
 ## NOW TAILOR THE CV
 Output the complete tailored CV JSON following the schema above."""
@@ -243,6 +273,19 @@ def _normalize_tailored_cv(tailored: dict, base_cv: dict) -> dict:
                         if key in edu:
                             edu["degree"] = edu[key]
                             break
+    
+    # Sort experience: current/recent jobs first
+    import re
+    def _exp_sort_key(job):
+        end = (job.get("end_date") or "").lower()
+        start = job.get("start_date") or ""
+        is_current = "present" in end or "current" in end
+        year_match = re.search(r'\b(19|20)\d{2}\b', start)
+        year = int(year_match.group()) if year_match else 1900
+        return (0 if is_current else 1, -year)
+    
+    if "experience" in tailored and len(tailored["experience"]) > 1:
+        tailored["experience"] = sorted(tailored["experience"], key=_exp_sort_key)
     
     return tailored
 

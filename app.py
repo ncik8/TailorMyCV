@@ -1003,15 +1003,36 @@ def gap_confirm_answer_route():
             answers.append(gap_answer)
         session['gap_answers'] = answers  # small — cleared if session resets, Supabase is source of truth
 
-        # Persist gap answers to Supabase — ONLY update gap_answers field, don't wipe other fields
+        # Persist gap answers to Supabase — update BOTH job_descriptions (per-job) and user_cvs (permanent history)
+        # job_descriptions: per-job gap answers (cleared when user "finds another job")
+        # user_cvs: all gap answers across ALL jobs (AI reads this for full context)
         try:
             supabase = get_supabase_client()
+            # Update job_descriptions gap_answers (per-job, used for UI)
             existing = load_job_description(user_id)
             if existing:
-                # Targeted update: only touch gap_answers, preserve all other fields
                 supabase.table('job_descriptions').update({
                     'gap_answers': json.dumps(answers)
                 }).eq('user_id', user_id).execute()
+            
+            # Append to user_cvs gap_answers (permanent, AI sees all)
+            user_cv = supabase.table('user_cvs').select('gap_answers').eq('user_id', user_id).maybe_single().execute()
+            existing_answers = []
+            if user_cv and user_cv.data:
+                raw = user_cv.data.get('gap_answers')
+                if raw:
+                    existing_answers = json.loads(raw) if isinstance(raw, str) else raw
+                elif isinstance(raw, list):
+                    existing_answers = raw
+            
+            # Deduplicate by requirement — replace old answer for same requirement
+            all_answers = [a for a in existing_answers if a.get('requirement') != requirement]
+            all_answers.append(gap_answer)
+            
+            supabase.table('user_cvs').update({
+                'gap_answers': json.dumps(all_answers, ensure_ascii=False)
+            }).eq('user_id', user_id).execute()
+            app.logger.info(f"[GAP] user_cvs gap_answers updated: total={len(all_answers)}")
         except Exception as e:
             app.logger.info(f"[GAP] Failed to persist gap answers: {e}")
 
@@ -1191,11 +1212,12 @@ def tailor_cv_page():
     job_description = job_data.get('description', '')
     ats_keywords = job_data.get('ats_keywords', [])
     gap_answers = job_data.get('gap_answers', []) if job_data else []
+    requirements = job_data.get('requirements', {})
 
     if not job_description:
         return redirect(url_for('job_paste_page'))
 
-    tailored = tailor_cv(cv_data, gap_answers, job_description, ats_keywords)
+    tailored = tailor_cv(cv_data, gap_answers, job_description, ats_keywords, requirements)
     session['tailored_cv'] = tailored
 
     if user_id:
@@ -1224,6 +1246,7 @@ def tailor_cv_route():
     job_data = load_job_description(user_id) if user_id else {}
     job_description = job_data.get('description', '')
     ats_keywords = job_data.get('ats_keywords', [])
+    requirements = job_data.get('requirements', {})
 
     if not job_description:
         return jsonify({'error': 'No job data'}), 400
@@ -1235,7 +1258,7 @@ def tailor_cv_route():
             return jsonify({'error': 'limit_reached', 'redirect': url_for('upgrade_page')}), 403
 
     try:
-        tailored = tailor_cv(cv_data, gap_answers, job_description, ats_keywords)
+        tailored = tailor_cv(cv_data, gap_answers, job_description, ats_keywords, requirements)
         session['tailored_cv'] = tailored
 
         # Increment CV count if user is logged in
