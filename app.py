@@ -627,7 +627,7 @@ def save_profile_route():
 
     app.logger.info(f"[SAVE] final profile experience: {profile['experience']}")
     app.logger.info(f"[SAVE] final profile education: {profile['education']}")
-    return redirect(url_for('job_paste_page'))
+    return redirect(url_for('edit_profile_page', success=1))
 
 
 @app.route('/job/paste')
