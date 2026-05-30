@@ -208,9 +208,10 @@
         {% if session.get('tailored_cv') %}
         <div class="card" style="background: #f0fdf4; border-color: #bbf7d0;">
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #166534;">✓ Tailored CV Ready</h3>
-            <div style="display: flex; gap: 12px;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <a href="/cv/preview" class="btn btn-success">View Tailored CV</a>
                 <a href="/cv/download" class="btn btn-secondary">Download PDF</a>
+                <button type="button" class="btn" style="background:#ef4444;color:#fff;border:1px solid #ef4444;" onclick="if(confirm('Delete this tailored CV?')){fetch('/cv/tailor/delete',{method:'POST'}).then(()=>window.location='/dashboard');}">Delete CV</button>
             </div>
         </div>
         {% endif %}

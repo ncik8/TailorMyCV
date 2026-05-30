@@ -54,10 +54,12 @@ def _prepare_cv_context(tailored_cv: dict) -> dict:
             "phone": ctx.get("phone", ""),
             "location": ctx.get("location", ""),
             "title": ctx.get("title", ""),
-            "summary": ctx.get("summary", ""),
             "website": ctx.get("website", ""),
             "linkedin": ctx.get("linkedin", ""),
         }
+        # summary lives at top level from tailor_cv, move into personal for templates
+        if ctx.get("summary") and "personal" in ctx:
+            ctx["personal"]["summary"] = ctx["summary"]
     
     # Map experience format: templates use 'highlights' not 'bullets'
     if "experience" in ctx:
@@ -1223,6 +1225,14 @@ def tailor_cv_page():
         increment_cv_count(user_id)
 
     return redirect(url_for('cv_preview_page'))
+
+
+@app.route('/cv/tailor/delete', methods=['POST'])
+def delete_tailored_cv():
+    """Delete the tailored CV from session."""
+    init_session()
+    session.pop('tailored_cv', None)
+    return redirect(url_for('dashboard'))
 
 
 @app.route('/cv/tailor', methods=['POST'])
