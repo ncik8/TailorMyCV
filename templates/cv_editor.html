@@ -328,17 +328,7 @@
                     <button class="btn-save" onclick="saveEdits()">Save Changes</button>
                 </div>
 
-                <div class="panel-section" style="margin-top: 24px;">
-                    <label>Quick Edit — Name</label>
-                    <input type="text" id="quickName" value="{{ personal.name }}" oninput="syncField('personal.name', this.value)">
-                </div>
-
-                <div class="panel-section">
-                    <label>Summary</label>
-                    <textarea rows="4" id="quickSummary">{{ personal.summary }}</textarea>
-                </div>
-
-                <p style="font-size: 11px; color: var(--text-3); margin-top: 16px; line-height: 1.6;">
+                <p style="font-size: 11px; color: var(--text-3); margin-top: 24px; line-height: 1.6;">
                     Tip: Click any text on the left to edit it directly. Use <strong>Ctrl+P</strong> (or <strong>Cmd+P</strong> on Mac) to print or save as PDF.
                 </p>
             </div>
