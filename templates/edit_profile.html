@@ -572,7 +572,11 @@
                 <div class="exp-card" data-index="{{ loop.index0 }}">
                     <div class="exp-card-header">
                         <h3>Position {{ loop.index }}</h3>
-                        <button type="button" class="remove-btn" onclick="removeExp({{ loop.index0 }})">×</button>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <button type="button" class="move-btn" onclick="moveExp({{ loop.index0 }}, -1)" title="Move up">↑</button>
+                            <button type="button" class="move-btn" onclick="moveExp({{ loop.index0 }}, 1)" title="Move down">↓</button>
+                            <button type="button" class="remove-btn" onclick="removeExp({{ loop.index0 }})">×</button>
+                        </div>
                     </div>
 <div class="form-row">
                 <div class="form-group">
@@ -795,7 +799,11 @@ function addExperience() {
     <div class="exp-card" data-index="${idx}">
         <div class="exp-card-header">
             <h3>Position ${list.children.length + 1}</h3>
-            <button type="button" class="remove-btn" onclick="removeExp(${idx})">×</button>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <button type="button" class="move-btn" onclick="moveExpLast(-1)" title="Move up">↑</button>
+                <button type="button" class="move-btn" onclick="moveExpLast(1)" title="Move down">↓</button>
+                <button type="button" class="remove-btn" onclick="removeExpLast()">×</button>
+            </div>
         </div>
 <div class="form-row">
             <div class="form-group">
@@ -862,6 +870,52 @@ function addBulletToClosest(btn) {
 
 function removeBullet(btn) {
     btn.parentElement.remove();
+}
+
+// Reorder functions for experience cards
+function moveExp(idx, direction) {
+    const list = document.getElementById('experience-list');
+    const cards = [...list.querySelectorAll('.exp-card')];
+    const currentIdx = cards.findIndex(c => parseInt(c.dataset.index) === idx);
+    if (currentIdx < 0) return;
+    const targetIdx = currentIdx + direction;
+    if (targetIdx < 0 || targetIdx >= cards.length) return;
+    // Get both card DOM elements and swap their positions
+    const current = cards[currentIdx];
+    const target = cards[targetIdx];
+    // Swap in DOM
+    if (direction < 0) {
+        target.before(current);
+    } else {
+        target.after(current);
+    }
+    // Update heading numbers
+    list.querySelectorAll('.exp-card').forEach((card, i) => {
+        card.querySelector('h3').textContent = `Position ${i + 1}`;
+    });
+}
+
+// For newly added cards (before they get their final index)
+function moveExpLast(direction) {
+    const list = document.getElementById('experience-list');
+    const cards = [...list.querySelectorAll('.exp-card')];
+    if (cards.length < 2) return;
+    const last = cards[cards.length - 1];
+    const target = cards[cards.length - 2];
+    if (direction < 0) {
+        target.before(last);
+    } else {
+        target.after(last);
+    }
+    list.querySelectorAll('.exp-card').forEach((card, i) => {
+        card.querySelector('h3').textContent = `Position ${i + 1}`;
+    });
+}
+
+function removeExpLast() {
+    const list = document.getElementById('experience-list');
+    const last = list.lastElementChild;
+    if (last && last.classList.contains('exp-card')) last.remove();
 }
 
 // Education management

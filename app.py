@@ -173,6 +173,24 @@ def auth_logout():
     return redirect(url_for('index'))
 
 
+@app.route('/auth/forgot-password', methods=['GET', 'POST'])
+def auth_forgot_password():
+    """Send password reset email via Supabase."""
+    if request.method == 'GET':
+        return render_template('auth/forgot_password.html')
+
+    email = request.form.get('email', '').strip()
+    if not email:
+        return render_template('auth/forgot_password.html', error='Please enter your email address.')
+
+    client = get_supabase_client()
+    try:
+        client.auth.reset_password_email(email)
+        return render_template('auth/forgot_password.html', success=True)
+    except Exception as e:
+        return render_template('auth/forgot_password.html', error='If that email exists, a reset link was sent.')
+
+
 @app.route('/upgrade')
 def upgrade_page():
     """Pricing / upgrade page."""
