@@ -165,8 +165,29 @@ def tailor_cv(base_cv: dict, gap_answers: list, job_description: str, ats_keywor
 ### Target Job Description:
 {job_description}
 
-### Job Requirements (ATS keywords the AI must weave into the summary):
+### Job Requirements (from the job description — you MUST use these to craft the summary):
 {requirements_summary}
+
+## YOUR DELIVERABLE — PAY CLOSE ATTENTION
+
+You are producing a tailored CV. The MOST IMPORTANT thing you do is write the "summary" field — this is what gets read first by both ATS systems and recruiters, and it's your best chance to match the job description.
+
+**How to write the summary:**
+1. FIRST look at the "Job Requirements" above — these are the ATS keywords the employer cares about
+2. THEN look at the candidate's experience, skills, and gap answers
+3. WEAVE the job requirements naturally into a 2-3 sentence summary in first person
+4. The summary must mention: years of experience, key expertise areas (mirroring the job description language), and one standout differentiator
+
+**The summary must:**
+- Be written in FIRST PERSON ("I have 10 years experience..." not "Candidate has 10 years...")
+- Include 3-5 specific ATS keywords from the Job Requirements section
+- Sound like the candidate's own voice — don't over-polish
+- Mention the target job title or domain if space allows
+
+**Example of good summary that weaves requirements:**
+Job Requirements: Python, AWS, team leadership, data pipelines
+Bad: "Experienced software engineer with technical skills."
+Good: "I bring 8+ years building data pipelines and ML workflows in Python, leading teams on AWS to deliver insights at scale."
 
 ## NOW TAILOR THE CV
 Output the complete tailored CV JSON following the schema above."""
