@@ -794,10 +794,11 @@ async function sendMessage() {
 }
 
 // ============================================
-// User picks destination
+// User picks destination (v2 - fix class name)
 // ============================================
 function selectDest(idx, btn) {
-    document.querySelectorAll('.dest-btn').forEach(b => b.classList.remove('selected'));
+    // Highlight selected button
+    document.querySelectorAll('.new-dest-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
 
     const dest = currentDestinations[idx];
@@ -805,7 +806,7 @@ function selectDest(idx, btn) {
 
     // Jump to confirming stage
     stage = 'confirming';
-    const destLabel = buildDestLabel ? buildDestLabel(dest) : (dest.label || 'CV Profile');
+    const destLabel = buildDestLabel(dest);
 
     const confirmMsg = {
         role: 'ai',
@@ -819,24 +820,29 @@ function selectDest(idx, btn) {
     scrollBottom();
 }
 
-// Fix: buildDestLabel not defined
-function buildDestLabel(dest) {
-    if (dest.type === 'job') return `${dest.title || 'Work'} @ ${dest.company || ''}`;
-    return dest.label || dest.type || 'CV Profile';
-}
-
 // ============================================
 // Confirm / Edit-and-confirm / Skip
 // ============================================
 async function confirmGap() {
-    await finalizeGap(currentDestinations.findIndex(d => document.querySelector('.dest-btn.selected') !== null) || 0);
+    // Find the selected destination by button ID
+    const selectedBtn = document.querySelector('.new-dest-btn.selected');
+    let selectedIdx = 0;
+    if (selectedBtn) {
+        const match = selectedBtn.id.match(/^dest-btn-(\d+)$/);
+        if (match) selectedIdx = parseInt(match[1], 10);
+    }
+    await finalizeGap(selectedIdx);
 }
 
 async function editAndConfirm() {
     const edited = document.getElementById('confirm-edit')?.value.trim() || currentInterpreted;
     currentInterpreted = edited;
     currentDestinations[0].interpreted = edited;
-    await finalizeGap(selectedJobIdx >= 0 ? currentDestinations.findIndex(d => d.type === 'job' && d.job_idx === selectedJobIdx) : 0);
+    // Use selectedJobIdx to find correct destination (0 for category/summary types)
+    const destIdx = selectedJobIdx >= 0
+        ? currentDestinations.findIndex(d => d.type === 'job' && d.job_idx === selectedJobIdx)
+        : 0;
+    await finalizeGap(destIdx >= 0 ? destIdx : 0);
 }
 
 async function skipGap() {
