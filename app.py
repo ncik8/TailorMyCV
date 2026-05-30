@@ -179,6 +179,45 @@ def upgrade_page():
     return render_template('upgrade.html', tier=user_tier)
 
 
+@app.route('/profile')
+def profile_page():
+    """Profile / account page — always reads fresh from DB."""
+    init_session()
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login_page'))
+
+    profile = get_or_create_profile(user_id)
+    upgrade_success = session.pop('upgrade_success', False)
+    return render_template('profile.html', profile=profile, upgrade_success=upgrade_success)
+
+
+@app.route('/billing/portal')
+def billing_portal():
+    """Redirect to Stripe customer portal for subscription management."""
+    init_session()
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login_page'))
+
+    from services.stripe_client import stripe
+    profile = get_or_create_profile(user_id)
+    customer_id = profile.get('stripe_customer_id')
+
+    if not customer_id:
+        # Fall back to email-based portal
+        customer_id = session.get('user_email')
+
+    try:
+        session_url = stripe.billing_portal.sessions.create({
+            "customer": customer_id,
+            "return_url": url_for('profile_page', _external=True),
+        })
+        return redirect(session_url.url)
+    except Exception as e:
+        return redirect(url_for('upgrade_page'))
+
+
 # ============ BLOG ROUTES ============
 
 @app.route('/blog')
@@ -320,8 +359,11 @@ def dashboard():
     if user_id:
         job_data = load_job_description(user_id)
 
+    # Load profile from DB for fresh cv_count
+    profile = get_or_create_profile(user_id) if user_id else {}
+
     upgrade_success = request.args.get('upgrade') == 'success'
-    return render_template('dashboard.html', upgrade_success=upgrade_success, cv_data=cv_data, job_data=job_data)
+    return render_template('dashboard.html', upgrade_success=upgrade_success, cv_data=cv_data, job_data=job_data, profile=profile)
 
 
 @app.route('/cv/upload')

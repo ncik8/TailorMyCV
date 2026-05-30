@@ -448,6 +448,7 @@
                 </div>
                 <div class="nav-auth">
 {% if session.get('user_id') %}
+                    <a href="/profile">Profile</a>
                     <form action="/auth/logout" method="POST" style="display:inline;">
                         <button type="submit" class="btn-logout">Logout</button>
                     </form>

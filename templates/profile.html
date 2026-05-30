@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Rezmycv{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="container" style="max-width: 680px;">
+        <div class="page-header" style="margin-bottom: 32px;">
+            <h1>Profile</h1>
+            <p style="color: rgba(10,10,10,.6); margin-top: 6px;">Manage your account and billing</p>
+        </div>
+
+        {% if upgrade_success %}
+        <div class="card" style="margin-bottom: 24px; background: #f0fdf4; border-color: #bbf7d0;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #166534;">✓ Payment successful!</h3>
+            <p style="color: #166534;">Your subscription is now active.</p>
+        </div>
+        {% endif %}
+
+        <!-- Plan & Usage -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Plan & Usage</h3>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 4px;">Current Plan</div>
+                    <div style="font-size: 22px; font-weight: 600;">
+                        {% if profile.tier == 'free' %}
+                        Free
+                        {% elif profile.tier == 'pro' %}
+                        Pro
+                        {% elif profile.tier == 'pro_plus' %}
+                        Pro+
+                        {% else %}
+                        Free
+                        {% endif %}
+                    </div>
+                </div>
+                {% if profile.tier == 'free' %}
+                <a href="/upgrade" class="btn btn-primary">Upgrade →</a>
+                {% endif %}
+            </div>
+
+            {% if profile.tier == 'free' %}
+            <div style="background: #f8f8f5; border-radius: 6px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                    <span style="color: rgba(10,10,10,.7);">CVs generated</span>
+                    <span style="font-weight: 600;">{{ profile.cv_count }} / 10</span>
+                </div>
+                <div style="background: #e0e0db; border-radius: 4px; height: 6px;">
+                    <div style="background: #0a0a0a; border-radius: 4px; height: 6px; width: {{ (profile.cv_count / 10 * 100) | int }}%;"></div>
+                </div>
+            </div>
+            {% else %}
+            <div style="background: #f0fdf4; border-radius: 6px; padding: 12px 16px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">♾</span>
+                <span style="font-size: 14px; color: #166534; font-weight: 500;">Unlimited CVs</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Billing (paid plans only) -->
+        {% if profile.tier in ('pro', 'pro_plus') %}
+        <div class="card" style="margin-bottom: 24px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Billing</h3>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 16px; background: #f8f8f5; border-radius: 6px;">
+                <div>
+                    <div style="font-size: 13px; color: rgba(10,10,10,.6); margin-bottom: 2px;">{{ profile.tier == 'pro_plus' and 'Pro+' or 'Pro' }} plan</div>
+                    <div style="font-size: 14px; font-weight: 500;">
+                        {% if profile.tier == 'pro' %}
+                        $19 / month
+                        {% else %}
+                        $25 / month
+                        {% endif %}
+                    </div>
+                </div>
+                <a href="/billing/portal" class="btn btn-secondary">Manage Subscription →</a>
+            </div>
+
+            <p style="font-size: 13px; color: rgba(10,10,10,.5);">
+                Manage your payment method, view invoices, or cancel your subscription via the Stripe customer portal.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Account -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Account</h3>
+
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(10,10,10,.4); margin-bottom: 4px;">Email</div>
+                <div style="font-size: 15px;">{{ session.user_email or '—' }}</div>
+            </div>
+
+            <div style="border-top: 1px solid #e8e8e4; padding-top: 20px; margin-top: 4px;">
+                <button type="button" class="btn" style="background: #ef4444; color: #fff; border: 1px solid #ef4444;" onclick="if(confirm('Are you sure you want to delete your account? This cannot be undone.')){fetch('/account/delete', {method: 'POST'}).then(r => { if(r.ok) window.location='/'; });}">Delete Account</button>
+                <p style="font-size: 12px; color: rgba(10,10,10,.4); margin-top: 10px;">Permanently deletes your account and all data. Cannot be undone.</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
