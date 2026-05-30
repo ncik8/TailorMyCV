@@ -165,7 +165,7 @@
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Gap Q&A Complete — {{ answered }} answers recorded</h3>
             <p style="color: #64748b; margin-bottom: 12px;">Your profile has been updated with answers from the gap interview. Ready to generate your tailored CV!</p>
             <div style="display: flex; gap: 12px; align-items: center;">
-                <a href="/cv/tailor" class="btn btn-primary">Generate Tailored CV →</a>
+                <button type="button" class="btn btn-primary" id="generateBtn" onclick="this.disabled=true;this.innerHTML='<span>&#11157;</span> Generating CV...';window.location='/cv/tailor'">Generate Tailored CV →</button>
                 <form action="/job/clear" method="POST" style="display: inline;" onsubmit="return confirm('Delete this job and start fresh?');">
                     <button type="submit" class="btn btn-danger">Delete Job</button>
                 </form>
