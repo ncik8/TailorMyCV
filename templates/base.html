@@ -452,6 +452,7 @@
                     <form action="/auth/logout" method="POST" style="display:inline;">
                         <button type="submit" class="btn-logout">Logout</button>
                     </form>
+{% else %}
                     <a href="/auth/login">Login</a>
                     <a href="/auth/signup" class="btn-nav-signup">Sign Up</a>
 {% endif %}
@@ -469,10 +470,10 @@
         <form action="/auth/logout" method="POST" style="display:inline;">
             <button type="submit" class="btn-logout" style="font-size:20px;">Logout</button>
         </form>
-        {% else %}
+{% else %}
         <a href="/auth/login" onclick="closeMobileNav()">Login</a>
         <a href="/auth/signup" class="btn-nav-signup" onclick="closeMobileNav()">Sign Up</a>
-        {% endif %}
+{% endif %}
     </div>
     {% endblock %}
 
