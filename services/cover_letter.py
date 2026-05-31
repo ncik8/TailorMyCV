@@ -4,7 +4,7 @@ from services.minimax import chat
 COVER_LETTER_PROMPT = """You are an expert cover letter writer. Write a professional cover letter for this job application.
 
 Structure:
-- Opening: Start with "To Whom It May Concern" on its own line, then "In reference to the position of {title} at {company}" on the next line, then a blank line before the body
+- Opening: Start with "To Whom It May Concern" on its own line, then "In reference to the position of {title}" on the next line, then a blank line before the body
 - Body: 1-2 paragraphs highlighting your most relevant experience
 - Closing: Call to action, thank them
 
@@ -16,7 +16,7 @@ Rules:
 - Personalize for the specific company/role
 - ALWAYS start with exactly:
   To Whom It May Concern
-  In reference to the position of [JOB TITLE] at [COMPANY NAME]
+  In reference to the position of [JOB TITLE]
 
 Input:
 - CV: {cv}

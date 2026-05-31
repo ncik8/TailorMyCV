@@ -350,6 +350,21 @@
             </div>
         </div>
 
+        <!-- Generate Cover Letter button (Pro+ only) -->
+        {% if session.get('tier') == 'pro_plus' %}
+        <div style="text-align: center; margin-top: 24px;">
+            <button onclick="generateCoverLetter()" id="cover-letter-btn" class="btn btn-secondary" style="padding: 12px 32px; font-size: 14px;">
+                ✉ Generate Cover Letter
+            </button>
+        </div>
+        {% else %}
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="/upgrade" class="btn btn-secondary" style="padding: 12px 32px; font-size: 14px; text-decoration: none;">
+                ✉ Generate Cover Letter<span style="font-size: 11px;">(Pro+ only)</span>
+            </a>
+        </div>
+        {% endif %}
+
         <!-- Continue button -->
         <div style="text-align: center; margin-top: 32px;">
             <a href="/cv/download" class="btn btn-primary" id="continue-btn" style="padding: 16px 48px; font-size: 14px;">
@@ -358,7 +373,7 @@
             <p style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3);">
                 Or <a href="/cv/preview" style="color: var(--text-2);">preview first</a>
                 &nbsp;·&nbsp;
-                <a href="/cv/editor" style="color: var(--text-2);">✎ edit &amp; download</a>
+                <a href="/cv/editor" style="color: var(--text-2);">✎ edit & download</a>
             </p>
         </div>
 
@@ -392,6 +407,29 @@ function selectTemplate(style) {
         if (data.success) {
             console.log('Template saved:', style);
         }
+    });
+}
+
+function generateCoverLetter() {
+    const btn = document.getElementById('cover-letter-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating...';
+
+    fetch('/cover-letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tone: 'professional' })
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            window.location.href = '/cover-letter/preview';
+        } else {
+            btn.disabled = false;
+            btn.textContent = '✉ Generate Cover Letter';
+            alert(data.error || 'Failed to generate cover letter');
+        }
+    }).catch(() => {
+        btn.disabled = false;
+        btn.textContent = '✉ Generate Cover Letter';
     });
 }
 </script>
