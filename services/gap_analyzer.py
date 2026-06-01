@@ -364,7 +364,16 @@ def apply_gap_answer_to_profile(cv_json: dict, requirement: str, user_answer: st
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
-        return json.loads(text)
+        result = json.loads(text)
+        # If AI returns a bare list (e.g. ["Salesforce", "HubSpot"]) instead of
+        # a dict, wrap it as an additional_info modification
+        if isinstance(result, list):
+            return {
+                "applied_to": "additional_info",
+                "applied_text": interpreted,
+                "cv_modification": result
+            }
+        return result
     except json.JSONDecodeError:
         return {"error": "Failed to parse CV modification", "raw": response}
 

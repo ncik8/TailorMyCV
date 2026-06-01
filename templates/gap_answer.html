@@ -887,7 +887,7 @@ async function finalizeGap(destIdx) {
                 interpreted: currentInterpreted,
                 category: currentCategory,
                 destination: dest,
-                cv_modification: (data1.cv_modification && typeof data1.cv_modification === 'object' && !Array.isArray(data1.cv_modification)) ? data1.cv_modification : {}
+                cv_modification: (data1.cv_modification && typeof data1.cv_modification === 'object') ? data1.cv_modification : {}
             })
         });
         const data2 = await resp2.json();
