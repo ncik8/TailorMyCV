@@ -34,6 +34,9 @@ ATS PRIORITY KEYWORDS (in order of importance):
 6. Microsoft Dynamics, Salesforce CRM, sales reporting
 7. AI technologies
 
+MANDATORY OUTPUT RULE — DO NOT BREAK THIS RULE:
+The "summary" field is MANDATORY and MUST appear in your JSON output. It must be a 2-3 sentence professional summary in first person. You MAY rewrite it to optimise for ATS keywords, but you MUST output it — never return null, never return empty string, never omit it.
+
 INPUT CV:
 {cv_str}
 
