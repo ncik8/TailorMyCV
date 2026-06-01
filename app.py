@@ -987,7 +987,11 @@ def gap_interpret_route():
 
 @app.route('/gap/confirm-destination', methods=['POST'])
 def gap_confirm_destination_route():
-    """Step 2: User picked destination. Apply it to CV, return preview for confirmation."""
+    """Step 2: User picked destination. Return the AI-phrased text for confirmation.
+    
+    No CV modification here — gap answers are saved as knowledge to user_cvs.gap_answers.
+    The tailoring step (tailor_cv) reads gap_answers directly and uses them to write
+    better bullets. No need to pre-merge into CV sections."""
     data = request.get_json()
     requirement = data.get('requirement', '').strip()
     answer = data.get('answer', '').strip()
@@ -1002,33 +1006,28 @@ def gap_confirm_destination_route():
     if not user_id:
         return jsonify({'error': 'Not logged in'}), 401
 
-    cv_data = load_cv(user_id)
-    if not cv_data:
-        return jsonify({'error': 'No CV found'}), 400
-
     try:
-        modification = apply_gap_answer_to_profile(
-            cv_data, requirement, answer, interpreted, category, destination
-        )
-        app.logger.info(f"[GAP] confirm-destination: modification type={type(modification).__name__}, keys={list(modification.keys()) if isinstance(modification, dict) else 'N/A'}, value={modification}")
-        if 'error' in modification:
-            return jsonify({'error': modification['error']}), 500
-
         # Build human-readable confirmation label
         if destination.get('type') == 'job':
-            idx = destination.get('job_idx', 0)
-            jobs = cv_data.get('experience', [])
-            job = jobs[idx] if idx < len(jobs) else jobs[-1]
-            label = f"{job.get('title', 'Job')} @ {job.get('company', '')}"
+            cv_data = load_cv(user_id)
+            if cv_data:
+                idx = destination.get('job_idx', 0)
+                jobs = cv_data.get('experience', [])
+                job = jobs[idx] if idx < len(jobs) else jobs[-1] if jobs else {}
+                label = f"{job.get('title', 'Job')} @ {job.get('company', '')}"
+            else:
+                label = 'Work Experience'
         else:
             label = destination.get('label', category.title())
 
+        app.logger.info(f"[GAP] confirm-destination: requirement={requirement}, label={label}")
+
         return jsonify({
             'success': True,
-            'applied_to': modification.get('applied_to', ''),
-            'applied_text': modification.get('applied_text', interpreted),
+            'applied_to': destination.get('type', 'other'),
+            'applied_text': interpreted,
             'confirmation_label': label,
-            'cv_modification': modification.get('cv_modification', {})
+            'cv_modification': {}  # No longer used — gap answers stay as knowledge
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1036,105 +1035,65 @@ def gap_confirm_destination_route():
 
 @app.route('/gap/confirm-answer', methods=['POST'])
 def gap_confirm_answer_route():
-    """Step 3: User confirmed. Save the updated/modified CV back to Supabase."""
+    """Step 3: User confirmed. Save the gap answer to user_cvs.gap_answers (permanent knowledge base).
+    
+    NO CV modification here. tailor_cv reads gap_answers directly and uses them
+    to write better bullets during the tailoring step. This avoids the double-merge
+    bugs from the old flow (confirm-destination merged to CV, then confirm-answer merged again)."""
     data = request.get_json()
     requirement = data.get('requirement', '').strip()
     answer = data.get('answer', '').strip()
     interpreted = data.get('interpreted', '').strip()
     category = data.get('category', 'other')
     destination = data.get('destination', {})
-    cv_modification = data.get('cv_modification', {})
     user_id = session.get('user_id')
 
     if not all([requirement, interpreted]) or not user_id:
         return jsonify({'error': 'Missing data'}), 400
 
     try:
-        cv_data = load_cv(user_id)
-        if not cv_data:
-            return jsonify({'error': 'No CV found'}), 400
+        gap_answer = {
+            'requirement': requirement,
+            'user_answer': answer,
+            'ai_phrased': interpreted,
+            'category': category,
+            'destination_label': destination.get('label', category.title()),
+            'applied_to': destination.get('type', 'other'),
+            'answered_at': _iso_now()
+        }
 
-        applied_to = ''
-        actual_modification = {}
-        if isinstance(cv_modification, dict):
-            applied_to = cv_modification.get('applied_to', '')
-            actual_modification = cv_modification.get('cv_modification', {})
-        elif isinstance(cv_modification, list):
-            # AI returned a bare list instead of {applied_to, cv_modification}
-            # Fall back to 'additional_info' as catch-all for multi-item lists
-            applied_to = 'additional_info'
-            actual_modification = cv_modification
-        app.logger.info(f"[GAP] confirm-answer: cv_modification type={type(cv_modification).__name__}, value={cv_modification}, applied_to={applied_to}, actual_modification={actual_modification}")
-
-        # Deep merge cv_modification into cv_data
-        modification_to_merge = {'applied_to': applied_to if applied_to else 'additional_info', 'cv_modification': actual_modification} if applied_to else {'applied_to': 'additional_info', 'cv_modification': cv_modification if isinstance(cv_modification, list) else {}}
-        updated_cv = merge_cv_sections(cv_data, modification_to_merge)
-
-        # Save updated CV to Supabase
-        save_result = save_cv(user_id, updated_cv)
-        app.logger.info(f"[GAP] save_cv returned: {save_result}, applied_to={applied_to}")
-        if not save_result:
-            return jsonify({'error': 'Failed to save updated CV'}), 500
-
-        # Save gap answer to session
-        try:
-            gap_answer = {
-                'requirement': requirement,
-                'user_answer': answer,
-                'ai_phrased': interpreted,
-                'category': category,
-                'destination': destination,
-                'applied_to': applied_to if applied_to else 'additional_info'
-            }
-            answers = session.get('gap_answers', [])
-            replaced = False
-            for i, a in enumerate(answers):
-                if a.get('requirement') == requirement:
-                    answers[i] = gap_answer
-                    replaced = True
-                    break
-            if not replaced:
-                answers.append(gap_answer)
-            session['gap_answers'] = answers
-        except Exception as e:
-            app.logger.info(f"[GAP] session update error (non-fatal): {e}")
-
-        # Persist gap answers to Supabase — update BOTH job_descriptions (per-job) and user_cvs (permanent history)
-        try:
-            supabase = get_supabase_client()
-            # Update job_descriptions gap_answers (per-job, used for UI)
-            existing = load_job_description(user_id)
-            if existing:
-                supabase.table('job_descriptions').update({
-                    'gap_answers': json.dumps(answers)
-                }).eq('user_id', user_id).execute()
-            
-            # Append to user_cvs gap_answers (permanent, AI sees all)
-            user_cv = supabase.table('user_cvs').select('gap_answers').eq('user_id', user_id).maybe_single().execute()
-            existing_answers = []
-            if user_cv and user_cv.data:
-                raw = user_cv.data.get('gap_answers')
-                if raw:
-                    existing_answers = json.loads(raw) if isinstance(raw, str) else raw
-                elif isinstance(raw, list):
-                    existing_answers = raw
-            
-            # Deduplicate by requirement — replace old answer for same requirement
-            all_answers = [a for a in existing_answers if a.get('requirement') != requirement]
-            all_answers.append(gap_answer)
-            
-            supabase.table('user_cvs').update({
-                'gap_answers': json.dumps(all_answers, ensure_ascii=False)
-            }).eq('user_id', user_id).execute()
-            app.logger.info(f"[GAP] user_cvs gap_answers updated: total={len(all_answers)}")
-        except Exception as e:
-            app.logger.info(f"[GAP] Failed to persist gap answers: {e}")
-
-        return jsonify({'success': True})
+        # Save to user_cvs.gap_answers (permanent, cross-job knowledge base)
+        supabase = get_supabase_client()
+        user_cv = supabase.table('user_cvs').select('gap_answers').eq('user_id', user_id).maybe_single().execute()
+        
+        existing_answers = []
+        if user_cv and user_cv.data:
+            raw = user_cv.data.get('gap_answers')
+            if raw:
+                existing_answers = json.loads(raw) if isinstance(raw, str) else raw
+            elif isinstance(raw, list):
+                existing_answers = raw
+        
+        # Deduplicate by requirement — replace old answer for same requirement
+        all_answers = [a for a in existing_answers if a.get('requirement') != requirement]
+        all_answers.append(gap_answer)
+        
+        result = supabase.table('user_cvs').update({
+            'gap_answers': json.dumps(all_answers, ensure_ascii=False)
+        }).eq('user_id', user_id).execute()
+        
+        app.logger.info(f"[GAP] confirm-answer saved: requirement={requirement}, total_answers={len(all_answers)}")
+        return jsonify({'success': True, 'total_answers': len(all_answers)})
+        
     except Exception as e:
         import traceback
         app.logger.info(f"[GAP] confirm-answer CRASH: {e}\n{traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
+
+
+def _iso_now():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
 
 
 def merge_cv_sections(cv_data: dict, modification: dict) -> dict:
