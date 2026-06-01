@@ -218,6 +218,10 @@ Step 2 - Decide where this information belongs on their CV. Choose one:
 Step 3 - If "job_bullet", generate up to 3 destination options from their work history.
 If another category, describe what would be added.
 
+IMPORTANT: If the answer describes MULTIPLE tools/skills/technologies (e.g. "Used Salesforce, HubSpot, and Notion for customer management"), classify as "other" and use "Add to Additional Info" destination — NOT "skill". A single-item skill like "Python" or "Docker" → "skill". A list of items → "other".
+
+For ALL categories, destinations array MUST include "Add to Additional Info" as a fallback option.
+
 CV structure:
 {cv_str}
 
@@ -228,7 +232,8 @@ Return ONLY a valid JSON object. No markdown, no explanation:
   "category_label": "Short human label for the pick button",
   "destinations": [
     {{"type": "job", "job_idx": 0, "title": "Software Engineer", "company": "Amazon", "years": "2020-2022"}},
-    ...up to 3 most relevant jobs...
+    ...up to 3 most relevant jobs... (only for job_bullet category)
+    {{"type": "category", "label": "Add to Additional Info"}},
     {{"type": "category", "label": "Add as Skill"}},
     {{"type": "category", "label": "Add as Language"}},
     {{"type": "category", "label": "Add as Certification"}},
@@ -322,6 +327,13 @@ For summary:
   "applied_to": "summary",
   "applied_text": "Added summary text",
   "cv_modification": "New summary text to append"
+}}
+
+For additional info (catch-all for lists of tools, multiple items, or anything that doesn't fit elsewhere):
+{{
+  "applied_to": "additional_info",
+  "applied_text": "Tools used: Salesforce, HubSpot, Notion",
+  "cv_modification": ["Salesforce", "HubSpot", "Notion"]
 }}
 
 Return pure JSON only, no markdown, no explanation."""

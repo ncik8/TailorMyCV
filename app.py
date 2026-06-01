@@ -1177,6 +1177,16 @@ def merge_cv_sections(cv_data: dict, modification: dict) -> dict:
         current = updated.get('summary', '')
         new_text = modification.get('cv_modification', '')
         updated['summary'] = f"{current} {new_text}".strip()
+    elif applied_to == 'additional_info':
+        # Catch-all for multi-item skill lists (Salesforce, HubSpot, Notion, etc.)
+        # Stored as 'additional_info' list in CV data
+        updated['additional_info'] = updated.get('additional_info', [])
+        new_items = modification.get('cv_modification', [])
+        existing_items = updated['additional_info']
+        for item in new_items:
+            if item not in existing_items:
+                existing_items.append(item)
+        updated['additional_info'] = existing_items
     else:
         # Catch-all: if applied_to is something unexpected (education, languages, etc.)
         # store the modification so it's never silently lost
