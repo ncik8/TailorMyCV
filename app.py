@@ -1600,6 +1600,8 @@ def cover_letter_generate_route():
             'professional'
         )
         session['cover_letter'] = cover_letter
+        if user_id:
+            save_job_description({'user_id': user_id, 'cover_letter': cover_letter})
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': f'Failed to generate cover letter: {str(e)}'}), 500
@@ -1632,6 +1634,9 @@ def cover_letter_route():
         )
         
         session['cover_letter'] = cover_letter
+        # Save to Supabase job_descriptions so it's available on refresh
+        if user_id:
+            save_job_description({'user_id': user_id, 'cover_letter': cover_letter})
         return jsonify({'success': True, 'cover_letter': cover_letter})
     except Exception as e:
         return jsonify({'error': f'Failed to generate cover letter: {str(e)}'}), 500
@@ -1639,8 +1644,10 @@ def cover_letter_route():
 
 @app.route('/cover-letter/preview')
 def cover_letter_preview_page():
-    """Preview cover letter."""
-    cover_letter = session.get('cover_letter', '')
+    """Preview cover letter — load from Supabase via job description."""
+    user_id = session.get('user_id')
+    job_data = load_job_description(user_id) if user_id else {}
+    cover_letter = job_data.get('cover_letter', '') or session.get('cover_letter', '')
     return render_template('cover_letter.html', cover_letter=cover_letter)
 
 
