@@ -19,6 +19,8 @@ SOURCES YOU CAN DRAW FROM:
 
 RULES:
 - NEVER fabricate jobs, dates, titles, or achievements that don't exist in the source data
+- NEVER remove or omit the summary section — it must always be present in the output
+- You MAY rewrite, expand, shorten, or restructure the summary to improve ATS keyword match, but it must always exist
 - You MAY rewrite, expand, shorten, or restructure any field to improve ATS keyword match
 - Use gap answers to fill in missing experience context — weave those details into relevant job entries
 - Keep the CV authentic — don't exaggerate or claim skills not supported by the sources
@@ -51,7 +53,7 @@ Return a complete rewritten CV as JSON. You may change all fields — every fiel
 Return ONLY a JSON object with this exact structure (no markdown, no explanation):
 {{
   "personal": {{ ... }},
-  "summary": {{ ... }},
+  "summary": {{ rewrite to optimise for ATS but must ALWAYS be present — never return empty or null }},
   "experience": [
     {{
       "title": "...",
@@ -72,6 +74,9 @@ Return ONLY a JSON object with this exact structure (no markdown, no explanation
     try:
         result = json.loads(str(response))
         if "experience" in result and "personal" in result:
+            # Safeguard: ensure summary is always present
+            if not result.get("summary") and cv.get("summary"):
+                result["summary"] = cv["summary"]
             return result
         else:
             return cv
