@@ -2,28 +2,41 @@ import json
 from services.minimax import chat
 
 
-def optimise_cv_for_ats(cv: dict, job_description: str, ats_keywords: list, requirements: dict) -> dict:
-    """Rewrite CV bullets to maximise ATS keyword match."""
+def optimise_cv_for_ats(cv: dict, job_description: str, ats_keywords: list, requirements: dict, gap_answers=None) -> dict:
+    """Rewrite CV to maximise ATS keyword match, using profile, tailored CV, and gap answers as context."""
+
     ats_keywords_str = json.dumps(ats_keywords, indent=2) if ats_keywords else "[]"
     requirements_str = json.dumps(requirements, indent=2) if requirements else "{}"
     cv_str = json.dumps(cv, indent=2)
+    gap_str = json.dumps(gap_answers, indent=2) if gap_answers else "[]"
 
-    prompt = f"""You are an ATS CV optimisation specialist. Rewrite the CV experience bullets to maximise keyword match with the job requirements.
+    prompt = f"""You are an ATS CV optimisation specialist. Rewrite the CV to maximise keyword match with the job requirements. You may change any field — personal, summary, experience, skills, education — as long as it stays truthful to the source data.
 
-IMPORTANT: Only rewrite the experience bullets. Do NOT change personal info, summary, skills, or education sections.
+SOURCES YOU CAN DRAW FROM:
+1. The current tailored CV
+2. Gap answers (context from previous Q&A with the jobseeker)
+3. Profile data already in the CV
 
-Only rewrite the experience bullets — personal info, summary, skills, and education must stay exactly the same. Never remove or shorten the summary.
+RULES:
+- NEVER fabricate jobs, dates, titles, or achievements that don't exist in the source data
+- You MAY rewrite, expand, shorten, or restructure any field to improve ATS keyword match
+- Use gap answers to fill in missing experience context — weave those details into relevant job entries
+- Keep the CV authentic — don't exaggerate or claim skills not supported by the sources
 
-Priority keywords to weave into bullets (in order of importance):
+ATS PRIORITY KEYWORDS (in order of importance):
 1. Retail, properties, distribution / wholesale
 2. Pipeline forecasting and sales targets / quota / revenue
 3. Presales, marketing collaboration, campaigns
 4. Implementation, delivery, customer success
 5. Stakeholder management, enterprise sales, key accounts, C-suite
 6. Microsoft Dynamics, Salesforce CRM, sales reporting
+7. AI technologies
 
 INPUT CV:
 {cv_str}
+
+GAP ANSWERS (use these to enrich experience bullets):
+{gap_str}
 
 ATS KEYWORDS:
 {ats_keywords_str}
@@ -34,32 +47,21 @@ JOB DESCRIPTION:
 JOB REQUIREMENTS:
 {requirements_str}
 
-Rewrite ONLY the experience bullets (the 'highlights' array in each job entry). For each bullet:
-- If it already covers an ATS keyword, keep it but make the keyword more prominent
-- If a keyword is missing from that job entry, rewrite the bullet to naturally absorb 1-2 keywords
-- If a critical ATS keyword has no bullet covering it at all, ADD a new bullet in the most relevant job entry
-
-Rules:
-- NEVER fabricate jobs, dates, titles, or achievements
-- Keep each bullet truthful to your real experience
-- Rewrite bullets in place — change only what needs to change
-- Each bullet should be 1-2 lines max
-- Add new bullets only for truly missing critical keywords
-
+Return a complete rewritten CV as JSON. You may change all fields — every field is eligible for optimisation. Only the factual core (real jobs, real dates, real titles) must be preserved.
 Return ONLY a JSON object with this exact structure (no markdown, no explanation):
 {{
-  "personal": {{ keep exactly the same }},
-  "summary": {{ keep exactly the same }},
+  "personal": {{ ... }},
+  "summary": {{ ... }},
   "experience": [
     {{
-      "title": "keep same",
-      "company": "keep same",
-      "dates": "keep same",
-      "highlights": ["rewritten bullet 1", "rewritten bullet 2", "..."]
+      "title": "...",
+      "company": "...",
+      "dates": "...",
+      "highlights": ["...", "..."]
     }}
   ],
-  "skills": {{ keep exactly the same }},
-  "education": {{ keep exactly the same }}
+  "skills": {{ ... }},
+  "education": {{ ... }}
 }}"""
 
     response = chat(prompt, prompt)

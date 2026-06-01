@@ -1324,12 +1324,20 @@ def optimise_cv_route():
     ats_keywords = job_data.get('ats_keywords', [])
     requirements = job_data.get('requirements', {})
 
+    # Load gap answers from Supabase (permanent profile knowledge)
+    gap_answers = []
+    if user_id:
+        cv_data = load_cv(user_id)
+        if cv_data:
+            gap_answers = cv_data.get('gap_answers') or []
+
     try:
         optimised = optimise_cv_for_ats(
             tailored_cv,
             job_description,
             ats_keywords,
-            requirements
+            requirements,
+            gap_answers
         )
         session['tailored_cv'] = optimised
         return jsonify({'success': True})
