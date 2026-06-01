@@ -74,14 +74,22 @@ Return ONLY a JSON object with this exact structure (no markdown, no explanation
     if isinstance(response, dict) and "error" in response:
         return cv
 
+    # Debug: log the raw AI response before parsing
+    print(f"[DEBUG optimise] raw response type: {type(response)}, value (first 500 chars): {str(response)[:500]}")
+
     try:
         result = json.loads(str(response))
+        print(f"[DEBUG optimise] parsed result keys: {list(result.keys()) if isinstance(result, dict) else 'NOT A DICT'}")
+        print(f"[DEBUG optimise] summary value: {result.get('summary') if isinstance(result, dict) else 'N/A'}")
         if "experience" in result and "personal" in result:
             # Safeguard: ensure summary is always present
             if not result.get("summary") and cv.get("summary"):
+                print(f"[DEBUG optimise] SUMMARY MISSING — restoring from original CV")
                 result["summary"] = cv["summary"]
             return result
         else:
+            print(f"[DEBUG optimise] result missing experience or personal keys, returning original CV")
             return cv
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError) as e:
+        print(f"[DEBUG optimise] JSON parse error: {e}, returning original CV")
         return cv

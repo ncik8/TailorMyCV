@@ -1339,6 +1339,7 @@ def optimise_cv_route():
             requirements,
             gap_answers
         )
+        app.logger.info(f"[OPTIMISE] returned keys: {list(optimised.keys())}, summary: {optimised.get('summary', 'MISSING')[:100] if optimised.get('summary') else 'MISSING'}")
         session['tailored_cv'] = optimised
         return jsonify({'success': True})
     except Exception as e:
