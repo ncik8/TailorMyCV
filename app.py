@@ -1054,11 +1054,21 @@ def gap_confirm_answer_route():
         if not cv_data:
             return jsonify({'error': 'No CV found'}), 400
 
-        applied_to = cv_modification.get('applied_to', '') if isinstance(cv_modification, dict) else ''
-        app.logger.info(f"[GAP] confirm-answer: cv_modification type={type(cv_modification).__name__}, value={cv_modification}, applied_to={applied_to}")
+        applied_to = ''
+        actual_modification = {}
+        if isinstance(cv_modification, dict):
+            applied_to = cv_modification.get('applied_to', '')
+            actual_modification = cv_modification.get('cv_modification', {})
+        elif isinstance(cv_modification, list):
+            # AI returned a bare list instead of {applied_to, cv_modification}
+            # Fall back to 'additional_info' as catch-all for multi-item lists
+            applied_to = 'additional_info'
+            actual_modification = cv_modification
+        app.logger.info(f"[GAP] confirm-answer: cv_modification type={type(cv_modification).__name__}, value={cv_modification}, applied_to={applied_to}, actual_modification={actual_modification}")
 
         # Deep merge cv_modification into cv_data
-        updated_cv = merge_cv_sections(cv_data, cv_modification)
+        modification_to_merge = {'applied_to': applied_to if applied_to else 'additional_info', 'cv_modification': actual_modification} if applied_to else {'applied_to': 'additional_info', 'cv_modification': cv_modification if isinstance(cv_modification, list) else {}}
+        updated_cv = merge_cv_sections(cv_data, modification_to_merge)
 
         # Save updated CV to Supabase
         save_result = save_cv(user_id, updated_cv)
@@ -1073,7 +1083,7 @@ def gap_confirm_answer_route():
             'ai_phrased': interpreted,
             'category': category,
             'destination': destination,
-            'applied_to': applied_to
+            'applied_to': applied_to if applied_to else 'additional_info'
         }
         # Update session (small — just IDs/flags, no CV data)
         answers = session.get('gap_answers', [])
