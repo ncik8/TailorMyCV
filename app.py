@@ -688,15 +688,25 @@ def confirm_job_route():
     requirements = extract_requirements(confirmed_text)
     app.logger.info(f"[JOB] extract_requirements returned keys: {list(requirements.keys()) if isinstance(requirements, dict) else 'ERROR: ' + str(requirements)[:200]}")
 
-    # Build ats_keywords directly from requirements['skills'] — requirements.skills
-    # is a list of actual skill strings (e.g. ["AI strategy", "AI delivery", ...])
-    # This is more reliable than the extraction loop which returned [].
+    # Build ats_keywords from ALL requirement categories so tools like Salesforce
+    # (which live in requirements['tools'], not requirements['skills']) get checked
     ats_keywords = []
     if isinstance(requirements, dict) and 'error' not in requirements:
-        skills = requirements.get('skills', [])
-        ats_keywords = [s.lower() for s in skills if isinstance(s, str) and s.strip()]
-        # Log for debugging
-        app.logger.info(f"[JOB] ats_keywords from requirements.skills: count={len(ats_keywords)}, keywords={ats_keywords}")
+        all_keywords = []
+        for category in ['skills', 'certifications', 'tools', 'other',
+                         'experience_years', 'leadership']:
+            items = requirements.get(category, [])
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, str) and item.strip():
+                        all_keywords.append(item.strip())
+                    elif isinstance(item, dict):
+                        # experience_years / leadership dicts: keys are requirement names
+                        for k in item.keys():
+                            if k.strip():
+                                all_keywords.append(k.strip())
+        ats_keywords = [k.lower() for k in all_keywords]
+        app.logger.info(f"[JOB] ats_keywords from all categories: count={len(ats_keywords)}, keywords={ats_keywords}")
 
     # Load CV data to run full gap analysis (one AI call to get gaps + ATS score)
     cv_data = None
@@ -1298,8 +1308,19 @@ def tailor_cv_page():
     job_data = load_job_description(user_id) if user_id else {}
     job_description = job_data.get('description', '')
     ats_keywords = job_data.get('ats_keywords', [])
-    gap_answers = job_data.get('gap_answers', []) if job_data else []
     requirements = job_data.get('requirements', {})
+
+    # gap_answers: always pull from user_cvs (permanent record of all gap
+    # answers across all jobs). Merge with per-job answers so current job
+    # context takes priority.
+    user_cv = load_cv(user_id) if user_id else {}
+    user_gap_answers = user_cv.get('gap_answers', []) if user_cv else []
+    job_gap_answers = job_data.get('gap_answers', []) if job_data else []
+    # Build dict keyed by requirement so per-job answers override user-level ones
+    gap_answers_map = {a.get('requirement', ''): a for a in user_gap_answers}
+    for a in job_gap_answers:
+        gap_answers_map[a.get('requirement', '')] = a
+    gap_answers = list(gap_answers_map.values())
 
     if not job_description:
         return redirect(url_for('job_paste_page'))
