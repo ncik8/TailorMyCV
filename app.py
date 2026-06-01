@@ -442,10 +442,6 @@ def parse_cv_route():
         # Store in session for this session
         session['cv_data'] = cv_data
         session['cv_filename'] = file.filename
-        # Store raw_text so edit-profile can show debug panel if extraction worked but parsing didn't
-        if cv_data.get('raw_text'):
-            session['raw_text'] = cv_data['raw_text']
-
         # Persist to Supabase if user is logged in
         user_id = session.get('user_id')
         if user_id:
@@ -499,7 +495,7 @@ def edit_profile_page():
     if not cv_data and user_id:
         saved_cv = load_cv(user_id)
         if saved_cv:
-            session['cv_data'] = saved_cv
+            # Don't store in session — it's already in Supabase. Keeps cookie small.
             cv_data = saved_cv
             supabase_cv = True
 
@@ -635,10 +631,7 @@ def save_profile_route():
             }
             profile['additional_info'].append(entry)
 
-    session['profile'] = profile
-    session['cv_data'] = profile
-
-    # Persist updated CV to Supabase
+    # Persist updated CV to Supabase only — don't bloat the session cookie
     user_id = session.get('user_id')
     if user_id:
         save_cv(user_id, profile)
