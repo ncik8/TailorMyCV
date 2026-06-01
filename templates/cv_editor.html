@@ -228,6 +228,19 @@
     text-decoration: none;
 }
 .btn-cover-link:hover { text-decoration: underline; }
+.btn-optimise {
+    background: #7c3aed;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-weight: 600;
+}
+.btn-optimise:hover { background: #6d28d9; }
 
 /* Print styles */
 @media print {
@@ -265,6 +278,17 @@
             <div class="section-label" style="text-align: center;">Step 4 of 4</div>
             <h1>Edit Your CV</h1>
             <p>Click any text to edit it. When you're done, print or download your CV.</p>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 24px;">
+            <button class="btn-optimise" id="btnOptimise" onclick="optimiseForATS()">Match ATS Keywords</button>
+            <div id="optimise-loading" style="display:none; margin-top: 10px; font-size: 13px; color: var(--text-3);">
+                Optimising for ATS keywords...
+            </div>
+            <div id="optimise-success" style="display:none; margin-top: 10px; font-size: 13px; color: #059669; font-weight: 600;">
+                ✓ ATS keywords matched — your CV is optimised!
+            </div>
+            <div id="optimise-error" style="display:none; margin-top: 10px; font-size: 13px; color: #dc2626;"></div>
         </div>
 
         <div class="editor-wrapper">
@@ -428,6 +452,38 @@ function generateCoverLetter() {
         document.getElementById('cover-loading').style.display = 'none';
         document.getElementById('cover-error').textContent = 'Network error';
         document.getElementById('cover-error').style.display = 'block';
+    });
+}
+
+function optimiseForATS() {
+    document.getElementById('btnOptimise').disabled = true;
+    document.getElementById('btnOptimise').innerText = 'Optimising...';
+    document.getElementById('optimise-loading').style.display = 'block';
+    document.getElementById('optimise-success').style.display = 'none';
+    document.getElementById('optimise-error').style.display = 'none';
+
+    fetch('/cv/optimise', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('optimise-loading').style.display = 'none';
+        document.getElementById('btnOptimise').disabled = false;
+        document.getElementById('btnOptimise').innerText = '✓ Matched — Re-optimise';
+        if (data.success) {
+            document.getElementById('optimise-success').style.display = 'block';
+            // Reload page to show the optimised CV
+            setTimeout(() => { location.reload(); }, 800);
+        } else {
+            document.getElementById('btnOptimise').innerText = 'Match ATS Keywords';
+            document.getElementById('optimise-error').textContent = data.error || 'Optimisation failed';
+            document.getElementById('optimise-error').style.display = 'block';
+        }
+    })
+    .catch(() => {
+        document.getElementById('optimise-loading').style.display = 'none';
+        document.getElementById('btnOptimise').disabled = false;
+        document.getElementById('btnOptimise').innerText = 'Match ATS Keywords';
+        document.getElementById('optimise-error').textContent = 'Network error';
+        document.getElementById('optimise-error').style.display = 'block';
     });
 }
 </script>

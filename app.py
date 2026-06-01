@@ -17,6 +17,7 @@ from services.cv_parser import parse_cv
 from services.job_scraper import scrape_job_url, parse_job_text
 from services.gap_analyzer import extract_requirements, analyze_gaps, convert_answer_to_cv_language, generate_gap_questions, interpret_gap_answer, apply_gap_answer_to_profile, score_ats_keywords
 from services.tailor import tailor_cv, generate_cv_pdf
+from services.optimise import optimise_cv_for_ats
 from services.cover_letter import generate_cover_letter
 from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS
 from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count, get_client as get_supabase_client
@@ -1306,6 +1307,34 @@ def tailor_cv_page():
         increment_cv_count(user_id)
 
     return redirect(url_for('cv_preview_page'))
+
+
+@app.route('/cv/optimise', methods=['POST'])
+def optimise_cv_route():
+    """Optimise the current tailored CV for ATS keyword match."""
+    init_session()
+    user_id = session.get('user_id')
+
+    tailored_cv = session.get('tailored_cv')
+    if not tailored_cv:
+        return jsonify({'error': 'No tailored CV found. Please run Tailor CV first.'}), 400
+
+    job_data = load_job_description(user_id) if user_id else {}
+    job_description = job_data.get('description', '')
+    ats_keywords = job_data.get('ats_keywords', [])
+    requirements = job_data.get('requirements', {})
+
+    try:
+        optimised = optimise_cv_for_ats(
+            tailored_cv,
+            job_description,
+            ats_keywords,
+            requirements
+        )
+        session['tailored_cv'] = optimised
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': f'Optimisation failed: {str(e)}'}), 500
 
 
 @app.route('/cv/tailor/delete', methods=['POST'])
