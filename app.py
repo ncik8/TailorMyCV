@@ -1007,6 +1007,7 @@ def gap_confirm_destination_route():
         modification = apply_gap_answer_to_profile(
             cv_data, requirement, answer, interpreted, category, destination
         )
+        app.logger.info(f"[GAP] confirm-destination: modification type={type(modification).__name__}, keys={list(modification.keys()) if isinstance(modification, dict) else 'N/A'}, value={modification}")
         if 'error' in modification:
             return jsonify({'error': modification['error']}), 500
 
@@ -1051,6 +1052,7 @@ def gap_confirm_answer_route():
             return jsonify({'error': 'No CV found'}), 400
 
         applied_to = cv_modification.get('applied_to', '') if isinstance(cv_modification, dict) else ''
+        app.logger.info(f"[GAP] confirm-answer: cv_modification type={type(cv_modification).__name__}, value={cv_modification}, applied_to={applied_to}")
 
         # Deep merge cv_modification into cv_data
         updated_cv = merge_cv_sections(cv_data, cv_modification)
