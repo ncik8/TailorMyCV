@@ -762,7 +762,7 @@ def save_job_description(job_record: dict) -> str:
 
         # Check if user already has a job description (replace it)
         existing = supabase.table('job_descriptions').select('id').eq('user_id', user_id).execute()
-job_data = {
+        job_data = {
             'user_id': user_id,
             'description': job_record.get('description', ''),
             'title': job_record.get('title', ''),
@@ -820,6 +820,7 @@ def load_job_description(user_id: str) -> dict:
                 'gaps': gaps,
                 'requirements': requirements,
                 'gap_answers': gap_answers,
+                'cover_letter': jd.get('cover_letter', ''),
             }
     except Exception as e:
         app.logger.info(f"[JOB] load_job_description error: {e}")
