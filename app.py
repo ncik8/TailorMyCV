@@ -1072,32 +1072,34 @@ def gap_confirm_answer_route():
 
         # Save updated CV to Supabase
         save_result = save_cv(user_id, updated_cv)
-        app.logger.info(f"[GAP] save_cv returned: {save_result}, applied_to={applied_to}, cv_modification_keys={list(cv_modification.keys())}")
+        app.logger.info(f"[GAP] save_cv returned: {save_result}, applied_to={applied_to}")
         if not save_result:
             return jsonify({'error': 'Failed to save updated CV'}), 500
 
         # Save gap answer to session
-        gap_answer = {
-            'requirement': requirement,
-            'user_answer': answer,
-            'ai_phrased': interpreted,
-            'category': category,
-            'destination': destination,
-            'applied_to': applied_to if applied_to else 'additional_info'
-        }
-        # Update session (small — just IDs/flags, no CV data)
-        answers = session.get('gap_answers', [])
-        for i, a in enumerate(answers):
-            if a.get('requirement') == requirement:
-                answers[i] = gap_answer
-                break
-        else:
-            answers.append(gap_answer)
-        session['gap_answers'] = answers  # small — cleared if session resets, Supabase is source of truth
+        try:
+            gap_answer = {
+                'requirement': requirement,
+                'user_answer': answer,
+                'ai_phrased': interpreted,
+                'category': category,
+                'destination': destination,
+                'applied_to': applied_to if applied_to else 'additional_info'
+            }
+            answers = session.get('gap_answers', [])
+            replaced = False
+            for i, a in enumerate(answers):
+                if a.get('requirement') == requirement:
+                    answers[i] = gap_answer
+                    replaced = True
+                    break
+            if not replaced:
+                answers.append(gap_answer)
+            session['gap_answers'] = answers
+        except Exception as e:
+            app.logger.info(f"[GAP] session update error (non-fatal): {e}")
 
         # Persist gap answers to Supabase — update BOTH job_descriptions (per-job) and user_cvs (permanent history)
-        # job_descriptions: per-job gap answers (cleared when user "finds another job")
-        # user_cvs: all gap answers across ALL jobs (AI reads this for full context)
         try:
             supabase = get_supabase_client()
             # Update job_descriptions gap_answers (per-job, used for UI)
@@ -1130,6 +1132,8 @@ def gap_confirm_answer_route():
 
         return jsonify({'success': True})
     except Exception as e:
+        import traceback
+        app.logger.info(f"[GAP] confirm-answer CRASH: {e}\n{traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 
