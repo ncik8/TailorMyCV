@@ -27,7 +27,7 @@
             </div>
             
             <div id="cover-letter-content" style="font-size: 16px; line-height: 1.8; color: #374151;">
-                {{ cover_letter|nl2br if cover_letter else 'No cover letter generated yet.' }}
+                {{ cover_letter|replace('\n', '<br>')|safe if cover_letter else 'No cover letter generated yet.' }}
             </div>
             
             <div id="cover-letter-loading" class="hidden" style="text-align: center; padding: 40px;">
