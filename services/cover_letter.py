@@ -17,6 +17,7 @@ Rules:
 - ALWAYS start with exactly:
   To Whom It May Concern
   In reference to the position of [JOB TITLE]
+- VARY sentence length deliberately. Mix short punchy sentences (3-6 words) with longer flowing ones (15-20 words). This creates a natural, human rhythm — like someone actually talking, not a press release. Example pattern: "I led a team of 400+." Followed by: "At GEBECERT I managed sales operations across 20 regional offices in Southeast Asia, driving enterprise pipeline and revenue growth through consultative selling."
 
 Input:
 - CV: {cv}
