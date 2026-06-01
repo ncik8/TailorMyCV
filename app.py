@@ -762,16 +762,16 @@ def save_job_description(job_record: dict) -> str:
 
         # Check if user already has a job description (replace it)
         existing = supabase.table('job_descriptions').select('id').eq('user_id', user_id).execute()
-        job_data = {
+job_data = {
             'user_id': user_id,
             'description': job_record.get('description', ''),
             'title': job_record.get('title', ''),
             'company': job_record.get('company', ''),
-            # ats_keywords: already a Python list or JSON string — store as JSON string
             'ats_keywords': job_record.get('ats_keywords') if isinstance(job_record.get('ats_keywords'), str) else json.dumps(job_record.get('ats_keywords', [])),
             'gaps': json.dumps(job_record.get('gaps')) if job_record.get('gaps') else None,
             'requirements': json.dumps(job_record.get('requirements')) if job_record.get('requirements') else None,
             'gap_answers': json.dumps(job_record.get('gap_answers', [])) if job_record.get('gap_answers') is not None else None,
+            'cover_letter': job_record.get('cover_letter', ''),
             'updated_at': datetime.now().isoformat()
         }
 
