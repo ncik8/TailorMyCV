@@ -1050,7 +1050,7 @@ def gap_confirm_answer_route():
         if not cv_data:
             return jsonify({'error': 'No CV found'}), 400
 
-        applied_to = cv_modification.get('applied_to', '')
+        applied_to = cv_modification.get('applied_to', '') if isinstance(cv_modification, dict) else ''
 
         # Deep merge cv_modification into cv_data
         updated_cv = merge_cv_sections(cv_data, cv_modification)
