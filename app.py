@@ -47,7 +47,7 @@ def _prepare_cv_context(tailored_cv: dict) -> dict:
     """
     ctx = dict(tailored_cv)
     
-    # The templates expect 'personal' sub-object for contact info
+# The templates expect 'personal' sub-object for contact info
     if "personal" not in ctx:
         ctx["personal"] = {
             "name": ctx.get("name", ""),
@@ -58,8 +58,12 @@ def _prepare_cv_context(tailored_cv: dict) -> dict:
             "website": ctx.get("website", ""),
             "linkedin": ctx.get("linkedin", ""),
         }
-        # summary lives at top level from tailor_cv, move into personal for templates
-        if ctx.get("summary") and "personal" in ctx:
+        # summary lives at top level from AI output — copy it into personal for templates
+        if ctx.get("summary"):
+            ctx["personal"]["summary"] = ctx["summary"]
+    else:
+        # personal already exists from AI output — ensure summary is also present in it
+        if ctx.get("summary") and not ctx["personal"].get("summary"):
             ctx["personal"]["summary"] = ctx["summary"]
     
     # Map experience format: templates use 'highlights' not 'bullets'
