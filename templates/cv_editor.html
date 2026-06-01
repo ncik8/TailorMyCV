@@ -208,6 +208,26 @@
     transition: border-color 0.2s;
 }
 .btn-save:hover { border-color: var(--text-2); }
+.btn-cover {
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-cover:hover { background: #047857; }
+.btn-cover-link {
+    color: #059669;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    text-decoration: none;
+}
+.btn-cover-link:hover { text-decoration: underline; }
 
 /* Print styles */
 @media print {
@@ -326,6 +346,15 @@
                 <div class="panel-actions">
                     <button class="btn-print" onclick="window.print()">Print / Download PDF</button>
                     <button class="btn-save" onclick="saveEdits()">Save Changes</button>
+                    <button class="btn-cover" onclick="generateCoverLetter()">Generate Cover Letter</button>
+                </div>
+
+                <div id="cover-loading" style="display:none; margin-top:12px; font-size:12px; color:var(--text-3);">
+                    Generating cover letter...
+                </div>
+                <div id="cover-error" style="display:none; margin-top:12px; font-size:12px; color:#dc2626;"></div>
+                <div id="cover-success" style="display:none; margin-top:12px;">
+                    <a href="/cover-letter/preview" class="btn-cover-link">View Cover Letter →</a>
                 </div>
 
                 <p style="font-size: 11px; color: var(--text-3); margin-top: 24px; line-height: 1.6;">
@@ -378,5 +407,28 @@ document.querySelectorAll('[contenteditable]').forEach(el => {
         });
     });
 });
+
+function generateCoverLetter() {
+    document.getElementById('cover-loading').style.display = 'block';
+    document.getElementById('cover-error').style.display = 'none';
+    document.getElementById('cover-success').style.display = 'none';
+
+    fetch('/cover-letter/generate', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('cover-loading').style.display = 'none';
+        if (data.success) {
+            document.getElementById('cover-success').style.display = 'block';
+        } else {
+            document.getElementById('cover-error').textContent = data.error || 'Failed to generate';
+            document.getElementById('cover-error').style.display = 'block';
+        }
+    })
+    .catch(() => {
+        document.getElementById('cover-loading').style.display = 'none';
+        document.getElementById('cover-error').textContent = 'Network error';
+        document.getElementById('cover-error').style.display = 'block';
+    });
+}
 </script>
 {% endblock %}

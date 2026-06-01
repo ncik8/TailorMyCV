@@ -1534,6 +1534,34 @@ def download_cv_pdf():
         return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
 
 
+@app.route('/cover-letter/generate', methods=['POST'])
+def cover_letter_generate_route():
+    """API: Generate cover letter from cv_editor page (no JSON body needed)."""
+    user_id = session.get('user_id')
+    cv_data = session.get('cv_data')
+    if not cv_data and user_id:
+        cv_data = load_cv(user_id)
+    job_data = load_job_description(user_id) if user_id else {}
+    gap_answers = job_data.get('gap_answers', []) if job_data else []
+
+    if not cv_data:
+        return jsonify({'error': 'No CV data'}), 400
+
+    try:
+        cover_letter = generate_cover_letter(
+            cv_data,
+            gap_answers,
+            job_data.get('description', ''),
+            job_data.get('company', ''),
+            job_data.get('title', ''),
+            'professional'
+        )
+        session['cover_letter'] = cover_letter
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate cover letter: {str(e)}'}), 500
+
+
 @app.route('/cover-letter', methods=['POST'])
 def cover_letter_route():
     """API: Generate cover letter."""
