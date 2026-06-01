@@ -12,7 +12,7 @@ def optimise_cv_for_ats(cv: dict, job_description: str, ats_keywords: list, requ
 
 IMPORTANT: Only rewrite the experience bullets. Do NOT change personal info, summary, skills, or education sections.
 
-CRITICAL: The summary section must ALWAYS be preserved and kept intact — do NOT remove, shorten, or modify the summary under any circumstances.
+CRITICAL: The summary section can be optimised for ATS keywords (rewrite to naturally include them). Only the experience bullets must be rewritten — personal info, skills, and education must stay exactly the same.
 
 Priority keywords to weave into bullets (in order of importance):
 1. Retail, properties, distribution / wholesale
@@ -49,7 +49,7 @@ Rules:
 Return ONLY a JSON object with this exact structure (no markdown, no explanation):
 {{
   "personal": {{ keep exactly the same }},
-  "summary": {{ keep exactly the same — NEVER modify or remove }},
+  "summary": {{ keep the same or rewrite to optimise for ATS keywords }},
   "experience": [
     {{
       "title": "keep same",
