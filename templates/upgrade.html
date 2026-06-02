@@ -171,12 +171,17 @@
                     <li>Gap Q&amp;A feature</li>
                     <li>PDF download</li>
                 </ul>
+                {% if tier == 'free' %}
                 <div class="tier-btn tier-btn-secondary">Current Plan</div>
+                {% elif session.get('user_id') %}
+                <form action="/checkout/free" method="POST">
+                    <button type="submit" class="tier-btn tier-btn-primary">Downgrade to Free</button>
+                </form>
+                {% endif %}
             </div>
 
             <!-- Pro -->
-            <div class="tier highlighted">
-                <div class="badge">Most Popular</div>
+            <div class="tier">
                 <div class="tier-name">Pro</div>
                 <div class="tier-price">$19 <span>/mo</span></div>
                 <p class="tier-desc">Unlimited CV generations for power users</p>
@@ -187,8 +192,12 @@
                     <li>PDF download</li>
                     <li>Priority support</li>
                 </ul>
-                {% if session.get('tier') == 'pro' or session.get('tier') == 'pro_plus' %}
+                {% if tier == 'pro' %}
                 <div class="tier-btn tier-btn-secondary">Current Plan</div>
+                {% elif tier == 'pro_plus' %}
+                <form action="/upgrade-subscription/pro" method="POST">
+                    <button type="submit" class="tier-btn tier-btn-primary">Downgrade — $19/mo</button>
+                </form>
                 {% elif session.get('user_id') %}
                 <form action="/checkout/pro" method="POST">
                     <button type="submit" class="tier-btn tier-btn-primary">Subscribe — $19/mo</button>
@@ -199,7 +208,8 @@
             </div>
 
             <!-- Pro+ -->
-            <div class="tier">
+            <div class="tier highlighted">
+                <div class="badge">Most Popular</div>
                 <div class="tier-name">Pro +</div>
                 <div class="tier-price">$25 <span>/mo</span></div>
                 <p class="tier-desc">Everything in Pro, plus cover letters</p>
@@ -208,12 +218,12 @@
                     <li>Tailored CV templates</li>
                     <li>Gap Q&amp;A feature</li>
                     <li>PDF download</li>
-                    <li>Cover letter generation</li>
+                    <li>Unlimited Tailored Cover Letters</li>
                     <li>Priority support</li>
                 </ul>
-                {% if session.get('tier') == 'pro_plus' %}
+                {% if tier == 'pro_plus' %}
                 <div class="tier-btn tier-btn-secondary">Current Plan</div>
-                {% elif session.get('user_id') and session.get('tier') == 'pro' %}
+                {% elif session.get('user_id') and tier == 'pro' %}
                 <form action="/upgrade-subscription/pro_plus" method="POST">
                     <button type="submit" class="tier-btn tier-btn-primary">Upgrade — $25/mo</button>
                 </form>
@@ -226,10 +236,6 @@
                 {% endif %}
             </div>
         </div>
-
-        <p class="annual-note">
-            Or <strong>save 50%</strong> with annual billing — contact us for annual plans.
-        </p>
 
         <p class="contact-note">
             Questions? <a href="mailto:hello@rezmycv.com">hello@rezmycv.com</a>

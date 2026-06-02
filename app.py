@@ -434,6 +434,7 @@ def stripe_webhook():
             supabase.table('profiles').update({
                 'tier': 'free',
                 'stripe_subscription_id': None,
+                'stripe_customer_id': None,
             }).eq('user_id', user_id).execute()
 
     return jsonify({'ok': True})
