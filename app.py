@@ -335,29 +335,37 @@ def stripe_webhook():
     if event['type'] in ('checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated'):
         obj = event['data']['object']
 
+        app.logger.info(f"[WEBHOOK] event_type={event['type']}, obj_keys={list(obj.keys()) if hasattr(obj, 'keys') else 'no keys'}")
         if event['type'] == 'checkout.session.completed':
             # checkout.session uses different field access
             sub_id = getattr(obj, 'subscription', None) or (obj['subscription'] if 'subscription' in obj else None)
             user_id = getattr(obj, 'client_reference_id', None) or (obj['client_reference_id'] if 'client_reference_id' in obj else None)
+            app.logger.info(f"[WEBHOOK] checkout.session: sub_id={sub_id}, user_id={user_id}")
         else:
             # For subscription events, safely access attributes
             sub_id = getattr(obj, 'id', None)
             metadata = getattr(obj, 'metadata', {}) or {}
             user_id = metadata.get('user_id') if isinstance(metadata, dict) else None
+            app.logger.info(f"[WEBHOOK] subscription event: sub_id={sub_id}, user_id={user_id}, metadata={metadata}")
 
         if sub_id and user_id:
+            app.logger.info(f"[WEBHOOK] Updating profile for user_id={user_id} to tier from subscription")
             # Get the price ID from the subscription
             sub = _stripe.Subscription.retrieve(sub_id)
             price_id = sub['items']['data'][0]['price']['id']
             tier = get_tier_from_price_id(price_id)
+            app.logger.info(f"[WEBHOOK] price_id={price_id}, tier={tier}")
 
             supabase = get_supabase_client()
-            supabase.table('profiles').update({
+            result = supabase.table('profiles').update({
                 'tier': tier,
                 'stripe_subscription_id': sub_id,
                 'stripe_customer_id': getattr(sub, 'customer', None),
                 'updated_at': 'now()',
             }).eq('user_id', user_id).execute()
+            app.logger.info(f"[WEBHOOK] update result: {result}")
+        else:
+            app.logger.warning(f"[WEBHOOK] Skipping update - sub_id={sub_id}, user_id={user_id}")
 
     elif event['type'] == 'customer.subscription.deleted':
         obj = event['data']['object']
