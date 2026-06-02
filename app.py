@@ -343,6 +343,17 @@ def upgrade_subscription_route(tier):
         return redirect(url_for('checkout_route', tier=tier))
 
     try:
+        # Check subscription status first
+        sub = _stripe.Subscription.retrieve(current_sub_id)
+        if sub.status in ('incomplete_expired', 'canceled', 'unpaid'):
+            # Subscription is dead — clear it and go to checkout for a new one
+            supabase.table('profiles').update({
+                'stripe_subscription_id': None,
+                'stripe_customer_id': None,
+            }).eq('user_id', user_id).execute()
+            app.logger.info(f"[UPGRADE] Subscription {current_sub_id} is {sub.status}, redirecting to checkout")
+            return redirect(url_for('checkout_route', tier=tier))
+
         result = upgrade_subscription(current_sub_id, tier)
         app.logger.info(f"[UPGRADE] user_id={user_id}, result={result}")
 
