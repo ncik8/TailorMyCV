@@ -47,3 +47,33 @@ def get_tier_from_price_id(price_id: str) -> str:
     if price_id == STRIPE_PRICE_PRO_PLUS:
         return "pro_plus"
     return "free"
+
+
+def upgrade_subscription(sub_id: str, new_tier: str):
+    """
+    Upgrade/downgrade an existing Stripe subscription to a new tier.
+    Uses proration — Stripe automatically handles credit for unused time.
+    """
+    price_id = TIER_PRICE_MAP.get(new_tier)
+    if not price_id:
+        raise ValueError(f"Unknown tier: {new_tier}")
+
+    # Get current subscription items
+    sub = stripe.Subscription.retrieve(sub_id)
+    current_item_id = sub['items']['data'][0].id
+    current_price_id = sub['items']['data'][0]['price']['id']
+
+    # If already on this tier, nothing to do
+    if current_price_id == price_id:
+        return {"status": "already_on_tier", "tier": new_tier}
+
+    # Modify the subscription item to the new price
+    updated_sub = stripe.Subscription.modify(
+        sub_id,
+        items=[{
+            'id': current_item_id,
+            'price': price_id,
+        }],
+        proration_behavior='create_prorations',
+    )
+    return {"status": "upgraded", "tier": new_tier, "subscription_id": updated_sub.id}

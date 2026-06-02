@@ -19,7 +19,7 @@ from services.gap_analyzer import extract_requirements, analyze_gaps, convert_an
 from services.tailor import tailor_cv, generate_cv_pdf
 from services.optimise import optimise_cv_for_ats
 from services.cover_letter import generate_cover_letter
-from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS, STRIPE_WEBHOOK_SECRET
+from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, upgrade_subscription, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS, STRIPE_WEBHOOK_SECRET
 from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count, get_client as get_supabase_client
 from services.user_cv import save_cv, load_cv, delete_cv, upload_raw_file
 
@@ -314,6 +314,47 @@ def checkout_route(tier):
         )
         return redirect(sc.url, code=303)
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/upgrade-subscription/<tier>', methods=['POST'])
+def upgrade_subscription_route(tier):
+    """
+    Upgrade/downgrade an existing subscription to a new tier.
+    Uses the existing Stripe subscription, modifies the price item.
+    """
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth_login'))
+
+    valid_tiers = {'pro': 'Pro', 'pro_plus': 'Pro+'}
+    if tier not in valid_tiers:
+        return redirect(url_for('upgrade_page'))
+
+    # Get user's current subscription from their profile
+    supabase = get_supabase_client()
+    profile = supabase.table('profiles').select('stripe_subscription_id, tier').eq('user_id', user_id).execute()
+    if not profile.data:
+        return redirect(url_for('upgrade_page'))
+
+    current_sub_id = profile.data[0].get('stripe_subscription_id')
+    if not current_sub_id:
+        # No existing subscription — go to checkout instead
+        return redirect(url_for('checkout_route', tier=tier))
+
+    try:
+        result = upgrade_subscription(current_sub_id, tier)
+        app.logger.info(f"[UPGRADE] user_id={user_id}, result={result}")
+
+        # Update local profile tier immediately (webhook will also fire)
+        new_tier = result.get('tier', tier)
+        supabase.table('profiles').update({
+            'tier': new_tier,
+        }).eq('user_id', user_id).execute()
+
+        return redirect(url_for('dashboard', upgrade='success'))
+    except Exception as e:
+        app.logger.error(f"[UPGRADE] Error upgrading subscription: {e}")
         return jsonify({'error': str(e)}), 500
 
 
