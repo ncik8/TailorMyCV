@@ -339,8 +339,10 @@ def stripe_webhook():
             sub_id = obj.get('subscription')
             user_id = obj.get('client_reference_id')
         else:
-            sub_id = obj.get('id')
-            user_id = obj.get('metadata', {}).get('user_id')
+            # For subscription.updated/deleted events, safely access metadata
+            sub_id = obj.id if hasattr(obj, 'id') else None
+            metadata = obj.metadata if hasattr(obj, 'metadata') and obj.metadata else {}
+            user_id = metadata.get('user_id') if isinstance(metadata, dict) else None
 
         if sub_id and user_id:
             # Get the price ID from the subscription
@@ -358,7 +360,8 @@ def stripe_webhook():
 
     elif event['type'] == 'customer.subscription.deleted':
         obj = event['data']['object']
-        user_id = obj.get('metadata', {}).get('user_id')
+        metadata = obj.metadata if hasattr(obj, 'metadata') and obj.metadata else {}
+        user_id = metadata.get('user_id') if isinstance(metadata, dict) else None
         if user_id:
             supabase = get_supabase_client()
             supabase.table('profiles').update({
