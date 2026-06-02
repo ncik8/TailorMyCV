@@ -19,7 +19,7 @@ from services.gap_analyzer import extract_requirements, analyze_gaps, convert_an
 from services.tailor import tailor_cv, generate_cv_pdf
 from services.optimise import optimise_cv_for_ats
 from services.cover_letter import generate_cover_letter
-from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS
+from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS, STRIPE_WEBHOOK_SECRET
 from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count, get_client as get_supabase_client
 from services.user_cv import save_cv, load_cv, delete_cv, upload_raw_file
 
