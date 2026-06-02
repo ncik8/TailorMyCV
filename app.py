@@ -106,6 +106,12 @@ def init_session():
         session['cv_template'] = 'classic'
     if 'profile' not in session:
         session['profile'] = None
+    # Always refresh tier from DB to keep it current (payments, upgrades, cancellations)
+    if session.get('user_id'):
+        supabase = get_supabase_client()
+        profile = supabase.table('profiles').select('tier').eq('user_id', session['user_id']).execute()
+        if profile.data:
+            session['tier'] = profile.data[0].get('tier', 'free')
 
 
 # ============ AUTH ROUTES ============
