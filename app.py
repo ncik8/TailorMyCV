@@ -1503,6 +1503,7 @@ def cv_preview_page():
         return redirect(url_for('cv_upload_page'))
 
     template_ctx = _prepare_cv_context(tailored_cv)
+    template_ctx['profile'] = {'name': tailored_cv.get('personal', {}).get('name', 'My CV')}
     return render_template('cv_editor.html', **template_ctx)
 
 
@@ -1534,6 +1535,7 @@ def cv_editor_page():
         return redirect(url_for('cv_upload_page'))
 
     template_ctx = _prepare_cv_context(tailored_cv)
+    template_ctx['profile'] = {'name': tailored_cv.get('personal', {}).get('name', 'My CV')}
     return render_template('cv_editor.html', **template_ctx)
 
 

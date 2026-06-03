@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}ResMyCV — Your CV, Tailored to Any Job{% endblock %}
+{% block title %}{{ profile.name|default('Edit CV') if profile else 'Edit CV' }} — ResMyCV{% endblock %}
 
 {% block extra_css %}
 <style>
