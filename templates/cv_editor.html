@@ -281,7 +281,7 @@
         </div>
 
         <div style="text-align: center; margin-bottom: 24px;">
-            <button class="btn-optimise" id="btnOptimise" onclick="optimiseForATS()">Match ATS Keywords</button>
+            <button class="btn-optimise" id="btnOptimise" onclick="optimiseForATS()">Optimise CV</button>
             <div id="optimise-loading" style="display:none; margin-top: 10px; font-size: 13px; color: var(--text-3);">
                 Optimising for ATS keywords...
             </div>
@@ -467,13 +467,13 @@ function optimiseForATS() {
     .then(data => {
         document.getElementById('optimise-loading').style.display = 'none';
         document.getElementById('btnOptimise').disabled = false;
-        document.getElementById('btnOptimise').innerText = '✓ Matched — Re-optimise';
+        document.getElementById('btnOptimise').innerText = '✓ Optimised — Re-optimise';
         if (data.success) {
             document.getElementById('optimise-success').style.display = 'block';
             // Reload page to show the optimised CV
             setTimeout(() => { location.reload(); }, 800);
         } else {
-            document.getElementById('btnOptimise').innerText = 'Match ATS Keywords';
+            document.getElementById('btnOptimise').innerText = 'Optimise CV';
             document.getElementById('optimise-error').textContent = data.error || 'Optimisation failed';
             document.getElementById('optimise-error').style.display = 'block';
         }
@@ -481,7 +481,7 @@ function optimiseForATS() {
     .catch(() => {
         document.getElementById('optimise-loading').style.display = 'none';
         document.getElementById('btnOptimise').disabled = false;
-        document.getElementById('btnOptimise').innerText = 'Match ATS Keywords';
+        document.getElementById('btnOptimise').innerText = 'Optimise CV';
         document.getElementById('optimise-error').textContent = 'Network error';
         document.getElementById('optimise-error').style.display = 'block';
     });
