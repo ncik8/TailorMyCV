@@ -183,7 +183,7 @@
             <!-- Pro -->
             <div class="tier">
                 <div class="tier-name">Pro</div>
-                <div class="tier-price">$19 <span>/mo</span></div>
+                <div class="tier-price">$5 <span>/mo</span></div>
                 <p class="tier-desc">Unlimited CV generations for power users</p>
                 <ul class="tier-features">
                     <li>Unlimited CV generations</li>
@@ -196,11 +196,11 @@
                 <div class="tier-btn tier-btn-secondary">Current Plan</div>
                 {% elif tier == 'pro_plus' %}
                 <form action="/upgrade-subscription/pro" method="POST">
-                    <button type="submit" class="tier-btn tier-btn-primary">Downgrade — $19/mo</button>
+                    <button type="submit" class="tier-btn tier-btn-primary">Downgrade — $5/mo</button>
                 </form>
                 {% elif session.get('user_id') %}
                 <form action="/checkout/pro" method="POST">
-                    <button type="submit" class="tier-btn tier-btn-primary">Subscribe — $19/mo</button>
+                    <button type="submit" class="tier-btn tier-btn-primary">Subscribe — $5/mo</button>
                 </form>
                 {% else %}
                 <a href="/auth/login" class="tier-btn tier-btn-primary">Login to Subscribe</a>
@@ -211,7 +211,7 @@
             <div class="tier highlighted">
                 <div class="badge">Most Popular</div>
                 <div class="tier-name">Pro +</div>
-                <div class="tier-price">$25 <span>/mo</span></div>
+                <div class="tier-price">$10 <span>/mo</span></div>
                 <p class="tier-desc">Everything in Pro, plus cover letters</p>
                 <ul class="tier-features">
                     <li>Unlimited CV generations</li>
@@ -225,11 +225,11 @@
                 <div class="tier-btn tier-btn-secondary">Current Plan</div>
                 {% elif session.get('user_id') and tier == 'pro' %}
                 <form action="/upgrade-subscription/pro_plus" method="POST">
-                    <button type="submit" class="tier-btn tier-btn-primary">Upgrade — $25/mo</button>
+                    <button type="submit" class="tier-btn tier-btn-primary">Upgrade — $10/mo</button>
                 </form>
                 {% elif session.get('user_id') %}
                 <form action="/checkout/pro_plus" method="POST">
-                    <button type="submit" class="tier-btn tier-btn-primary">Subscribe — $25/mo</button>
+                    <button type="submit" class="tier-btn tier-btn-primary">Subscribe — $10/mo</button>
                 </form>
                 {% else %}
                 <a href="/auth/login" class="tier-btn tier-btn-primary">Login to Subscribe</a>
