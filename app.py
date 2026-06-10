@@ -22,6 +22,7 @@ from services.cover_letter import generate_cover_letter
 from services.stripe_client import create_checkout_session, construct_webhook_event, get_tier_from_price_id, upgrade_subscription, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_PLUS, STRIPE_WEBHOOK_SECRET
 from services.auth import sign_up, sign_in, sign_out, get_or_create_profile, can_generate_cv, increment_cv_count, get_client as get_supabase_client
 from services.user_cv import save_cv, load_cv, delete_cv, upload_raw_file
+from services.events import log_event
 
 load_dotenv()
 
@@ -146,6 +147,7 @@ def auth_signup():
     session['tier'] = profile.get('tier', 'free')
     session['cv_count'] = profile.get('cv_count', 0)
     session.permanent = True
+    log_event(user.id, 'signup', source='email')
     return redirect(url_for('dashboard'))
 
 
@@ -173,6 +175,7 @@ def auth_login():
     session['tier'] = profile.get('tier', 'free')
     session['cv_count'] = profile.get('cv_count', 0)
     session.permanent = True
+    log_event(user.id, 'login', source='email')
     return redirect(next_url if next_url else url_for('dashboard'))
 
 
@@ -318,6 +321,7 @@ def checkout_route(tier):
             success_url=success_url,
             cancel_url=cancel_url,
         )
+        log_event(user_id, 'click_upgrade', tier=tier, from_route='checkout')
         return redirect(sc.url, code=303)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -369,6 +373,7 @@ def upgrade_subscription_route(tier):
             'tier': new_tier,
         }).eq('user_id', user_id).execute()
 
+        log_event(user_id, 'click_upgrade', tier=tier, from_route='upgrade_subscription')
         return redirect(url_for('dashboard', upgrade='success'))
     except Exception as e:
         app.logger.error(f"[UPGRADE] Error upgrading subscription: {e}")
@@ -481,6 +486,7 @@ def cv_upload_page():
     init_session()
     if not session.get('user_id'):
         return redirect(url_for('auth_login', next='/cv/upload'))
+    log_event(session.get('user_id'), 'view_upload')
     return render_template('cv_upload.html')
 
 
@@ -528,6 +534,7 @@ def parse_cv_route():
             stored_filename = f"cv_{user_id[:8]}.{ext}"
             upload_result = upload_raw_file(user_id, file_bytes, stored_filename, content_type)
             app.logger.info(f"[CV] upload_raw_file result: {upload_result}")
+            log_event(user_id, 'upload_cv', filename=file.filename, ext=ext)
 
         return jsonify({'success': True, 'redirect': url_for('edit_profile_page')})
     except Exception as e:
@@ -721,6 +728,7 @@ def save_profile_route():
 def job_paste_page():
     """Job URL/text paste page."""
     init_session()
+    log_event(session.get('user_id'), 'view_paste_job')
     return render_template('job_paste.html')
 
 
@@ -819,6 +827,7 @@ def confirm_job_route():
 
     # Session only stores the ID reference — no cookie bloat
     session['job_desc_id'] = job_id
+    log_event(user_id, 'paste_job', job_id=job_id, keywords=len(ats_keywords))
 
     return jsonify({'success': True, 'requirements': requirements, 'ats_keywords': ats_keywords, 'gaps': gaps})
 
@@ -951,6 +960,7 @@ def gap_answer_page():
     if not job_data or not job_data.get('description'):
         return redirect(url_for('job_paste_page'))
 
+    log_event(user_id, 'view_gap_answer')
     app.logger.info(f"[GAP] session.gaps={'yes' if session.get('gaps') else 'NONE'}, job_data.gaps={'yes' if (job_data and job_data.get('gaps')) else 'NONE'}, job_data.keys={list(job_data.keys()) if job_data else 'empty'}")
     gaps = session.get('gaps')
     if not gaps:
@@ -1057,6 +1067,7 @@ def gap_interpret_route():
 
     try:
         result = interpret_gap_answer(cv_data, requirement, answer)
+        log_event(user_id, 'submit_gap_answer', requirement_len=len(requirement), answer_len=len(answer))
         return jsonify({'success': True, **result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1480,6 +1491,7 @@ def cv_preview_page():
     """Light-editable CV preview — uses cv_editor.html for inline editing."""
     init_session()
     tailored_cv = session.get('tailored_cv')
+    log_event(session.get('user_id'), 'view_preview')
 
     # Dev mode: if no tailored_cv but request has ?mock=1, use sample data
     if not tailored_cv and request.args.get('mock') == '1':
@@ -1645,6 +1657,7 @@ def download_cv_pdf():
 
         filename = f"{tailored_cv.get('name', 'CV').replace(' ', '_')}_tailored_{job_data.get('title', 'job').replace(' ', '_')}.pdf"
 
+        log_event(user_id, 'download_pdf', template=selected_template, filename=filename)
         return send_file(pdf_buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
     except Exception as e:
         return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
