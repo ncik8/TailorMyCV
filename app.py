@@ -121,6 +121,7 @@ def init_session():
 def auth_signup():
     """Sign up new user."""
     if request.method == 'GET':
+        log_event(session.get('user_id'), 'view_signup')
         return render_template('auth/signup.html', error=None)
     
     email = request.form.get('email', '').strip()
@@ -156,6 +157,7 @@ def auth_login():
     """Login existing user."""
     next_url = request.args.get('next', '')
     if request.method == 'GET':
+        log_event(session.get('user_id'), 'view_login')
         return render_template('auth/login.html', error=None, next=next_url)
     
     email = request.form.get('email', '').strip()
@@ -294,6 +296,88 @@ def blog_post(slug):
         return render_template('blog/404.html'), 404
 
     return render_template('blog/post.html', post=post)
+
+
+@app.route('/admin/funnel')
+def admin_funnel():
+    """
+    Investor-facing funnel metrics. Counts events for each step of the
+    signup → upload → tailor → download pipeline.
+
+    Last 30 days, grouped by event_name. Returns JSON for easy embed
+    in dashboards or investor updates.
+
+    SECURITY: simple admin secret check via ADMIN_TOKEN env var. If not
+    set, the endpoint is open (fine for a public funnel demo). Set
+    ADMIN_TOKEN in Railway to lock it down.
+    """
+    from datetime import datetime, timedelta, timezone
+    try:
+        admin_token = os.environ.get('ADMIN_TOKEN', '')
+        if admin_token and request.args.get('token') != admin_token:
+            return jsonify({'error': 'unauthorized'}), 401
+
+        supabase = get_supabase_client()
+        # Last 30 days of events
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        resp = supabase.table('events').select('event_name, user_id, created_at') \
+            .gte('created_at', cutoff).execute()
+        events = resp.data or []
+
+        # Count by event_name
+        from collections import Counter
+        counts = Counter(e['event_name'] for e in events)
+
+        # Unique users per event
+        users_per_event = {}
+        for e in events:
+            en = e['event_name']
+            uid = e.get('user_id')
+            if uid:
+                users_per_event.setdefault(en, set()).add(uid)
+
+        unique_user_counts = {en: len(uids) for en, uids in users_per_event.items()}
+
+        # Funnel (in order)
+        funnel_steps = [
+            ('view_landing', 'Landing'),
+            ('view_signup', 'Signup page'),
+            ('signup', 'Signed up'),
+            ('login', 'Logged in'),
+            ('view_upload', 'Upload page'),
+            ('upload_cv', 'Uploaded CV'),
+            ('view_paste_job', 'Job paste page'),
+            ('paste_job', 'Job pasted'),
+            ('view_gap_answer', 'Gap answer page'),
+            ('submit_gap_answer', 'Gap answered'),
+            ('view_preview', 'Preview viewed'),
+            ('download_pdf', 'PDF downloaded'),
+            ('click_upgrade', 'Clicked upgrade'),
+        ]
+        funnel = []
+        for en, label in funnel_steps:
+            count = counts.get(en, 0)
+            unique = unique_user_counts.get(en, 0)
+            funnel.append({'event': en, 'label': label, 'count': count, 'unique_users': unique})
+
+        # Also return top-level totals
+        total_events = len(events)
+        unique_users_overall = len({e['user_id'] for e in events if e.get('user_id')})
+
+        return jsonify({
+            'window_days': 30,
+            'total_events': total_events,
+            'unique_users_overall': unique_users_overall,
+            'funnel': funnel,
+            'all_event_counts': dict(counts),
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+        }), 500
 
 
 @app.route('/checkout/<tier>', methods=['POST'])
@@ -457,6 +541,7 @@ def stripe_webhook():
 @app.route('/')
 def index():
     """Landing page."""
+    log_event(session.get('user_id'), 'view_landing')
     return render_template('index.html')
 
 
