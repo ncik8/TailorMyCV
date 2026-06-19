@@ -298,6 +298,27 @@ def blog_post(slug):
     return render_template('blog/post.html', post=post)
 
 
+from datetime import datetime, timedelta, timezone
+from functools import wraps
+
+
+def _check_admin_auth():
+    """HTTP Basic Auth for /admin/* endpoints. Hardcoded credentials
+    (admin / Mylo@5327) per Nick's request. Browser shows native login popup."""
+    auth = request.authorization
+    if not auth or auth.username != 'admin' or auth.password != 'Mylo@5327':
+        return False
+    return True
+
+
+def _make_unauth_response():
+    """401 with WWW-Authenticate header so browser pops a native login prompt."""
+    resp = jsonify({'error': 'unauthorized', 'message': 'Login required: admin / Mylo@5327'})
+    resp.status_code = 401
+    resp.headers['WWW-Authenticate'] = 'Basic realm="RezMyCV Admin"'
+    return resp
+
+
 @app.route('/admin/funnel')
 def admin_funnel():
     """
@@ -307,22 +328,18 @@ def admin_funnel():
     Last 30 days, grouped by event_name. Returns JSON for easy embed
     in dashboards or investor updates.
 
-    SECURITY: simple admin secret check via ADMIN_TOKEN env var. If not
-    set, the endpoint is open (fine for a public funnel demo). Set
-    ADMIN_TOKEN in Railway to lock it down.
+    Protected by HTTP Basic Auth (admin / Mylo@5327).
     """
-    from datetime import datetime, timedelta, timezone
-    try:
-        admin_token = os.environ.get('ADMIN_TOKEN', '')
-        if admin_token and request.args.get('token') != admin_token:
-            return jsonify({'error': 'unauthorized'}), 401
+    if not _check_admin_auth():
+        return _make_unauth_response()
 
+    try:
         supabase = get_supabase_client()
         # Last 30 days of events
         cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
         resp = supabase.table('events').select('event_name, user_id, created_at') \
             .gte('created_at', cutoff).execute()
-        events = resp.data or []
+        events = resp.data or [] 
 
         # Count by event_name
         from collections import Counter
@@ -383,10 +400,10 @@ def admin_funnel():
 @app.route('/admin/funnel/view')
 def admin_funnel_view():
     """Human-readable funnel dashboard. Same data as /admin/funnel but
-    rendered as HTML so non-technical viewers (investors, Nick) can see it."""
-    admin_token = os.environ.get('ADMIN_TOKEN', '')
-    if admin_token and request.args.get('token') != admin_token:
-        return jsonify({'error': 'unauthorized'}), 401
+    rendered as HTML so non-technical viewers (investors, Nick) can see it.
+    Protected by HTTP Basic Auth (admin / Mylo@5327)."""
+    if not _check_admin_auth():
+        return _make_unauth_response()
     return render_template('admin/funnel.html')
 
 
