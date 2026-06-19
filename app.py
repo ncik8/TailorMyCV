@@ -530,6 +530,15 @@ def parse_cv_route():
             app.logger.info(f"[CV] user_id={user_id}, cv_name={cv_data.get('name', 'N/A')}")
             save_result = save_cv(user_id, cv_data)
             app.logger.info(f"[CV] save_cv result: {save_result}")
+            # Hard-fail: if save_cv returned None, the upsert errored silently
+            # (most commonly: missing columns in user_cvs — see migrations/003).
+            # Don't redirect the user to "success" if nothing was saved — surface
+            # the error so they retry instead of bouncing.
+            if save_result is None:
+                log_event(user_id, 'cv_save_failed')
+                return jsonify({
+                    'error': 'Could not save your CV. Please try again — if it keeps failing, contact support.'
+                }), 500
             ext = file.filename.lower().split('.')[-1]
             stored_filename = f"cv_{user_id[:8]}.{ext}"
             upload_result = upload_raw_file(user_id, file_bytes, stored_filename, content_type)
