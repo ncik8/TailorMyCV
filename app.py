@@ -380,6 +380,16 @@ def admin_funnel():
         }), 500
 
 
+@app.route('/admin/funnel/view')
+def admin_funnel_view():
+    """Human-readable funnel dashboard. Same data as /admin/funnel but
+    rendered as HTML so non-technical viewers (investors, Nick) can see it."""
+    admin_token = os.environ.get('ADMIN_TOKEN', '')
+    if admin_token and request.args.get('token') != admin_token:
+        return jsonify({'error': 'unauthorized'}), 401
+    return render_template('admin/funnel.html')
+
+
 @app.route('/checkout/<tier>', methods=['POST'])
 def checkout_route(tier):
     """Create Stripe Checkout session for the given tier."""

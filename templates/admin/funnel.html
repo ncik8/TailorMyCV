@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RezMyCV Funnel — Investor View</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --fg: #f4f2ec;
+    --muted: #8a8a85;
+    --border: #2a2a2a;
+    --accent: #f4f2ec;
+    --green: #10b981;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+    padding: 2rem;
+  }
+  .container { max-width: 980px; margin: 0 auto; }
+  h1 {
+    font-family: 'GT Sectra', 'Cormorant Garamond', Georgia, serif;
+    font-weight: 400;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 3rem; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 3rem;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 600;
+    font-feature-settings: 'tnum' 1;
+  }
+  h2 {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    font-weight: 500;
+  }
+  .funnel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 200px 1fr 120px 80px;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-label { font-weight: 500; }
+  .step-event {
+    font-family: 'JetBrains Mono', Menlo, monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .step-bar-container {
+    height: 6px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .step-bar {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.4s ease;
+  }
+  .step-count {
+    font-family: 'JetBrains Mono', Menlo, monospace;
+    text-align: right;
+    font-feature-settings: 'tnum' 1;
+  }
+  .step-conversion {
+    text-align: right;
+    font-family: 'JetBrains Mono', Menlo, monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .step.zero .step-bar { background: var(--border); }
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', Menlo, monospace;
+  }
+  .refresh-btn {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    font-family: inherit;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 1rem;
+  }
+  .refresh-btn:hover { background: var(--surface); border-color: var(--fg); }
+  .error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 1rem;
+    margin-bottom: 2rem;
+  }
+  .all-events {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    font-family: 'JetBrains Mono', Menlo, monospace;
+    font-size: 0.75rem;
+  }
+  .all-events-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>RezMyCV Funnel</h1>
+  <div class="subtitle">Last 30 days <button class="refresh-btn" onclick="loadFunnel()">Refresh</button></div>
+
+  <div id="error"></div>
+
+  <div class="stats" id="stats"></div>
+
+  <h2>Conversion Funnel</h2>
+  <div class="funnel" id="funnel"></div>
+
+  <h2>All Event Counts</h2>
+  <div class="all-events" id="all-events"></div>
+
+  <div class="footer" id="footer"></div>
+</div>
+
+<script>
+async function loadFunnel() {
+  const errorEl = document.getElementById('error');
+  const statsEl = document.getElementById('stats');
+  const funnelEl = document.getElementById('funnel');
+  const allEventsEl = document.getElementById('all-events');
+  const footerEl = document.getElementById('footer');
+
+  errorEl.innerHTML = '';
+  statsEl.innerHTML = 'Loading…';
+  funnelEl.innerHTML = '';
+  allEventsEl.innerHTML = '';
+  footerEl.innerHTML = '';
+
+  try {
+    const url = window.location.origin + '/admin/funnel';
+    const r = await fetch(url);
+    const data = await r.json();
+
+    if (data.error) {
+      errorEl.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+      if (data.traceback) {
+        errorEl.innerHTML += `<pre class="error" style="font-size: 0.75rem; white-space: pre-wrap;">${data.traceback}</pre>`;
+      }
+      return;
+    }
+
+    // Top stats
+    statsEl.innerHTML = `
+      <div class="stat">
+        <div class="stat-label">Total Events</div>
+        <div class="stat-value">${data.total_events.toLocaleString()}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Unique Users</div>
+        <div class="stat-value">${data.unique_users_overall.toLocaleString()}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Window</div>
+        <div class="stat-value">${data.window_days}d</div>
+      </div>
+    `;
+
+    // Funnel
+    const maxCount = Math.max(...data.funnel.map(s => s.count), 1);
+    let prevUnique = null;
+    data.funnel.forEach(step => {
+      const widthPct = step.count === 0 ? 0 : Math.max(2, (step.count / maxCount) * 100);
+      const conversion = prevUnique === null || prevUnique === 0
+        ? '—'
+        : `${((step.unique_users / prevUnique) * 100).toFixed(0)}%`;
+      const zeroClass = step.count === 0 ? 'zero' : '';
+      const html = `
+        <div class="step ${zeroClass}">
+          <div>
+            <div class="step-label">${step.label}</div>
+            <div class="step-event">${step.event}</div>
+          </div>
+          <div class="step-bar-container">
+            <div class="step-bar" style="width: ${widthPct}%"></div>
+          </div>
+          <div class="step-count">${step.count} <span style="color: var(--muted);">(${step.unique_users}u)</span></div>
+          <div class="step-conversion">${conversion}</div>
+        </div>
+      `;
+      funnelEl.innerHTML += html;
+      if (step.unique_users > 0) prevUnique = step.unique_users;
+    });
+
+    // All event counts
+    const sorted = Object.entries(data.all_event_counts).sort((a, b) => b[1] - a[1]);
+    sorted.forEach(([name, count]) => {
+      allEventsEl.innerHTML += `
+        <div class="all-events-row">
+          <span>${name}</span>
+          <span>${count}</span>
+        </div>
+      `;
+    });
+
+    footerEl.innerHTML = `Generated ${new Date(data.generated_at).toLocaleString()}`;
+  } catch (e) {
+    errorEl.innerHTML = `<div class="error">Failed to load funnel: ${e.message}</div>`;
+  }
+}
+
+loadFunnel();
+// Auto-refresh every 30s
+setInterval(loadFunnel, 30000);
+</script>
+</body>
+</html>
