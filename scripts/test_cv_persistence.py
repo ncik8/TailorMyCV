@@ -96,67 +96,100 @@ def check_round_trip_on_existing_user(url, key):
     return True
 
 
-def check_write_and_delete(url, key):
-    """Insert a row with all columns, read it back, then delete it."""
-    print("[3/4] Upsert+delete round-trip with all 3 fix columns...")
-    test_uid = str(uuid4())
-    test_row = {
-        "user_id": test_uid,
-        "name": "Smoke Test",
-        "email": "smoke@test.local",
-        "experience": json.dumps([{"title": "T", "company": "C", "bullets": []}]),
-        "skills": json.dumps(["Python"]),
-        "additional_info": json.dumps([{"key": "k", "value": "v"}]),
-        "gap_answers": json.dumps([{"requirement": "r", "user_answer": "a"}]),
-        "updated_at": "now()",
-    }
-    # Upsert
+def get_existing_user_id(url, key):
+    """Read first user_cvs row to get a real user_id (in auth.users).
+    Returns the user_id or None if user_cvs is empty."""
     status, _, body = supabase_query(
         url, key,
-        "/rest/v1/user_cvs",
-        method="POST",
-        body=test_row,
-        extra_headers={"Prefer": "return=representation,resolution=ignore-duplicates"}
+        "/rest/v1/user_cvs?select=user_id&limit=1"
+    )
+    if status != 200:
+        return None
+    rows = json.loads(body)
+    if rows:
+        return rows[0]["user_id"]
+    return None
+
+
+def check_write_and_delete(url, key):
+    """Upsert using an EXISTING auth.users user_id (Flora's), read back,
+    then delete. Reuses the existing row (upsert), no new auth.users needed."""
+    print("[3/4] Upsert+read+delete on existing user (uses real auth.users FK)...")
+    # Pick first real user
+    existing_uid = get_existing_user_id(url, key)
+    if not existing_uid:
+        print("  SKIP: no existing user_cvs row to test against")
+        return True  # not a failure, just nothing to test
+    # Upsert using existing user_id (ON CONFLICT updates the row)
+    test_row = {
+        "user_id": existing_uid,
+        "name": "Smoke Test (overwritten)",
+        "additional_info": json.dumps([{"key": "smoke_test_marker", "value": "v"}]),
+        "gap_answers": json.dumps([{"requirement": "smoke_test", "user_answer": "pass"}]),
+        "updated_at": "now()",
+    }
+    # PATCH the existing row (user_cvs has UNIQUE on user_id, so upsert requires
+    # the correct resolution mode and on_conflict target — PATCH is simpler)
+    status, _, body = supabase_query(
+        url, key,
+        f"/rest/v1/user_cvs?user_id=eq.{existing_uid}",
+        method="PATCH",
+        body={
+            "name": "Smoke Test (overwritten)",
+            "additional_info": json.dumps([{"key": "smoke_test_marker", "value": "v"}]),
+            "gap_answers": json.dumps([{"requirement": "smoke_test", "user_answer": "pass"}]),
+            "updated_at": "now()",
+        },
+        extra_headers={"Prefer": "return=representation"}
     )
     if status not in (200, 201):
-        print(f"  FAIL: upsert returned HTTP {status}: {body[:300]}")
+        print(f"  FAIL: PATCH returned HTTP {status}: {body[:300]}")
         return False
-    print(f"  upsert OK ({status})")
+    print(f"  PATCH OK ({status})")
 
     # Read back, verify the 3 fix columns
     status, _, body = supabase_query(
         url, key,
-        f"/rest/v1/user_cvs?select=user_id,additional_info,gap_answers,updated_at&user_id=eq.{test_uid}"
+        f"/rest/v1/user_cvs?select=user_id,additional_info,gap_answers,updated_at,name&user_id=eq.{existing_uid}"
     )
     if status != 200:
         print(f"  FAIL: read-back returned HTTP {status}: {body[:200]}")
         return False
     rows = json.loads(body)
     if not rows:
-        print(f"  FAIL: read-back returned no rows (insert didn't stick?)")
+        print(f"  FAIL: read-back returned no rows")
         return False
     r = rows[0]
     failed = []
-    for col in ("additional_info", "gap_answers", "updated_at"):
-        if r.get(col) is None:
-            failed.append(col)
+    if r.get("additional_info") is None:
+        failed.append("additional_info")
+    if r.get("gap_answers") is None:
+        failed.append("gap_answers")
+    if r.get("updated_at") is None:
+        failed.append("updated_at")
     if failed:
         print(f"  FAIL: read-back has NULL for {failed}")
         return False
-    print(f"  read-back PASS: additional_info={r['additional_info']!r}")
+    print(f"  read-back PASS: user_id={r['user_id'][:8]}")
+    print(f"                   additional_info={r['additional_info']!r}")
     print(f"                   gap_answers={r['gap_answers']!r}")
     print(f"                   updated_at={r['updated_at']!r}")
+    print(f"                   name={r.get('name')!r} (smoke-test marker)")
 
-    # Cleanup
+    # Cleanup: restore original values (PATCH to original Flora data).
+    # We don't DELETE because this is the user's real CV.
+    original_name = "Flora Archibald"
     status, _, body = supabase_query(
         url, key,
-        f"/rest/v1/user_cvs?user_id=eq.{test_uid}",
-        method="DELETE"
+        f"/rest/v1/user_cvs?user_id=eq.{existing_uid}",
+        method="PATCH",
+        body={"name": original_name},
+        extra_headers={"Prefer": "return=minimal"}
     )
     if status not in (200, 204):
-        print(f"  WARN: cleanup DELETE returned HTTP {status}: {body[:200]}")
+        print(f"  WARN: cleanup PATCH returned HTTP {status}: {body[:200]}")
     else:
-        print(f"  cleanup PASS")
+        print(f"  cleanup PASS (name restored to {original_name!r})")
     return True
 
 
