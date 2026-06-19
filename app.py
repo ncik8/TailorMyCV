@@ -420,13 +420,20 @@ def stripe_webhook():
             app.logger.info(f"[WEBHOOK] price_id={price_id}, tier={tier}")
 
             supabase = get_supabase_client()
-            result = supabase.table('profiles').update({
-                'tier': tier,
-                'stripe_subscription_id': sub_id,
-                'stripe_customer_id': getattr(sub, 'customer', None),
-                'updated_at': 'now()',
-            }).eq('user_id', user_id).execute()
-            app.logger.info(f"[WEBHOOK] update result: {result}")
+            # Use upsert so users whose profiles row was never created at signup
+            # (the try/except in sign_up swallowed the error) still get tier set.
+            # ON CONFLICT (user_id) DO UPDATE — preserves existing cv_count etc.
+            try:
+                result = supabase.table('profiles').upsert({
+                    'user_id': user_id,
+                    'tier': tier,
+                    'stripe_subscription_id': sub_id,
+                    'stripe_customer_id': getattr(sub, 'customer', None),
+                    'updated_at': 'now()',
+                }, on_conflict='user_id').execute()
+                app.logger.info(f"[WEBHOOK] profiles upsert OK for user_id={user_id}, tier={tier}")
+            except Exception as e:
+                app.logger.error(f"[WEBHOOK] profiles upsert FAILED for user_id={user_id}: {e}")
         else:
             app.logger.warning(f"[WEBHOOK] Skipping update - sub_id={sub_id}, user_id={user_id}")
 

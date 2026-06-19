@@ -21,15 +21,21 @@ def sign_up(email: str, password: str) -> dict:
     try:
         auth_result = client.auth.sign_up({"email": email, "password": password})
         if auth_result.user:
-            # Create profile row for new user
+            # Create profile row for new user.
+            # Logged at info level so silent failures are visible in production.
             try:
                 client.table("profiles").insert({
                     "user_id": auth_result.user.id,
                     "tier": "free",
                     "cv_count": 0
-                })
-            except Exception:
-                pass  # Profile may already exist from trigger
+                }).execute()
+                print(f"[AUTH] sign_up: profile created for user_id={auth_result.user.id}")
+            except Exception as profile_err:
+                # Common cause: profile already exists from trigger or earlier attempt.
+                # Log loudly so it's visible if the row really should have been created.
+                import sys
+                print(f"[AUTH] sign_up: profile insert error for user_id={auth_result.user.id}: "
+                      f"{type(profile_err).__name__}: {profile_err}", file=sys.stderr)
             return {"user": auth_result.user, "session": auth_result.session}
         return {"error": "Signup failed"}
     except Exception as e:
