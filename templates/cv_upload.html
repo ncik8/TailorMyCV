@@ -5,11 +5,11 @@
 {% block content %}
 <div class="page">
     <div class="container" style="max-width: 800px;">
-        <div class="page-header">
+        <div class="page-header" style="margin-bottom: 56px;">
             <h1>Upload Your CV</h1>
             <p>We'll parse it and extract your experience, skills, and achievements.</p>
         </div>
-        
+
         <div class="card">
             <div id="upload-area" style="border: 2px dashed #d1d5db; border-radius: 12px; padding: 60px 40px; text-align: center; cursor: pointer; transition: all 0.2s;">
                 <div style="font-size: 48px; margin-bottom: 16px;">📄</div>
@@ -17,6 +17,10 @@
                 <p style="color: #64748b; margin-bottom: 24px;">or click to browse</p>
                 <p style="color: #94a3b8; font-size: 14px;">Supports DOCX and PDF · Max 10MB</p>
                 <input type="file" id="file-input" accept=".docx,.doc,.pdf" style="display: none;">
+            </div>
+
+            <div style="margin-top: 16px; padding: 12px 16px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; color: #78350f; font-size: 13px; line-height: 1.5;">
+                💡 On iPhone? Open your CV in <span style="text-decoration: underline;">Files app</span> first — tap the file to download it from <span style="text-decoration: underline;">iCloud</span>, then upload here.
             </div>
 
             <div style="text-align: center; margin-top: 20px;">
