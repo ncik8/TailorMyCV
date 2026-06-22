@@ -191,20 +191,88 @@ def auth_logout():
 
 @app.route('/auth/forgot-password', methods=['GET', 'POST'])
 def auth_forgot_password():
-    """Send password reset email via Supabase."""
+    """Send password reset email via Resend (from hello@rezmycv.com).
+
+    Replaces the previous Supabase-default reset flow so the email looks
+    branded and uses our own sender domain. The "no enumeration" guarantee
+    stays: same success message whether or not the email exists.
+    """
     if request.method == 'GET':
         return render_template('auth/forgot_password.html')
 
-    email = request.form.get('email', '').strip()
+    email = (request.form.get('email') or '').strip().lower()
     if not email:
         return render_template('auth/forgot_password.html', error='Please enter your email address.')
 
-    client = get_supabase_client()
+    # Always render the same success template, regardless of whether the
+    # user exists or email send succeeded. This avoids email enumeration
+    # and avoids leaking our Resend/Supabase state to the public.
+    success_template = 'auth/forgot_password.html'
+
     try:
-        client.auth.reset_password_email(email)
-        return render_template('auth/forgot_password.html', success=True)
+        from services.auth import create_password_reset_token
+        from services.email import send_password_reset_email
+        result = create_password_reset_token(email)
+        if result:
+            reset_url = url_for('auth_reset_password', token=result['token'], _external=True)
+            # Fire-and-don't-block: log but don't fail the request if email errors.
+            try:
+                send_password_reset_email(email, reset_url)
+            except Exception as e:
+                import sys
+                print(f"[AUTH] forgot-password: email send raised: {e}", file=sys.stderr)
+        # Whether or not the user exists, show the same message.
+        return render_template(success_template, success=True)
     except Exception as e:
-        return render_template('auth/forgot_password.html', error='If that email exists, a reset link was sent.')
+        # Token creation failed (DB error, missing key, etc.). Still show
+        # the success message so we don't leak server state.
+        import sys
+        print(f"[AUTH] forgot-password error: {type(e).__name__}: {e}", file=sys.stderr)
+        return render_template(success_template, success=True)
+
+
+@app.route('/auth/reset-password/<token>', methods=['GET', 'POST'])
+def auth_reset_password(token):
+    """Set a new password using a valid reset token.
+
+    GET: validate token, show the new-password form. Token invalid/expired/used
+         -> show a neutral error page with a "request a new link" CTA.
+    POST: validate + update password via Supabase admin. On success, redirect
+          to /auth/login with a flash.
+    """
+    from services.auth import verify_password_reset_token, consume_password_reset_token
+
+    # Always validate first, for both GET and POST.
+    row = verify_password_reset_token(token)
+    if not row:
+        return render_template(
+            'auth/reset_password.html',
+            invalid_token=True,
+            error="This reset link is invalid, expired, or already used. Request a new one.",
+        ), 400
+
+    if request.method == 'GET':
+        return render_template('auth/reset_password.html', token=token)
+
+    new_password = request.form.get('password') or ''
+    confirm = request.form.get('confirm_password') or ''
+    if not new_password or not confirm:
+        return render_template('auth/reset_password.html', token=token,
+                               error='Please enter and confirm your new password.')
+    if new_password != confirm:
+        return render_template('auth/reset_password.html', token=token,
+                               error='Passwords do not match.')
+    if len(new_password) < 6:
+        return render_template('auth/reset_password.html', token=token,
+                               error='Password must be at least 6 characters.')
+
+    success = consume_password_reset_token(token, new_password)
+    if not success:
+        return render_template('auth/reset_password.html', token=token,
+                               error='Could not update your password. Try requesting a new link.'), 500
+
+    log_event(row['user_id'], 'password_reset')
+    return redirect('/auth/login?reset=1')
 
 
 @app.route('/upgrade')
