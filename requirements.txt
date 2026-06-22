@@ -10,4 +10,5 @@ xhtml2pdf
 gunicorn
 jinja2
 stripe
+resend
 # Build cache bust - May 27 2026
