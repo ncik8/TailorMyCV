@@ -913,7 +913,16 @@ def save_profile_route():
     # Persist updated CV to Supabase only — don't bloat the session cookie
     user_id = session.get('user_id')
     if user_id:
-        save_cv(user_id, profile)
+        save_result = save_cv(user_id, profile)
+        if save_result is None:
+            # Hard-fail: silent success on a failed save is the bug we just
+            # shipped a fix for. Mirror the /cv/parse hard-fail pattern so the
+            # user sees an error instead of a fake success.
+            app.logger.error(f"[SAVE] save_cv returned None for user_id={user_id}")
+            log_event(user_id, 'cv_save_failed', source='save_profile_route')
+            return jsonify({
+                'error': 'Could not save your changes. Please try again — if it keeps failing, contact support.'
+            }), 500
 
     app.logger.info(f"[SAVE] final profile experience: {profile['experience']}")
     app.logger.info(f"[SAVE] final profile education: {profile['education']}")

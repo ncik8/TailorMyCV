@@ -1,13 +1,24 @@
 """
 Persist user CV data to Supabase (user_cvs table with TEXT columns).
 All arrays are JSON-encoded to TEXT strings before insert.
+
+Uses SUPABASE_SERVICE_ROLE_KEY (NOT SUPABASE_KEY/anon) because:
+- user_cvs RLS (migration 009) only allows writes when auth.uid()=user_id
+- The backend is a trusted server context — service_role bypasses RLS
+- Using anon here caused silent save failures after migration 009
 """
 import json
 import os
 from supabase import create_client, Client
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+# Prefer service_role (server-side, RLS bypass). Fall back to anon for
+# backwards-compat with deployments that only set SUPABASE_KEY.
+SUPABASE_KEY = (
+    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    or os.getenv("SUPABASE_KEY")
+    or ""
+)
 
 _supabase_client: Client = None
 
