@@ -999,14 +999,20 @@ def confirm_job_route():
 
     # Load CV data to run full gap analysis (one AI call to get gaps + ATS score)
     cv_data = None
+    existing_gap_answers = []
     if user_id:
         cv_data = load_cv(user_id)
+        if cv_data:
+            raw = cv_data.get('gap_answers')
+            if raw:
+                existing_gap_answers = json.loads(raw) if isinstance(raw, str) else (raw if isinstance(raw, list) else [])
 
     gaps = {}
     if cv_data:
-        # Run full gap analysis with ATS scoring in one call
-        gaps = analyze_gaps(cv_data, requirements)
-        app.logger.info(f"[JOB] Gap analysis done: partials={len(gaps.get('partials', []))}, missing={len(gaps.get('missing', []))}, ats_score={gaps.get('ats_score', 0)}")
+        # Run full gap analysis with ATS scoring in one call.
+        # Pass existing_gap_answers so the model skips already-covered requirements.
+        gaps = analyze_gaps(cv_data, requirements, existing_gap_answers=existing_gap_answers)
+        app.logger.info(f"[JOB] Gap analysis done: partials={len(gaps.get('partials', []))}, missing={len(gaps.get('missing', []))}, ats_score={gaps.get('ats_score', 0)}, prior_answers_seen={len(existing_gap_answers)}")
 
     # Delete existing job descriptions for this user to get a clean slate.
     # NOTE: on-the-fly fallback in gap_answer_page overwrites gaps/requirements
@@ -1186,7 +1192,13 @@ def gap_answer_page():
             requirements = job_data.get('requirements')
             if not requirements:
                 requirements = extract_requirements(job_data.get('description', ''))
-            gaps = analyze_gaps(cv_data, requirements)
+            # Pull existing gap answers so the model skips already-covered requirements
+            existing_gap_answers = []
+            if cv_data:
+                raw = cv_data.get('gap_answers')
+                if raw:
+                    existing_gap_answers = json.loads(raw) if isinstance(raw, str) else (raw if isinstance(raw, list) else [])
+            gaps = analyze_gaps(cv_data, requirements, existing_gap_answers=existing_gap_answers)
             # Persist to Supabase so future loads get it from there.
             # Use targeted UPDATE to avoid wiping ats_keywords/description.
             try:
@@ -1231,6 +1243,16 @@ def gap_answer_page():
             'question': q or m.get('question', '') or f"Tell me about your experience with {req}. Even a brief example counts!",
             'answer': answer
         })
+
+    # Post-filter: drop any gap whose requirement the user has already answered.
+    # Belt-and-suspenders for the AI prompt instruction — guarantees we never
+    # re-ask a question the user already answered, even if M3 missed the cue.
+    answered_reqs = {a.get('requirement', '').strip() for a in (answers or []) if a.get('requirement')}
+    before_count = len(all_gaps)
+    all_gaps = [g for g in all_gaps if g.get('requirement', '').strip() not in answered_reqs]
+    filtered_count = before_count - len(all_gaps)
+    if filtered_count:
+        app.logger.info(f"[GAP] post-filter dropped {filtered_count} already-answered gap(s) out of {before_count}")
 
     # Build start messages from existing answers
     start_messages = []
@@ -1511,7 +1533,13 @@ def gap_analysis_page():
         if not requirements:
             requirements = extract_requirements(job_data.get('description', ''))
         try:
-            gaps = analyze_gaps(cv_data, requirements)
+            # Pull existing gap answers so the model skips already-covered requirements
+            existing_gap_answers = []
+            if cv_data:
+                raw = cv_data.get('gap_answers')
+                if raw:
+                    existing_gap_answers = json.loads(raw) if isinstance(raw, str) else (raw if isinstance(raw, list) else [])
+            gaps = analyze_gaps(cv_data, requirements, existing_gap_answers=existing_gap_answers)
         except Exception as e:
             return render_template('gap_analyze.html', gaps={}, questions=[], interview_likelihood=50, error=str(e))
 
@@ -1601,6 +1629,12 @@ def tailor_cv_page():
         return redirect(url_for('job_paste_page'))
 
     tailored = tailor_cv(cv_data, gap_answers, job_description, ats_keywords, requirements)
+    if isinstance(tailored, dict) and tailored.get('error'):
+        # Hard-fail: tailor.py returned an error (JSON parse fail, M3 timeout, etc.)
+        # Storing an error dict as `tailored_cv` would render a blank page.
+        app.logger.error(f"[TAILOR] tailor_cv returned error: {tailored.get('error')}")
+        return redirect(url_for('job_paste_page', tailor_error=1))
+
     session['tailored_cv'] = tailored
 
     if user_id:
@@ -1688,6 +1722,9 @@ def tailor_cv_route():
 
     try:
         tailored = tailor_cv(cv_data, gap_answers, job_description, ats_keywords, requirements)
+        if isinstance(tailored, dict) and tailored.get('error'):
+            app.logger.error(f"[TAILOR] tailor_cv returned error: {tailored.get('error')}")
+            return jsonify({'error': tailored['error']}), 500
         session['tailored_cv'] = tailored
 
         # Increment CV count if user is logged in
@@ -1706,6 +1743,13 @@ def cv_preview_page():
     init_session()
     tailored_cv = session.get('tailored_cv')
     log_event(session.get('user_id'), 'view_preview')
+
+    # If a previous tailor call failed, session['tailored_cv'] holds an error dict
+    # instead of a real CV. Detect and redirect so the user doesn't see a blank page.
+    if isinstance(tailored_cv, dict) and tailored_cv.get('error'):
+        app.logger.error(f"[PREVIEW] session holds tailor error: {tailored_cv.get('error')}")
+        session.pop('tailored_cv', None)
+        return redirect(url_for('job_paste_page', tailor_error=1))
 
     # Dev mode: if no tailored_cv but request has ?mock=1, use sample data
     if not tailored_cv and request.args.get('mock') == '1':
@@ -1738,6 +1782,11 @@ def cv_editor_page():
     """Light-editable CV preview on the grid-background page."""
     init_session()
     tailored_cv = session.get('tailored_cv')
+
+    # Detect stale error dict from a failed tailor call (defence in depth)
+    if isinstance(tailored_cv, dict) and tailored_cv.get('error'):
+        session.pop('tailored_cv', None)
+        return redirect(url_for('job_paste_page', tailor_error=1))
 
     # Dev mode: if no tailored_cv but request has ?mock=1, use sample data
     if not tailored_cv and request.args.get('mock') == '1':

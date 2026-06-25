@@ -123,12 +123,38 @@ def extract_requirements(job_description: str) -> dict:
     except json.JSONDecodeError as e:
         print(f"[DEBUG extract_requirements] JSON decode error: {e}, raw text: {repr(text)[:300]}")
         return {"error": f"Failed to parse requirements: {e}", "raw": response}
-def analyze_gaps(cv_json: dict, requirements: dict) -> dict:
-    """Analyze gaps between CV and job requirements. Includes ATS keyword scoring."""
+def analyze_gaps(cv_json: dict, requirements: dict, existing_gap_answers: list = None) -> dict:
+    """Analyze gaps between CV and job requirements. Includes ATS keyword scoring.
+
+    existing_gap_answers: list of {requirement, user_answer, ai_phrased, ...} the user
+    has already answered for prior jobs. The model sees these in the prompt and
+    is told to skip requirements the user has already demonstrated knowledge of.
+    Even with this, a deterministic post-filter in app.py catches anything the
+    model misses (belt + suspenders).
+    """
     cv_str = json.dumps(cv_json, indent=2)
     req_str = json.dumps(requirements)
 
-    prompt = GAP_ANALYZER_PROMPT.format(cv=cv_str, requirements=req_str)
+    # Format existing answers for the prompt — show requirement + the user's
+    # paraphrased bullet so the model can recognise them as covered.
+    if existing_gap_answers:
+        covered = []
+        for a in existing_gap_answers:
+            req = a.get("requirement", "").strip()
+            bullet = a.get("ai_phrased") or a.get("user_answer", "")
+            if req:
+                covered.append(f"- {req}: {bullet[:200]}")
+        existing_block = "\n".join(covered)
+        existing_section = f"""
+
+### Already-Answered Requirements (user has demonstrated knowledge of these — DO NOT include them as gaps):
+{existing_block}
+"""
+    else:
+        existing_section = ""
+
+    prompt = GAP_ANALYZER_PROMPT.format(cv=cv_str, requirements=req_str) + existing_section
+
     response = chat(prompt, prompt)
 
     if isinstance(response, dict) and "error" in response:
