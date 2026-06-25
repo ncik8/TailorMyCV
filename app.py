@@ -1029,6 +1029,15 @@ def confirm_job_route():
         'gaps': gaps,
     }
     job_id = save_job_description(job_record)
+    if not job_id:
+        # Hard-fail: silent 'success' on a failed save = the user gets kicked
+        # back to /job/paste by the next stage's redirect-with-no-data check.
+        # Surface the error so we never silently lose the job description.
+        app.logger.error(f"[JOB] save_job_description returned None for user_id={user_id}")
+        log_event(user_id, 'job_save_failed')
+        return jsonify({
+            'error': 'Could not save your job description. Please try again — if it keeps failing, contact support.'
+        }), 500
 
     # Session only stores the ID reference — no cookie bloat
     session['job_desc_id'] = job_id

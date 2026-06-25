@@ -12,10 +12,24 @@ _supabase_admin_client: Client = None
 
 
 def get_client() -> Client:
-    """User-context Supabase client (anon key, RLS-enforced)."""
+    """Backend Supabase client. Uses service_role (RLS bypass) so server-side
+    writes to user_cvs / job_descriptions / events / profiles aren't blocked
+    by RLS policies that require auth.uid()=user_id (which is null for the
+    server context).
+
+    The anon key fallback below is for backwards-compat with deployments
+    that only set SUPABASE_KEY — but anon-key writes WILL FAIL after the
+    RLS lockdown migrations (008 + 009). Make sure SUPABASE_SERVICE_ROLE_KEY
+    is set on Railway.
+    """
     global _supabase_client
     if _supabase_client is None:
-        _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        key = (
+            os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+            or os.getenv("SUPABASE_KEY")
+            or ""
+        )
+        _supabase_client = create_client(SUPABASE_URL, key)
     return _supabase_client
 
 
