@@ -1,0 +1,24 @@
+{# Reusable meta tags for standalone pages. Include right after the <title>. #}
+{# Expects: title (string), description (string), canonical_path (string), og_image_alt (string, optional) #}
+<meta name="description" content="{{ description }}">
+<meta name="keywords" content="{% block meta_keywords_fallback %}CV tailoring, ATS CV, beat ATS, tailored resume, AI CV, job application{% endblock %}">
+<link rel="canonical" href="https://rezmycv.com{{ canonical_path }}">
+
+<meta property="og:type" content="{% block og_type_fallback %}website{% endblock %}">
+<meta property="og:site_name" content="RezMyCV">
+<meta property="og:title" content="{{ title }}">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:url" content="https://rezmycv.com{{ canonical_path }}">
+<meta property="og:image" content="https://rezmycv.com/static/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ og_image_alt or title }}">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ title }}">
+<meta name="twitter:description" content="{{ description }}">
+<meta name="twitter:image" content="https://rezmycv.com/static/og-default.png">
+<meta name="twitter:image:alt" content="{{ og_image_alt or title }}">
+
+<link rel="icon" type="image/png" href="/static/favicon.png">

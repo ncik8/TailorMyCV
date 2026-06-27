@@ -1,6 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}{{ post.title }} — Rezmycv Blog{% endblock %}
+{% block title %}{{ post.title }} — RezMyCV Blog{% endblock %}
+
+{% block meta_description %}{{ post.meta_description or post.excerpt or post.title }}{% endblock %}
+
+{% block canonical %}https://rezmycv.com/blog/{{ post.slug }}{% endblock %}
+
+{% block og_type %}article{% endblock %}
+
+{% block og_image %}{% if post.og_image %}https://rezmycv.com{{ post.og_image }}{% elif post.cover_image %}https://rezmycv.com{{ post.cover_image }}{% else %}{{ self.og_image() }}{% endif %}{% endblock %}
+
+{% block og_image_alt %}{{ post.title }}{% endblock %}
+
+{% block article_published_time %}{{ post.published_at or '' }}{% endblock %}
+
+{% block article_author %}{{ post.author or 'RezMyCV Editorial Team' }}{% endblock %}
 
 {% block content %}
 <div class="page">
