@@ -978,7 +978,9 @@ def confirm_job_route():
     app.logger.info(f"[JOB] extract_requirements returned keys: {list(requirements.keys()) if isinstance(requirements, dict) else 'ERROR: ' + str(requirements)[:200]}")
 
     # Build ats_keywords from ALL requirement categories so tools like Salesforce
-    # (which live in requirements['tools'], not requirements['skills']) get checked
+    # (which live in requirements['tools'], not requirements['skills']) get checked.
+    # NOTE: experience_years and leadership are dicts (e.g. {"project_management": 5}),
+    # not lists — extract their keys too so we don't silently drop whole categories.
     ats_keywords = []
     if isinstance(requirements, dict) and 'error' not in requirements:
         all_keywords = []
@@ -990,10 +992,15 @@ def confirm_job_route():
                     if isinstance(item, str) and item.strip():
                         all_keywords.append(item.strip())
                     elif isinstance(item, dict):
-                        # experience_years / leadership dicts: keys are requirement names
                         for k in item.keys():
                             if k.strip():
                                 all_keywords.append(k.strip())
+            elif isinstance(items, dict):
+                # experience_years / leadership are dicts — keys are requirement names,
+                # values may be years (int) or strings (e.g. "Manager"). Take keys only.
+                for k in items.keys():
+                    if isinstance(k, str) and k.strip():
+                        all_keywords.append(k.strip())
         ats_keywords = [k.lower() for k in all_keywords]
         app.logger.info(f"[JOB] ats_keywords from all categories: count={len(ats_keywords)}, keywords={ats_keywords}")
 

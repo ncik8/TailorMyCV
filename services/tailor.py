@@ -193,7 +193,7 @@ Good: "I bring 8+ years building data pipelines and ML workflows in Python, lead
 Output the complete tailored CV JSON following the schema above."""
 
 
-    response = chat(prompt, prompt)
+    response = chat(prompt, "Proceed.")
     
     if isinstance(response, dict) and "error" in response:
         return response

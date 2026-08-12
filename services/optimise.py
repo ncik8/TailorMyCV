@@ -69,7 +69,7 @@ Return ONLY a JSON object with this exact structure (no markdown, no explanation
   "education": {{ ... }}
 }}"""
 
-    response = chat(prompt, prompt)
+    response = chat(prompt, "Proceed.")
 
     if isinstance(response, dict) and "error" in response:
         return cv

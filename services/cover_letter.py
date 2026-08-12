@@ -51,7 +51,7 @@ def generate_cover_letter(cv: dict, gap_answers: list, job_description: str, com
         tone=tone_instruction
     )
     
-    response = chat(prompt, prompt)
+    response = chat(prompt, "Proceed.")
     
     if isinstance(response, dict) and "error" in response:
         return response.get("error", "Failed to generate cover letter")

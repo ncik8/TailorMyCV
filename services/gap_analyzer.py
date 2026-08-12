@@ -1,15 +1,22 @@
 import json
 from services.minimax import chat
 
-REQUIREMENTS_EXTRACTOR_PROMPT = """You are an expert job requirement analyst. Extract all hard requirements from this job description.
+REQUIREMENTS_EXTRACTOR_PROMPT = """You are an expert job requirement analyst. Extract only HARD requirements from this job description.
 
-Categorize them into:
-- skills: specific technical/hard skills (e.g., Python, SQL, Project Management)
-- experience_years: years of experience required for specific domains (e.g., {"project_management": 5, "agile": 3})
-- certifications: required degrees, certs, licenses (e.g., PMP, MBA, CPA)
-- leadership: management/team size requirements (e.g., {"team_size": 10, "title": "Manager"})
-- tools: specific tools/technologies mentioned (e.g., Jira, AWS, Salesforce)
-- other: other hard requirements (e.g., "valid drivers license", "clean driving record")
+Be conservative — only include what is genuinely required (not nice-to-haves, not culture statements, not job responsibilities).
+
+Categorise into:
+- skills: specific technical/hard skills (e.g. Python, SQL, Project Management)
+- experience_years: years of experience required for specific domains (e.g. {"project_management": 5}). ONLY include if the JD explicitly states a numeric years requirement.
+- certifications: required degrees, certs, licenses (e.g. PMP, MBA, CPA). ONLY include if explicitly required.
+- leadership: management/team size requirements (e.g. {"team_size": 10, "title": "Manager"}). ONLY include if team size or reporting level is explicit.
+- tools: specific tools/technologies mentioned (e.g. Jira, AWS, Salesforce, HubSpot)
+- other: STRICTLY use this category ONLY for hard external constraints — work location (e.g. "must be based in Hong Kong"), work authorisation, security clearance, language requirement. DO NOT include soft asks, nice-to-haves, culture statements, mission/values statements, or generic role descriptions.
+
+Be especially wary of:
+- Lifting duty descriptions from "What You'll Do" or "Responsibilities" sections — these describe the job, not requirements.
+- Including aspirational or culture statements ("passionate about X", "drive innovation") — filter these out.
+- Inferring requirements not stated (e.g. "must know Excel" when JD says "advanced Excel user").
 
 Return ONLY a valid JSON object with these exact keys. No markdown, no explanation.
 Example output:
@@ -17,9 +24,16 @@ Example output:
 
 GAP_ANALYZER_PROMPT = """You are an expert CV analyst. Compare the CV against the job requirements.
 
+CARDINAL RULES — read carefully before doing anything:
+1. ONLY identify gaps for requirements that appear EXPLICITLY in the JSON requirements block below.
+2. DO NOT infer, invent, or extrapolate requirements beyond what is listed.
+3. Each item in matches / partials / missing MUST use the exact "requirement" string from the input (or a normalised form like lowercasing/whitespace).
+4. If the requirements block is empty, return empty arrays — never fabricate gaps.
+5. Responsibilities and duties listed in the CV (e.g. "led a team of 8") are NOT requirements unless they appear in the requirements block.
+
 For each requirement, determine if it's:
 - MET: The CV clearly satisfies this requirement
-- PARTIAL: The CV partially satisfies this (e.g., 4 years vs 5 years required)
+- PARTIAL: The CV partially satisfies this (e.g. 4 years vs 5 years required)
 - MISSING: The CV doesn't address this requirement at all
 
 For PARTIAL or MISSING requirements, provide a SPECIFIC question to ask the user that would help fill the gap.
@@ -45,18 +59,24 @@ def score_ats_keywords(cv_json: dict, requirements: dict) -> dict:
     Returns: {ats_score: 0-100, found: [...], missing: [...]}
     """
     import re
-    # Build flat list of ATS keywords from requirements
+    # Build flat list of ATS keywords from requirements. Defensive against
+    # experience_years / leadership being returned as dicts (e.g. {"pm": 5}).
     keywords = []
-    # Check all 6 categories, including experience_years and leadership dicts
     for category in ['skills', 'certifications', 'tools', 'other', 'experience_years', 'leadership']:
-        for item in requirements.get(category, []):
+        items = requirements.get(category, [])
+        if isinstance(items, list):
+            iter_items = items
+        elif isinstance(items, dict):
+            # Dict: keys are requirement names; values may be years (int) or strings.
+            iter_items = list(items.keys())
+        else:
+            iter_items = []
+        for item in iter_items:
             if isinstance(item, str) and item:
                 keywords.append(item.lower())
             elif isinstance(item, dict):
-                # experience_years and leadership have keys like "enterprise_AI_initiatives"
-                # that are the actual requirement names, and string values like "Manager"
                 for k, v in item.items():
-                    if k.strip():
+                    if isinstance(k, str) and k.strip():
                         keywords.append(k.lower())
                     if isinstance(v, str) and v.strip():
                         keywords.append(v.lower())
@@ -133,7 +153,7 @@ def analyze_gaps(cv_json: dict, requirements: dict, existing_gap_answers: list =
     model misses (belt + suspenders).
     """
     cv_str = json.dumps(cv_json, indent=2)
-    req_str = json.dumps(requirements)
+    req_str = json.dumps(requirements, indent=2)
 
     # Format existing answers for the prompt — show requirement + the user's
     # paraphrased bullet so the model can recognise them as covered.
@@ -155,7 +175,7 @@ def analyze_gaps(cv_json: dict, requirements: dict, existing_gap_answers: list =
 
     prompt = GAP_ANALYZER_PROMPT.format(cv=cv_str, requirements=req_str) + existing_section
 
-    response = chat(prompt, prompt)
+    response = chat(prompt, "Proceed.")
 
     if isinstance(response, dict) and "error" in response:
         return response
@@ -215,7 +235,7 @@ Return ONLY the rewritten CV bullet point. Nothing else. Keep it to 1-2 sentence
 def convert_answer_to_cv_language(requirement: str, user_answer: str) -> str:
     """Convert user's informal answer to professional CV language."""
     prompt = GAP_QNA_PROMPT.format(requirement=requirement, answer=user_answer)
-    response = chat(prompt, prompt)
+    response = chat(prompt, "Proceed.")
 
     if isinstance(response, dict) and "error" in response:
         return user_answer
@@ -280,7 +300,7 @@ def interpret_gap_answer(cv_json: dict, requirement: str, user_answer: str) -> d
         requirement=requirement,
         cv_str=cv_str
     )
-    response = chat(prompt, prompt)
+    response = chat(prompt, "Proceed.")
 
     if isinstance(response, dict) and "error" in response:
         return {
@@ -379,7 +399,7 @@ def apply_gap_answer_to_profile(cv_json: dict, requirement: str, user_answer: st
         category=category,
         cv_str=cv_str
     )
-    response = chat(prompt, prompt)
+    response = chat(prompt, "Proceed.")
 
     if isinstance(response, dict) and "error" in response:
         return {"error": "Failed to apply answer", "raw": response}
@@ -461,7 +481,7 @@ def generate_gap_questions(gaps: dict) -> dict:
     req_str = json.dumps(gap_requirements, indent=2)
     prompt = GAP_QUESTIONS_PROMPT.format(gap_requirements=req_str)
     
-    response = chat(prompt, prompt)
+    response = chat(prompt, "Proceed.")
     
     if isinstance(response, dict) and "error" in response:
         return _fallback_generate_questions(gap_requirements)
